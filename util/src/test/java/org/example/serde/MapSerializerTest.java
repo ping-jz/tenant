@@ -1,0 +1,84 @@
+package org.example.serde;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+public class MapSerializerTest {
+
+  /** 业务入口 */
+  private CommonSerializer serializer;
+  /** 临时buff */
+  private ByteBuf buf;
+
+  @BeforeEach
+  void beforeEach() {
+    serializer = new CommonSerializer();
+    buf = Unpooled.buffer();
+
+    MapSerializer map = new MapSerializer(serializer, HashMap::new);
+
+    serializer.registerSerializer(10, Map.class, map);
+    serializer.linkTo(HashMap.class, Map.class);
+  }
+
+  @Test
+  void intDoubleTest() {
+    Random random = ThreadLocalRandom.current();
+    Map<Integer, Double> col = new HashMap<>();
+    int size = random.nextInt(Short.MAX_VALUE);
+    for (int i = 0; i < size; i++) {
+      col.put(random.nextInt(), random.nextDouble());
+    }
+
+    serializer.writeObject(buf, col);
+    Map<Integer, Double> res = serializer.read(buf);
+    assertEquals(col, res);
+  }
+
+  @Test
+  void strCollectionTest() {
+    Random random = ThreadLocalRandom.current();
+    Map<String, Double> col = new HashMap<>();
+    int size = random.nextInt(Short.MAX_VALUE);
+    for (int i = 0; i < size; i++) {
+      col.put(Long.toString(random.nextLong()), random.nextDouble());
+    }
+
+    serializer.writeObject(buf, col);
+    Map<String, Double> res = serializer.read(buf);
+    assertEquals(col, res);
+  }
+
+  @Test
+  void colCollectionTest() {
+    Random random = ThreadLocalRandom.current();
+    Map<Integer, Map<String, Double>> col = new HashMap<>();
+    int size = Byte.MAX_VALUE;
+    int old = 0;
+    for (int i = 0; i < size; i++) {
+      int subSize = random.nextInt(size);
+      Map<String, Double> strs = new HashMap<>();
+      for (int j = 0; j < subSize; j++) {
+        strs.put(Long.toString(random.nextLong()), random.nextDouble());
+      }
+      int key = random.nextInt();
+      if (col.put(key, strs) != null) {
+        old = key;
+      }
+    }
+
+    col.put(old, null);
+
+    serializer.writeObject(buf, col);
+    Map<Integer, Map<String, Double>> res = serializer.read(buf);
+    assertEquals(col, res);
+  }
+}
