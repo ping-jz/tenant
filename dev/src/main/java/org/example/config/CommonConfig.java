@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 2021年06月30日 18:08:38
  **/
 @Configuration
-@ComponentScan(basePackages = "org/example/common")
+@ComponentScan(basePackages = "org.example.common")
 public class CommonConfig {
 
 }

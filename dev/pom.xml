@@ -47,6 +47,9 @@
               <classpathPrefix>lib/</classpathPrefix>
               <mainClass>org.example.MainApplication</mainClass>
             </manifest>
+            <manifestEntries>
+              <Class-Path>resources/</Class-Path>
+            </manifestEntries>
           </archive>
           <outputDirectory>${project.build.directory}/release</outputDirectory>
         </configuration>
@@ -65,7 +68,7 @@
               <goal>copy-resources</goal>
             </goals>
             <configuration>
-              <outputDirectory>${project.build.directory}/release</outputDirectory>
+              <outputDirectory>${project.build.directory}/release/resources/</outputDirectory>
               <resources>
                 <resource>
                   <directory>src/main/resources</directory>

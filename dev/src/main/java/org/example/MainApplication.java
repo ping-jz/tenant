@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.example.config.CommonConfig;
+import org.example.config.GameConfig;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.io.Resource;
@@ -30,13 +31,8 @@ public class MainApplication {
         AnnotationConfigApplicationContext child = new AnnotationConfigApplicationContext();
         childContexts.add(child);
 
-        ClassLoader loader = CustomClassLoader.of(propertyLoc, Thread.currentThread()
-            .getContextClassLoader());
-        //ClassLoader loader =Thread.currentThread().getContextClassLoader();
-
-        child.setClassLoader(loader);
         child.setParent(root);
-        child.register(loader.loadClass("org.example.config.GameConfig"));
+        child.register(GameConfig.class);
 
         Resource resource = child.getResource(propertyLoc);
         child.getEnvironment().getPropertySources()
