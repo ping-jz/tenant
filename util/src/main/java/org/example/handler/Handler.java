@@ -1,4 +1,4 @@
-package org.example.dispatcher;
+package org.example.handler;
 
 import java.lang.reflect.Method;
 
@@ -19,13 +19,16 @@ public class Handler {
   private Method method;
   /** 请求协议编号 */
   private int reqId;
-  /** 结果协议编号 */
-  private int resId;
 
-  public Handler(Object obj, Method method) {
-    this.obj = obj;
-    this.method = method;
-    method.setAccessible(true);
+  public Handler() {
+  }
+
+  public static Handler of(Object obj, Method method, int req) {
+    Handler handler = new Handler();
+    handler.obj = obj;
+    handler.method = method;
+    handler.reqId = req;
+    return handler;
   }
 
   public Object obj() {
@@ -38,6 +41,10 @@ public class Handler {
 
   public Object invoke() throws Exception {
     return invoke(NO_PARAMS);
+  }
+
+  public int reqId() {
+    return reqId;
   }
 
   public Object invoke(Object... params) throws Exception {

@@ -65,8 +65,8 @@
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <log4j.version>2.13.1</log4j.version>
-    <slf4j.verion>2.11.0</slf4j.verion>
+    <log4j.version>2.14.1</log4j.version>
+    <slf4j.verion>2.14.1</slf4j.verion>
     <junit.version>5.7.0</junit.version>
     <spring.version>5.3.7</spring.version>
     <javax.annotation-api>1.3.2</javax.annotation-api>
@@ -115,6 +115,11 @@
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-api</artifactId>
         <version>${log4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-slf4j-impl</artifactId>
+        <version>${slf4j.verion}</version>
       </dependency>
 
       <!-- Common test dependencies -->

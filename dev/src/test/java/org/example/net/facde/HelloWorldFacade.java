@@ -1,6 +1,6 @@
-package org.example.dispatcher.facde;
+package org.example.net.facde;
 
-import org.example.dispatcher.Packet;
+import org.example.handler.Packet;
 
 /**
  * 世界你好，门面
@@ -12,7 +12,6 @@ public class HelloWorldFacade {
 
   /** 回声协议 */
   public static final int ECHO_REQ = 1;
-  public static final int ECHO_RES = 1;
 
 
   /**
@@ -21,8 +20,8 @@ public class HelloWorldFacade {
    * @param str 内容
    * @since 2021年07月22日 21:58:45
    */
-  @Packet(req = ECHO_REQ, res = ECHO_RES)
-  public String echo(String str) {
+  @Packet(req = ECHO_REQ)
+  public Object echo(Object str) {
     return str;
   }
 

@@ -26,6 +26,10 @@
             </goals>
             <configuration>
               <outputDirectory>${project.build.directory}/release/lib</outputDirectory>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>false</overWriteSnapshots>
+              <overWriteIfNewer>true</overWriteIfNewer>
+              <includeScope>runtime</includeScope>
             </configuration>
           </execution>
         </executions>
@@ -40,6 +44,7 @@
           <excludes>
             <!-- don't copy resources to jar -->
             <exclude>*.properties</exclude>
+            <exclude>*.xml</exclude>
           </excludes>
           <archive>
             <manifest>
@@ -52,6 +57,7 @@
             </manifestEntries>
           </archive>
           <outputDirectory>${project.build.directory}/release</outputDirectory>
+
         </configuration>
       </plugin>
 
@@ -117,6 +123,10 @@
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
     </dependency>
   </dependencies>
 
