@@ -18,9 +18,9 @@ import java.lang.annotation.Target;
 public @interface Packet {
 
   /**
-   * 请求协议号，返回协议号为{@link Packet#req()}负数形式
+   * 请求协议号，返回协议号为{@link Packet#value()} ()}负数形式
    *
    * @since 2021年07月22日 22:00:32
    */
-  int req();
+  int value();
 }

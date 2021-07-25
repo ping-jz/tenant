@@ -39,6 +39,7 @@ public class Dispatcher {
     Handler handler = handlerRegistry.getHandler(req.proto());
     if (handler == null) {
       logger.error("地址:{}, 协议号:{}, 无对应处理器", channel.remoteAddress(), req.proto());
+      return;
     }
 
     try {

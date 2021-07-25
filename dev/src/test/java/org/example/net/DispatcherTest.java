@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.example.handler.HandlerRegistry;
+import org.example.handler.Packet;
 import org.example.net.codec.MessageCodec;
-import org.example.net.facde.HelloWorldFacade;
 import org.example.serde.CommonSerializer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ public class DispatcherTest {
     EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(Integer.BYTES, serializer));
 
     Message echoRequest = new Message();
-    echoRequest.proto(HelloWorldFacade.ECHO_REQ);
+    echoRequest.proto(HelloWorldFacade.ECHO);
     echoRequest.optIdx(0);
     echoRequest.packet("HelloWorld");
 
@@ -56,7 +56,7 @@ public class DispatcherTest {
     EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(Integer.BYTES, serializer));
 
     Message echoRequest = new Message();
-    echoRequest.proto(HelloWorldFacade.ECHO_REQ);
+    echoRequest.proto(HelloWorldFacade.ECHO);
     echoRequest.optIdx(0);
     echoRequest.packet(new String[]{"Hello", "World"});
 
@@ -71,6 +71,34 @@ public class DispatcherTest {
     assertArrayEquals((Object[]) echoRequest.packet(), serializer.read(buf));
 
     channel.finishAndReleaseAll();
+  }
+
+  /**
+   * 世界你好，门面
+   *
+   * @author ZJP
+   * @since 2021年07月22日 21:58:02
+   **/
+  private static class HelloWorldFacade {
+
+    private static final int ECHO = 1;
+
+    /**
+     * 回声
+     *
+     * @param str 内容
+     * @since 2021年07月22日 21:58:45
+     */
+
+    @Packet(ECHO)
+    public Object echo(Object str) {
+      return str;
+    }
+
+    public void doNothing() {
+
+    }
+
   }
 
 

@@ -52,7 +52,7 @@ public class HandlerRegistry {
         res = new ArrayList<>();
       }
 
-      Handler handler = Handler.of(object, m, packet.req());
+      Handler handler = Handler.of(object, m, packet.value());
       res.add(handler);
     }
 

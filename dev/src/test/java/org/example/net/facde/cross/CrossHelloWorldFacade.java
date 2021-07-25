@@ -1,4 +1,4 @@
-package org.example.net.facde;
+package org.example.net.facde.cross;
 
 import org.example.handler.Packet;
 
@@ -8,11 +8,7 @@ import org.example.handler.Packet;
  * @author ZJP
  * @since 2021年07月22日 21:58:02
  **/
-public class HelloWorldFacade {
-
-  /** 回声协议 */
-  public static final int ECHO_REQ = 1;
-
+public class CrossHelloWorldFacade implements HelloWorld {
 
   /**
    * 回声
@@ -20,9 +16,15 @@ public class HelloWorldFacade {
    * @param str 内容
    * @since 2021年07月22日 21:58:45
    */
-  @Packet(req = ECHO_REQ)
+  @Override
+  @Packet(HelloWorld.ECHO)
   public Object echo(Object str) {
     return str;
+  }
+
+  @Override
+  public void doNothing() {
+
   }
 
 }

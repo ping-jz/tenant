@@ -20,7 +20,7 @@ public class HelloWorldFacade {
    * @param str 内容
    * @since 2021年07月22日 21:58:45
    */
-  @Packet(req = ECHO_REQ)
+  @Packet(ECHO_REQ)
   public String echo(String str) {
     return str;
   }
