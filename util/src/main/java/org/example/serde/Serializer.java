@@ -14,8 +14,7 @@ import io.netty.buffer.ByteBuf;
  *    内容长度:根据实现来确定
  * </pre>
  *
- * //TODO 增加自动关联
- * //TODO 增加对接口类型的自动关联
+ * // 增加自动关联 DONE
  * //TODO 增加对数组，集合，字段的优化。对单一类型优化(增加一个)
  *
  * @author ZJP

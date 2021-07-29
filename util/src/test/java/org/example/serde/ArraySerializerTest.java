@@ -25,9 +25,9 @@ public class ArraySerializerTest {
 
   @Test
   void oneDimensionsCheckTest() {
-    int[] array = new int[]{};
+    int[] array = {};
     assertArrayEquals(new int[]{0}, ArraySerializer.getDimensions(array));
-    int[] arrayTwo = new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    int[] arrayTwo = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     assertArrayEquals(new int[]{10}, ArraySerializer.getDimensions(arrayTwo));
   }
 
@@ -46,7 +46,7 @@ public class ArraySerializerTest {
 
   @Test
   void emptyArrayTest() {
-    int[] test = new int[]{};
+    int[] test = {};
     serializer.writeObject(buf, test);
 
     int[] res = serializer.read(buf);
@@ -55,7 +55,7 @@ public class ArraySerializerTest {
 
   @Test
   void simpleArrayTest() {
-    int[] test = new int[]{1999999, 1999922, 199999955, 19999444, 1999999, 1999999, 1999999, 1999999, 1999999, 3999999};
+    int[] test = {1999999, 1999922, 199999955, 19999444, 1999999, 1999999, 1999999, 1999999, 1999999, 3999999};
     serializer.writeObject(buf, test);
 
     int[] res = serializer.read(buf);
@@ -64,7 +64,7 @@ public class ArraySerializerTest {
 
   @Test
   void twoDimensionIntArrayTest() {
-    int[][] test = new int[][]{{1, 10}, {10, 1}};
+    int[][] test = {{1, 10}, {10, 1}};
     serializer.writeObject(buf, test);
     int[][] res = serializer.read(buf);
     assertArrayEquals(test, res);

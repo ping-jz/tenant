@@ -1,9 +1,9 @@
 package org.example.serde;
 
 import io.netty.buffer.ByteBuf;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 序列化组合实现,业务主要入口
@@ -48,9 +48,9 @@ public class CommonSerializer implements Serializer<Object> {
   private Map<Class<?>, Integer> clazz2Id;
 
   public CommonSerializer() {
-    serializers = new HashMap<>();
-    id2Clazz = new HashMap<>();
-    clazz2Id = new HashMap<>();
+    serializers = new ConcurrentHashMap<>();
+    id2Clazz = new ConcurrentHashMap<>();
+    clazz2Id = new ConcurrentHashMap<>();
     commonType();
     registerWrapperType();
 
@@ -228,7 +228,7 @@ public class CommonSerializer implements Serializer<Object> {
     int writeIdx = buf.writerIndex();
     try {
       @SuppressWarnings("unchecked")
-      Serializer<Object> serializer = (Serializer<Object>) serializers.get(clazz);
+      Serializer<Object> serializer = findSerilaizer(clazz);
       if (serializer == null) {
         throw new RuntimeException("类型:" + clazz + "，未注册");
       }
@@ -244,7 +244,22 @@ public class CommonSerializer implements Serializer<Object> {
       buf.writerIndex(writeIdx);
       throw new RuntimeException("类型:" + clazz + ",序列化错误", e);
     }
+  }
 
+  @SuppressWarnings("unchecked")
+  private <T> Serializer<T> findSerilaizer(Class<?> clzz) {
+    Serializer<T> serializer = (Serializer<T>) serializers.get(clzz);
+    if (serializer == null) {
+      for(Class<?> key : serializers.keySet()) {
+        if(key.isAssignableFrom(clzz) && key.isInterface()) {
+          linkTo(clzz, key);
+          break;
+        }
+      }
 
+      serializer = (Serializer<T>) serializers.get(clzz);
+    }
+
+    return serializer;
   }
 }

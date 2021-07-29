@@ -7,6 +7,7 @@ import io.netty.buffer.Unpooled;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ThreadLocalRandom;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,6 @@ public class SetSerializerTest {
     CollectionSerializer collectSer = new CollectionSerializer(serializer, HashSet::new);
 
     serializer.registerSerializer(10, Set.class, collectSer);
-    serializer.linkTo(HashSet.class, Set.class);
   }
 
   @Test
@@ -53,7 +53,7 @@ public class SetSerializerTest {
   @Test
   void doubleCollectionTest() {
     Random random = ThreadLocalRandom.current();
-    Set<Double> col = new HashSet<>();
+    Set<Double> col = new TreeSet<>();
     int size = random.nextInt(Short.MAX_VALUE);
     for (int i = 0; i < size; i++) {
       col.add(random.nextDouble());
@@ -85,7 +85,7 @@ public class SetSerializerTest {
     int size = Byte.MAX_VALUE;
     for (int i = 0; i < size; i++) {
       int subSize = random.nextInt(size);
-      Set<String> strs = new HashSet<>(subSize);
+      Set<String> strs = new TreeSet<>();
       for (int j = 0; j < subSize; j++) {
         strs.add(Integer.toString(random.nextInt()));
       }

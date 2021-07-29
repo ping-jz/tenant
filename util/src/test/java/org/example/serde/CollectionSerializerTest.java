@@ -6,10 +6,12 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 
@@ -34,11 +36,9 @@ public class CollectionSerializerTest {
     CollectionSerializer collectSer = new CollectionSerializer(serializer);
 
     serializer.registerSerializer(10, Collection.class, collectSer);
-    serializer.linkTo(List.class, Collection.class);
-    serializer.linkTo(ArrayList.class, Collection.class);
   }
 
-  @Test
+  @RepeatedTest(3)
   void intCollectionTest() {
     Random random = ThreadLocalRandom.current();
     List<Integer> col = new ArrayList<>();
@@ -53,9 +53,9 @@ public class CollectionSerializerTest {
   }
 
   @Test
-  void doubleCollectionTest() {
+  void doubleCollectionLinkedTest() {
     Random random = ThreadLocalRandom.current();
-    List<Double> col = new ArrayList<>();
+    List<Double> col = new LinkedList<>();
     int size = random.nextInt(Short.MAX_VALUE);
     for (int i = 0; i < size; i++) {
       col.add(random.nextDouble());

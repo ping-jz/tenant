@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
 import java.util.concurrent.ThreadLocalRandom;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,11 +28,10 @@ public class MapSerializerTest {
     MapSerializer map = new MapSerializer(serializer, HashMap::new);
 
     serializer.registerSerializer(10, Map.class, map);
-    serializer.linkTo(HashMap.class, Map.class);
   }
 
   @Test
-  void intDoubleTest() {
+  void intDoubleHashMapTest() {
     Random random = ThreadLocalRandom.current();
     Map<Integer, Double> col = new HashMap<>();
     int size = random.nextInt(Short.MAX_VALUE);
@@ -44,9 +45,9 @@ public class MapSerializerTest {
   }
 
   @Test
-  void strCollectionTest() {
+  void strCollectionLinkedHashMapTest() {
     Random random = ThreadLocalRandom.current();
-    Map<String, Double> col = new HashMap<>();
+    Map<String, Double> col = new LinkedHashMap<>();
     int size = random.nextInt(Short.MAX_VALUE);
     for (int i = 0; i < size; i++) {
       col.put(Long.toString(random.nextLong()), random.nextDouble());
@@ -58,9 +59,9 @@ public class MapSerializerTest {
   }
 
   @Test
-  void colCollectionTest() {
+  void colCollectionTreeMapTest() {
     Random random = ThreadLocalRandom.current();
-    Map<Integer, Map<String, Double>> col = new HashMap<>();
+    Map<Integer, Map<String, Double>> col = new TreeMap<>();
     int size = Byte.MAX_VALUE;
     int old = 0;
     for (int i = 0; i < size; i++) {
