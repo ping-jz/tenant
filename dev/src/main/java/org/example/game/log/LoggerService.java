@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 public class LoggerService {
 
   private Logger logger;
+  private Logger sysLogger;
   @Value("${game.id}")
   private String gameId;
 
@@ -18,6 +19,7 @@ public class LoggerService {
   @PostConstruct
   public void postConstruct() {
     logger = LoggerContext.getContext().getLogger(this.getClass());
+    sysLogger = LoggerContext.getContext().getLogger("game_sys");
   }
 
   public Logger log() {
@@ -29,6 +31,9 @@ public class LoggerService {
     ThreadContext.put("game_id", gameId);
   }
 
-  public void sysLog(String name) {
+  public void sysLog() {
+    //TODO Is Ok, make it better
+    ThreadContext.put("game_sys_log", gameId + "/sys/test_system");
+    sysLogger.info("asdfasdf");
   }
 }

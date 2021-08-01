@@ -69,6 +69,7 @@ public class HelloService extends SimpleChannelInboundHandler<HttpObject> {
           .hello(String.format("%s 进程:%s hello world 计数:%s", name, pid, count.incrementAndGet()));
 
       loggerService.log().error(content);
+      loggerService.sysLog();
 
       boolean keepAlive = HttpUtil.isKeepAlive(req);
       FullHttpResponse response = new DefaultFullHttpResponse(req.protocolVersion(), OK,
