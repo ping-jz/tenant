@@ -15,13 +15,13 @@
  */
 package org.example.game;
 
-import org.example.common.ThreadCommonResource;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import org.example.common.ThreadCommonResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.ContextStartedEvent;
@@ -70,7 +70,9 @@ public final class HttpHelloWorldServer implements AutoCloseable {
 
   @Override
   public void close() throws Exception {
-    System.out.format("%s closing\n", name);
-    channel.close();
+    if (channel != null) {
+      System.out.format("%s closing\n", name);
+      channel.close();
+    }
   }
 }

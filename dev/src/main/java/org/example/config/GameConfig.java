@@ -1,7 +1,6 @@
 package org.example.config;
 
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Component;
  **/
 @Component
 @ComponentScan(basePackages = "org/example/game")
-@Import(LoggerConfig.class)
 @ImportResource
 public class GameConfig {
 
