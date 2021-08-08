@@ -19,28 +19,12 @@ public class LoggerService {
   @Value("${game.id}")
   private String gameId;
 
-  /** 下次时间变化(单位:天) */
-  private long nextRolloverMillis;
-  /** 今天时间，方便获取年月日 */
-  private ZonedDateTime today;
   /** 缓存builder */
   private ThreadLocal<StringBuilder> threadLocalSb = ThreadLocal.withInitial(StringBuilder::new);
 
-  public LoggerService() {
-    rollover();
-  }
-
-  private void rollover() {
-    ZonedDateTime dateTime = ZonedDateTime.of(LocalDate.now(), LocalTime.MIDNIGHT,
-        ZoneId.systemDefault());
-    nextRolloverMillis = dateTime.plusDays(1).toInstant().toEpochMilli();
-    today = dateTime;
-  }
-
-
   @PostConstruct
   public void postConstruct() {
-    logger = LoggerContext.getContext().getLogger(this.getClass());
+    logger = LoggerContext.getContext().getLogger(getClass());
     sysLogger = LoggerContext.getContext().getLogger("game_sys");
   }
 
@@ -59,28 +43,10 @@ public class LoggerService {
   }
 
   private void initSysLogContext(String sysName) {
-    if (nextRolloverMillis < System.currentTimeMillis()) {
-      rollover();
-    }
     //TODO Is Ok, make it better
     StringBuilder sb = threadLocalSb.get();
     sb.setLength(0);
-
-
-    sb.append(gameId).append("/sys/");
-    fillDataPattern(sb);
-    sb.append('/').append(sysName);
-
+    sb.append(gameId).append('/').append(sysName);
     ThreadContext.put("game_sys_log", sb.toString());
-  }
-
-  /**
-   * @return dataPattern yyyy-MM-dd
-   * @since 2021年08月08日 22:07:41
-   */
-  private StringBuilder fillDataPattern(StringBuilder sb) {
-    char split = '-';
-    return sb.append(today.getYear()).append(split).append(today.getMonthValue()).append(split)
-        .append(today.getDayOfMonth());
   }
 }
