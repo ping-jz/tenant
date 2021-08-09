@@ -79,7 +79,7 @@
           <RollingFile name="console_file"
             fileName="${LOG_HOME}/${ctx:game_id}/${ctx:game_id}_console"
             filePattern="${LOG_HOME}/${ctx:game_id}/${ctx:game_id}_console_%d{yyyy-MM-dd}.log">
-            <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
             <PatternLayout>
               <Pattern>%d [%-p] [%t] %c{1}.%M - %m%n</Pattern>
             </PatternLayout>
