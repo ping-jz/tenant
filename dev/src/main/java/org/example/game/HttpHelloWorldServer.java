@@ -22,6 +22,8 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.example.common.ThreadCommonResource;
+import org.example.game.log.LoggerService;
+import org.example.util.NettyEventLoopUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.ContextStartedEvent;
@@ -45,6 +47,8 @@ public final class HttpHelloWorldServer implements AutoCloseable {
   private int port;
   @Value("${game.id}")
   private String name;
+  @Autowired
+  private LoggerService loggerService;
 
   private Channel channel;
 
@@ -58,7 +62,7 @@ public final class HttpHelloWorldServer implements AutoCloseable {
     ServerBootstrap b = new ServerBootstrap();
     b.option(ChannelOption.SO_BACKLOG, 1024);
     b.group(threadCommonResource.getBoss(), threadCommonResource.getWorker())
-        .channel(NioServerSocketChannel.class)
+        .channel(NettyEventLoopUtil.getServerSocketChannelClass())
         .handler(new LoggingHandler(LogLevel.INFO))
         .childHandler(initializer);
 
@@ -71,8 +75,9 @@ public final class HttpHelloWorldServer implements AutoCloseable {
   @Override
   public void close() throws Exception {
     if (channel != null) {
-      System.out.format("%s closing\n", name);
+      loggerService.log().info("closing");
       channel.close();
+      channel = null;
     }
   }
 }
