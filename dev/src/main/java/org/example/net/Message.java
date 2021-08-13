@@ -11,7 +11,7 @@ public class Message {
   /** 协议编号 (0 < 为收到/发送请求,  收到/发送结果 < 0) */
   private int proto;
   /** 序列号(客户端发什么，服务端就返回什么) */
-  private int optIdx;
+  private int reqId;
   /** 内容 */
   private Object packet;
 
@@ -26,11 +26,11 @@ public class Message {
   }
 
   public int optIdx() {
-    return optIdx;
+    return reqId;
   }
 
   public Message optIdx(int optIdx) {
-    this.optIdx = optIdx;
+    this.reqId = optIdx;
     return this;
   }
 

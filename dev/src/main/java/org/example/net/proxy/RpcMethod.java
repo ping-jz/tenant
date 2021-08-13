@@ -16,15 +16,11 @@ import java.lang.annotation.Target;
 public @interface RpcMethod {
 
   /**
-   * 方法ID,范围：模块ID +[0...99]
-   * <p>
-   * 配合{@link RpcMethod#value()} 组成唯一调用ID
-   * <p>A模块ID:0, 方法ID:1</p>
-   * <p>唯一调用ID: 0 + 1 = 1</p>
-   *
-   * </p>
+   * 方法ID,范围：{@link RpcModule#value()} +[0...99]
    *
    * @return 方法ID
+   * <p>手动分配:范围内选一个 </p>
+   * <p>随机分配:范围内随机一个</p>
    * @since 2021年07月25日 14:29:21
    */
   int value() default 0;

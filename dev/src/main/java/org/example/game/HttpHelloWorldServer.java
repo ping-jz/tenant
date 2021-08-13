@@ -16,11 +16,11 @@
 package org.example.game;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import java.net.InetSocketAddress;
 import org.example.common.ThreadCommonResource;
 import org.example.game.log.LoggerService;
 import org.example.util.NettyEventLoopUtil;
@@ -50,7 +50,7 @@ public final class HttpHelloWorldServer implements AutoCloseable {
   @Autowired
   private LoggerService loggerService;
 
-  private Channel channel;
+  private ChannelFuture channelFuture;
 
   @EventListener
   public void onStart(ContextStartedEvent refreshedEvent) throws Exception {
@@ -58,26 +58,33 @@ public final class HttpHelloWorldServer implements AutoCloseable {
   }
 
 
-  public void start() throws Exception {
+  public boolean start() throws Exception {
     ServerBootstrap b = new ServerBootstrap();
     b.option(ChannelOption.SO_BACKLOG, 1024);
     b.group(threadCommonResource.getBoss(), threadCommonResource.getWorker())
         .channel(NettyEventLoopUtil.getServerSocketChannelClass())
+        .option(ChannelOption.SO_REUSEADDR, true)
         .handler(new LoggingHandler(LogLevel.INFO))
         .childHandler(initializer);
 
-    channel = b.bind(port).sync().channel();
+    channelFuture = b.bind(new InetSocketAddress(port)).sync();
+    if (port == 0 && channelFuture.isSuccess()) {
+      InetSocketAddress address = (InetSocketAddress) channelFuture.channel().localAddress();
+      port = address.getPort();
+      loggerService.log().info("rpc server start with random port: {}!", port);
+    }
 
     System.err.println("Open your web browser and navigate to " +
         "http" + "://127.0.0.1:" + port + '/');
+    return channelFuture.isSuccess();
   }
 
   @Override
   public void close() throws Exception {
-    if (channel != null) {
+    if (channelFuture != null) {
       loggerService.log().info("closing");
-      channel.close();
-      channel = null;
+      channelFuture.channel().close();
+      channelFuture = null;
     }
   }
 }

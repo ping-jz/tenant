@@ -5,6 +5,8 @@ import io.netty.util.NettyRuntime;
 import io.netty.util.concurrent.DefaultEventExecutor;
 import io.netty.util.concurrent.EventExecutor;
 import java.util.concurrent.ThreadFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
@@ -15,6 +17,8 @@ import org.springframework.stereotype.Component;
  **/
 @Component
 public class ThreadCommonResource implements AutoCloseable {
+
+  private Logger logger = LoggerFactory.getLogger(this.getClass());
 
   /** BOSS线程 */
   private final NioEventLoopGroup boss;
@@ -36,13 +40,13 @@ public class ThreadCommonResource implements AutoCloseable {
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() {
     worker.shutdownGracefully();
     boss.shutdownGracefully();
     for (EventExecutor executor : executors) {
       executor.shutdownGracefully();
     }
-    System.out.format("thread org.example.common closing\n");
+    logger.info("threadCommonResource closing\n");
   }
 
 
