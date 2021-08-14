@@ -11,6 +11,8 @@ import io.netty.util.AttributeKey;
  **/
 public class Connection {
 
+  /** ip address */
+  private String address;
   /** a netty channel */
   private Channel channel;
 
@@ -18,13 +20,18 @@ public class Connection {
   public static final AttributeKey<Connection> CONNECTION = AttributeKey
       .valueOf("connection");
 
-  public Connection(Channel channel) {
+  public Connection(Channel channel, String address) {
     this.channel = channel;
+    this.address = address;
     this.channel.attr(CONNECTION).set(this);
   }
 
   public Channel channel() {
     return channel;
+  }
+
+  public String address() {
+    return address;
   }
 
   public boolean isActive() {

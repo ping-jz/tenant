@@ -19,6 +19,8 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
   private int lengthFieldLength;
   /** 序列化实现 */
   private Serializer<Object> serializer;
+  /** 一次最多少解码多少个包 */
+  private int maxDecodeAtOnce;
 
   public MessageCodec(Serializer<Object> serializer) {
     this(Integer.BYTES, serializer);
@@ -26,8 +28,14 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
 
   public MessageCodec(int lengthFieldLength,
       Serializer<Object> serializer) {
+    this(lengthFieldLength, serializer, 1024);
+  }
+
+  public MessageCodec(int lengthFieldLength,
+      Serializer<Object> serializer, int maxDecodeAtOnce) {
     this.lengthFieldLength = lengthFieldLength;
     this.serializer = serializer;
+    this.maxDecodeAtOnce = maxDecodeAtOnce;
   }
 
   @Override
@@ -47,28 +55,32 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
 
   @Override
   protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-    if (in.readableBytes() < lengthFieldLength) {
-      return;
+    for (int i = 0; i < maxDecodeAtOnce; i++) {
+      if (in.readableBytes() < lengthFieldLength) {
+        break;
+      }
+
+      int length = in.getInt(in.readerIndex());
+      if (length <= 0) {
+        out.clear();
+        throw new RuntimeException(String
+            .format("address:%s, Body Size is incorrect:%s", ctx.channel().remoteAddress(),
+                length));
+      }
+
+      if (in.readableBytes() - lengthFieldLength < length) {
+        break;
+      }
+
+      in.skipBytes(lengthFieldLength);
+
+      Message message = new Message();
+      message.proto(in.readInt());
+      message.optIdx(in.readInt());
+      message.packet(serializer.readObject(in));
+
+      out.add(message);
     }
-
-    int length = in.getInt(in.readerIndex());
-    if (length <= 0) {
-      throw new RuntimeException(String
-          .format("address:%s, Body Size is incorrect:%s", ctx.channel().remoteAddress(), length));
-    }
-
-    if (in.readableBytes() - lengthFieldLength < length) {
-      return;
-    }
-
-    in.skipBytes(lengthFieldLength);
-
-    Message message = new Message();
-    message.proto(in.readInt());
-    message.optIdx(in.readInt());
-    message.packet(serializer.readObject(in));
-
-    out.add(message);
   }
 
   @Override

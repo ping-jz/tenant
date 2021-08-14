@@ -1,14 +1,19 @@
 package org.example.net;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.socket.SocketChannel;
-import java.io.IOException;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import java.util.concurrent.TimeUnit;
 import org.example.common.ThreadCommonResource;
 import org.example.net.client.RpcClient;
+import org.example.net.client.RpcClient.ClientHandlerInitializer;
+import org.example.net.codec.MessageCodec;
 import org.example.net.server.RpcServer;
+import org.example.net.server.RpcServer.ServerHandlerInitializer;
+import org.example.serde.CommonSerializer;
+import org.example.serde.Serializer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,9 +26,12 @@ public class BasicUsageTest {
 
   private static ThreadCommonResource resource;
 
+  private ConnectionHandler handler;
   private RpcServer rpcServer;
   private RpcClient rpcClient;
   private String address;
+
+  private final int invokeTimes = 5;
 
 
   @BeforeAll
@@ -41,23 +49,25 @@ public class BasicUsageTest {
   @BeforeEach
   void start() throws Exception {
     rpcServer = new RpcServer();
-    rpcServer.handler(new ChannelInitializer<SocketChannel>() {
-      @Override
-      protected void initChannel(SocketChannel ch) throws Exception {
-        logger.info("client:{}, connected", ch.remoteAddress());
-      }
-    });
+
+    Serializer<Object> serializer = new CommonSerializer();
+    ServerHandlerInitializer initializer = new ServerHandlerInitializer(
+        handler = new ConnectionHandler());
+    initializer.codec(new MessageCodec(serializer));
+    rpcServer.handler(initializer);
     rpcServer.start(resource);
+    address = rpcServer.ip() + ':' + rpcServer.port();
 
-    address = rpcServer.ip() + ":" + rpcServer.port();
-
+    ClientHandlerInitializer clientHandler = new ClientHandlerInitializer(
+        new SimpleChannelInboundHandler<Message>() {
+          @Override
+          protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
+            logger.info("echo {}", msg.packet());
+          }
+        });
+    clientHandler.codec(new MessageCodec(serializer));
     rpcClient = new RpcClient();
-    rpcClient.handler(new ChannelInitializer<>() {
-      @Override
-      protected void initChannel(Channel ch) throws Exception {
-        //DO nothing
-      }
-    });
+    rpcClient.handler(clientHandler);
     rpcClient.init(resource.getBoss());
   }
 
@@ -73,8 +83,15 @@ public class BasicUsageTest {
   }
 
   @Test
-  public void testOneway() throws IOException {
-    Connection connection = rpcClient.getConnection(address);
+  public void testOneway() throws Exception {
+    for (int i = 0; i < invokeTimes; i++) {
+      rpcClient.oneway(address, new Message().packet("Hello World"));
+    }
+    TimeUnit.MILLISECONDS.sleep(100);
+
+    Assertions.assertTrue(rpcClient.getConnection(address).isActive());
+    Assertions.assertEquals(invokeTimes, handler.invokeTimes());
+    Assertions.assertEquals(1, handler.connectionCount());
   }
 
   @Test

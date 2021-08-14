@@ -10,6 +10,9 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 
 public class NettyEventLoopUtil {
 
+  private NettyEventLoopUtil() {
+  }
+
   /**
    * @return a SocketChannel class suitable for the given EventLoopGroup implementation
    */

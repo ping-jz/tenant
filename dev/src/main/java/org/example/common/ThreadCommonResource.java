@@ -46,7 +46,7 @@ public class ThreadCommonResource implements AutoCloseable {
     for (EventExecutor executor : executors) {
       executor.shutdownGracefully();
     }
-    logger.info("threadCommonResource closing\n");
+    logger.info("threadCommonResource closing");
   }
 
 
