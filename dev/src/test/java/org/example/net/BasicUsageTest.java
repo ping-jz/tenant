@@ -1,5 +1,8 @@
 package org.example.net;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.example.common.ThreadCommonResource;
 import org.example.net.client.RpcClient;
@@ -87,11 +90,6 @@ public class BasicUsageTest {
   }
 
   @Test
-  public void testSync() {
-    throw new UnsupportedOperationException("Make me passed");
-  }
-
-  @Test
   public void testFuture() throws Exception {
     String helloWorld = "Hello World";
     long timeOut = 1000;
@@ -116,20 +114,45 @@ public class BasicUsageTest {
     long timeOut = 1000;
     for (int i = 0; i < invokeTimes; i++) {
       InvokeFuture messageFuture = rpcClient.invokeWithFuture(address,
-          new Message().proto(1).packet(helloWorld), 1);
+          new Message().proto(1).packet(helloWorld), 0);
       Message message = messageFuture.waitResponse(timeOut);
       Assertions.assertNotNull(message);
       Assertions.assertFalse(message.isSuc());
       Assertions.assertEquals(message.status(), MessageStatus.TIMEOUT.status());
     }
 
+    TimeUnit.MILLISECONDS.sleep(10);
     Assertions.assertTrue(rpcClient.getConnection(address).isActive());
+    Assertions.assertEquals(invokeTimes, serHandler.invokeTimes());
     Assertions.assertEquals(1, serHandler.connectionCount());
   }
 
   @Test
-  public void testCallback() {
-    throw new UnsupportedOperationException("Make me passed");
+  public void testCallback() throws Exception {
+    String helloWorld = "Hello World";
+    long timeOut = 1000;
+    List<CountDownLatch> latches = new ArrayList<>(invokeTimes);
+    for (int i = 0; i < invokeTimes; i++) {
+      CountDownLatch latch = new CountDownLatch(1);
+      Message request = Message.of().proto(1).packet(helloWorld);
+      rpcClient.invokeWithCallBack(address, request
+          , (Message msg) -> {
+            Assertions.assertNotNull(msg);
+            Assertions.assertTrue(msg.isSuc());
+            Assertions.assertEquals(helloWorld, msg.packet());
+            latch.countDown();
+          }, timeOut);
+
+      latches.add(latch);
+    }
+
+    for (CountDownLatch latch : latches) {
+      Assertions.assertTrue(latch.await(timeOut, TimeUnit.MILLISECONDS));
+    }
+
+    Assertions.assertTrue(rpcClient.getConnection(address).isActive());
+    Assertions.assertEquals(invokeTimes, serHandler.invokeTimes());
+    Assertions.assertEquals(1, serHandler.connectionCount());
   }
 
 

@@ -16,7 +16,7 @@ public class InvokeFuture {
   /** 回调ID */
   private int id;
   /** 回调 */
-  private InvokeCallback<InvokeFuture> callback;
+  private InvokeCallback<Object> callback;
   /** 结果 */
   private Message result;
   /** 异常 */
@@ -32,9 +32,9 @@ public class InvokeFuture {
     id = invokeId;
   }
 
-  public InvokeFuture(int invokeId, InvokeCallback<InvokeFuture> callback) {
+  public InvokeFuture(int invokeId, InvokeCallback<?> callback) {
     id = invokeId;
-    this.callback = callback;
+    this.callback = (InvokeCallback<Object>) callback;
   }
 
   public Message waitResponse(long timeoutMillis) throws InterruptedException {
@@ -57,22 +57,16 @@ public class InvokeFuture {
     latch.countDown();
   }
 
-  public void completeNormally() {
-    if (callback != null && executeCallbackOnlyOnce.compareAndExchange(false, true)) {
-      callback.onResponse(this);
-    }
-  }
-
   public void completeThrowAble() {
     if (callback != null && executeCallbackOnlyOnce.compareAndExchange(false, true)) {
       callback.onException(cause);
     }
   }
 
-  public void executeInvokeCallback() {
+  public void completeNormally() {
     if (callback != null) {
       if (executeCallbackOnlyOnce.compareAndSet(false, true)) {
-        callback.onResponse(this);
+        callback.onResponse(result);
       }
     }
   }

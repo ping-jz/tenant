@@ -27,8 +27,9 @@ public class CliTestHandler extends SimpleChannelInboundHandler<Message> {
     InvokeFuture future = connection.removeInvokeFuture(msg.msgId());
     if (future != null) {
       future.putResult(msg);
+      future.cancelTimeout();
       try {
-        future.executeInvokeCallback();
+        future.completeNormally();
       } catch (Exception e) {
         logger.error("Exception caught when executing invoke callback, id={}",
             msg.msgId(), e);
