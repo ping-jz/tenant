@@ -29,7 +29,7 @@ public class CliTestHandler extends SimpleChannelInboundHandler<Message> {
       future.putResult(msg);
       future.cancelTimeout();
       try {
-        future.completeNormally();
+        future.executeCallBack();
       } catch (Exception e) {
         logger.error("Exception caught when executing invoke callback, id={}",
             msg.msgId(), e);

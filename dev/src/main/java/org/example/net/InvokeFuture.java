@@ -57,13 +57,13 @@ public class InvokeFuture {
     latch.countDown();
   }
 
-  public void completeThrowAble() {
+  public void executeThrowAble() {
     if (callback != null && executeCallbackOnlyOnce.compareAndExchange(false, true)) {
       callback.onException(cause);
     }
   }
 
-  public void completeNormally() {
+  public void executeCallBack() {
     if (callback != null) {
       if (executeCallbackOnlyOnce.compareAndSet(false, true)) {
         callback.onResponse(result);

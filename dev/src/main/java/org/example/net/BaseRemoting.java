@@ -65,7 +65,7 @@ public class BaseRemoting {
       if (f != null) {
         f.cancelTimeout();
         f.putCause(e);
-        f.completeThrowAble();
+        f.executeThrowAble();
       }
       logger.error("Exception caught when sending invocation. The address is {}",
           conn.channel().remoteAddress(), e);
@@ -93,7 +93,7 @@ public class BaseRemoting {
         InvokeFuture f = conn.removeInvokeFuture(msgId);
         if (f != null) {
           f.putResult(Message.of().status(MessageStatus.TIMEOUT));
-          f.completeNormally();
+          f.executeCallBack();
         }
       }, timeout, TimeUnit.MILLISECONDS);
       future.addTimeout(timeoutFuture);
@@ -104,7 +104,7 @@ public class BaseRemoting {
           if (f != null) {
             f.cancelTimeout();
             f.putResult(Message.of().status(MessageStatus.SEND_ERROR));
-            f.completeNormally();
+            f.executeCallBack();
           }
           logger.error("Invoke send failed. The address is {}",
               conn.channel().remoteAddress(), cf.cause());
@@ -116,7 +116,7 @@ public class BaseRemoting {
         f.cancelTimeout();
         f.putResult(Message.of().status(MessageStatus.SEND_ERROR));
         f.putCause(e);
-        f.completeThrowAble();
+        f.executeThrowAble();
       }
       logger.error("Exception caught when sending invocation. The address is {}",
           conn.channel().remoteAddress(), e);

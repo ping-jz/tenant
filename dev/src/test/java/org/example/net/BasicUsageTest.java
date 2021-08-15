@@ -1,5 +1,10 @@
 package org.example.net;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -14,7 +19,6 @@ import org.example.serde.CommonSerializer;
 import org.example.serde.Serializer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -84,9 +88,9 @@ public class BasicUsageTest {
     }
     TimeUnit.MILLISECONDS.sleep(100);
 
-    Assertions.assertTrue(rpcClient.getConnection(address).isActive());
-    Assertions.assertEquals(invokeTimes, serHandler.invokeTimes());
-    Assertions.assertEquals(1, serHandler.connectionCount());
+    assertTrue(rpcClient.getConnection(address).isActive());
+    assertEquals(invokeTimes, serHandler.invokeTimes());
+    assertEquals(1, serHandler.connectionCount());
   }
 
   @Test
@@ -97,15 +101,15 @@ public class BasicUsageTest {
       InvokeFuture messageFuture = rpcClient.invokeWithFuture(address,
           new Message().proto(1).packet(helloWorld), timeOut);
       Message message = messageFuture.waitResponse(timeOut);
-      Assertions.assertNotNull(message);
-      Assertions.assertTrue(message.isSuc());
-      Assertions.assertEquals(helloWorld, message.packet());
-      Assertions.assertEquals(-1, message.proto());
+      assertNotNull(message);
+      assertTrue(message.isSuc());
+      assertEquals(helloWorld, message.packet());
+      assertEquals(-1, message.proto());
     }
 
-    Assertions.assertTrue(rpcClient.getConnection(address).isActive());
-    Assertions.assertEquals(invokeTimes, serHandler.invokeTimes());
-    Assertions.assertEquals(1, serHandler.connectionCount());
+    assertTrue(rpcClient.getConnection(address).isActive());
+    assertEquals(invokeTimes, serHandler.invokeTimes());
+    assertEquals(1, serHandler.connectionCount());
   }
 
   @Test
@@ -116,15 +120,15 @@ public class BasicUsageTest {
       InvokeFuture messageFuture = rpcClient.invokeWithFuture(address,
           new Message().proto(1).packet(helloWorld), 0);
       Message message = messageFuture.waitResponse(timeOut);
-      Assertions.assertNotNull(message);
-      Assertions.assertFalse(message.isSuc());
-      Assertions.assertEquals(message.status(), MessageStatus.TIMEOUT.status());
+      assertNotNull(message);
+      assertFalse(message.isSuc());
+      assertEquals(message.status(), MessageStatus.TIMEOUT.status());
     }
 
     TimeUnit.MILLISECONDS.sleep(10);
-    Assertions.assertTrue(rpcClient.getConnection(address).isActive());
-    Assertions.assertEquals(invokeTimes, serHandler.invokeTimes());
-    Assertions.assertEquals(1, serHandler.connectionCount());
+    assertTrue(rpcClient.getConnection(address).isActive());
+    assertEquals(invokeTimes, serHandler.invokeTimes());
+    assertEquals(1, serHandler.connectionCount());
   }
 
   @Test
@@ -137,9 +141,9 @@ public class BasicUsageTest {
       Message request = Message.of().proto(1).packet(helloWorld);
       rpcClient.invokeWithCallBack(address, request
           , (Message msg) -> {
-            Assertions.assertNotNull(msg);
-            Assertions.assertTrue(msg.isSuc());
-            Assertions.assertEquals(helloWorld, msg.packet());
+            assertNotNull(msg);
+            assertTrue(msg.isSuc());
+            assertEquals(helloWorld, msg.packet());
             latch.countDown();
           }, timeOut);
 
@@ -147,12 +151,12 @@ public class BasicUsageTest {
     }
 
     for (CountDownLatch latch : latches) {
-      Assertions.assertTrue(latch.await(timeOut, TimeUnit.MILLISECONDS));
+      assertTrue(latch.await(timeOut, TimeUnit.MILLISECONDS));
     }
 
-    Assertions.assertTrue(rpcClient.getConnection(address).isActive());
-    Assertions.assertEquals(invokeTimes, serHandler.invokeTimes());
-    Assertions.assertEquals(1, serHandler.connectionCount());
+    assertTrue(rpcClient.getConnection(address).isActive());
+    assertEquals(invokeTimes, serHandler.invokeTimes());
+    assertEquals(1, serHandler.connectionCount());
   }
 
 

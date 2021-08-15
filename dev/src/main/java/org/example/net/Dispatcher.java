@@ -6,7 +6,7 @@ import org.example.handler.HandlerRegistry;
 import org.slf4j.Logger;
 
 /**
- * 消息分发调度者
+ * 消息分发调度者(分发客户端的消息)
  *
  * @author ZJP
  * @since 2021年07月24日 14:41:27
@@ -41,8 +41,6 @@ public class Dispatcher {
       logger.error("地址:{}, 协议号:{}, 无对应处理器", channel.remoteAddress(), req.proto());
       return;
     }
-
-    //TODO 如果要处理下回调，或者
 
     try {
       Object result = handler.invoke(req.packet());

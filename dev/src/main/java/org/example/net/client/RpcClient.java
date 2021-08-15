@@ -150,7 +150,7 @@ public class RpcClient implements AutoCloseable {
   @Override
   public void close() {
     for (Connection connection : connections.values()) {
-      connection.channel().close();
+      connection.close();
     }
   }
 
