@@ -2,6 +2,7 @@ package org.example.net;
 
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An abstract Over netty channel
@@ -11,14 +12,25 @@ import io.netty.util.AttributeKey;
  **/
 public class Connection {
 
+  /** Attribute key for connection */
+  public static final AttributeKey<Connection> CONNECTION = AttributeKey
+      .valueOf("connection");
+
   /** ip address */
   private String address;
   /** a netty channel */
   private Channel channel;
+  /** callBack future */
+  private final ConcurrentHashMap<Integer, InvokeFuture> invokeFutures = new ConcurrentHashMap<>();
 
-  /** Attribute key for connection */
-  public static final AttributeKey<Connection> CONNECTION = AttributeKey
-      .valueOf("connection");
+  public InvokeFuture addInvokeFuture(InvokeFuture future) {
+    return invokeFutures.putIfAbsent(future.id(), future);
+  }
+
+  public InvokeFuture removeInvokeFuture(int msgId) {
+    return invokeFutures.remove(msgId);
+  }
+
 
   public Connection(Channel channel, String address) {
     this.channel = channel;

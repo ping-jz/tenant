@@ -45,7 +45,8 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
     int messageStart = start + lengthFieldLength;
     out.writerIndex(messageStart);
     out.writeInt(msg.proto());
-    out.writeInt(msg.optIdx());
+    out.writeInt(msg.msgId());
+    out.writeShort(msg.status());
     serializer.writeObject(out, msg.packet());
 
     //set the length
@@ -76,7 +77,8 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
 
       Message message = new Message();
       message.proto(in.readInt());
-      message.optIdx(in.readInt());
+      message.msgId(in.readInt());
+      message.status(in.readShort());
       message.packet(serializer.readObject(in));
 
       out.add(message);

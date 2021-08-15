@@ -42,13 +42,15 @@ public class Dispatcher {
       return;
     }
 
+    //TODO 如果要处理下回调，或者
+
     try {
       Object result = handler.invoke(req.packet());
       //
       if (result != null && 0 < req.proto()) {
         Message response = new Message();
         response.proto(Math.negateExact(req.proto()));
-        response.optIdx(req.optIdx());
+        response.msgId(req.msgId());
         response.packet(result);
         channel.write(response);
       }

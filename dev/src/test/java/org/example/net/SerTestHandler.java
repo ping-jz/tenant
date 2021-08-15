@@ -12,13 +12,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @since 2021年08月14日 21:14:19
  **/
 @Sharable
-public class ConnectionHandler extends SimpleChannelInboundHandler<Message> {
+public class SerTestHandler extends SimpleChannelInboundHandler<Message> {
 
   private AtomicInteger invokeTimes;
 
   private AtomicInteger connectionCount;
 
-  public ConnectionHandler() {
+  public SerTestHandler() {
     invokeTimes = new AtomicInteger();
     connectionCount = new AtomicInteger();
   }
@@ -32,6 +32,19 @@ public class ConnectionHandler extends SimpleChannelInboundHandler<Message> {
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
     invokeTimes.incrementAndGet();
+    if (0 < msg.msgId()) {
+      ctx.write(Message
+          .of(-msg.proto())
+          .msgId(msg.msgId())
+          .status(MessageStatus.SUCCESS)
+          .packet(msg.packet())
+      );
+    }
+  }
+
+  @Override
+  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+    ctx.flush();
   }
 
   public int invokeTimes() {

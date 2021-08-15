@@ -17,7 +17,9 @@ import java.util.concurrent.TimeUnit;
 import org.example.net.BaseRemoting;
 import org.example.net.Connection;
 import org.example.net.DefaultRemoting;
+import org.example.net.InvokeFuture;
 import org.example.net.Message;
+import org.example.net.MessageIdGenerator;
 import org.example.net.ServerIdleHandler;
 import org.example.net.codec.MessageCodec;
 import org.example.util.NettyEventLoopUtil;
@@ -68,8 +70,21 @@ public class RpcClient implements AutoCloseable {
    * @author ZJP
    * @since 2021年08月14日 20:53:14
    **/
-  public void oneway(String addr, Message push) {
-    remoting.oneway(getConnection(addr), push);
+  public void invoke(String addr, Message push) {
+    remoting.invoke(getConnection(addr), push);
+  }
+
+  /**
+   * Rpc invocation with future returned.<br>
+   *
+   * @param addr 目标地址
+   * @param message 请求消息
+   * @param timeout 超时时间
+   * @since 2021年08月15日 15:45:03
+   */
+  public InvokeFuture invokeWithFuture(String addr, Message message, long timeout) {
+    message.msgId(MessageIdGenerator.nextId());
+    return remoting.invokeWithFuture(getConnection(addr), message, timeout);
   }
 
   /**

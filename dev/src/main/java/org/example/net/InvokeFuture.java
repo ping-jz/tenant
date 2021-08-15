@@ -1,6 +1,7 @@
 package org.example.net;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -13,23 +14,28 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class InvokeFuture {
 
   /** 回调ID */
-  private int invokeId;
+  private int id;
   /** 回调 */
   private InvokeCallback<InvokeFuture> callback;
   /** 结果 */
   private Message result;
   /** 异常 */
   private Throwable cause;
+  /** 超时任务 */
+  private Future<?> timeout;
   /** 执行标记 */
-  private final AtomicBoolean executeCallBackOnlyOnce = new AtomicBoolean(false);
+  private final AtomicBoolean executeCallbackOnlyOnce = new AtomicBoolean(false);
 
   private final CountDownLatch latch = new CountDownLatch(1);
 
-  public InvokeFuture(int invokeId, InvokeCallback<InvokeFuture> callback) {
-    this.invokeId = invokeId;
-    this.callback = callback;
+  public InvokeFuture(int invokeId) {
+    id = invokeId;
   }
 
+  public InvokeFuture(int invokeId, InvokeCallback<InvokeFuture> callback) {
+    id = invokeId;
+    this.callback = callback;
+  }
 
   public Message waitResponse(long timeoutMillis) throws InterruptedException {
     latch.await(timeoutMillis, TimeUnit.MILLISECONDS);
@@ -44,9 +50,6 @@ public class InvokeFuture {
   public void putResult(Message response) {
     result = response;
     latch.countDown();
-    if (callback != null && executeCallBackOnlyOnce.compareAndExchange(false, true)) {
-      callback.onResponse(this);
-    }
   }
 
   public void putCause(Throwable cause) {
@@ -55,14 +58,33 @@ public class InvokeFuture {
   }
 
   public void completeNormally() {
-    if (callback != null && executeCallBackOnlyOnce.compareAndExchange(false, true)) {
+    if (callback != null && executeCallbackOnlyOnce.compareAndExchange(false, true)) {
       callback.onResponse(this);
     }
   }
 
   public void completeThrowAble() {
-    if (callback != null && executeCallBackOnlyOnce.compareAndExchange(false, true)) {
+    if (callback != null && executeCallbackOnlyOnce.compareAndExchange(false, true)) {
       callback.onException(cause);
+    }
+  }
+
+  public void executeInvokeCallback() {
+    if (callback != null) {
+      if (executeCallbackOnlyOnce.compareAndSet(false, true)) {
+        callback.onResponse(this);
+      }
+    }
+  }
+
+  public void addTimeout(Future<?> future) {
+    timeout = future;
+  }
+
+  public void cancelTimeout() {
+    if (timeout != null) {
+      timeout.cancel(false);
+      timeout = null;
     }
   }
 
@@ -71,5 +93,7 @@ public class InvokeFuture {
     return latch.getCount() <= 0;
   }
 
-
+  public int id() {
+    return id;
+  }
 }

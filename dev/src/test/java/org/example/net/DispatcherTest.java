@@ -35,7 +35,7 @@ public class DispatcherTest {
 
     Message echoRequest = new Message();
     echoRequest.proto(HelloWorldFacade.ECHO);
-    echoRequest.optIdx(0);
+    echoRequest.msgId(0);
     echoRequest.packet("HelloWorld");
 
     dispatcher.doDispatcher(channel, echoRequest);
@@ -45,7 +45,8 @@ public class DispatcherTest {
 
     assertTrue(0 < buf.readInt());
     assertEquals(Math.negateExact(echoRequest.proto()), buf.readInt());
-    assertEquals(echoRequest.optIdx(), buf.readInt());
+    assertEquals(echoRequest.msgId(), buf.readInt());
+    assertEquals(echoRequest.status(), buf.readShort());
     assertEquals(echoRequest.packet(), serializer.readObject(buf));
 
     channel.finishAndReleaseAll();
@@ -55,20 +56,23 @@ public class DispatcherTest {
   void multiHelloWorldTest() {
     EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(Integer.BYTES, serializer));
 
-    Message echoRequest = new Message();
-    echoRequest.proto(HelloWorldFacade.ECHO);
-    echoRequest.optIdx(0);
-    echoRequest.packet(new String[]{"Hello", "World"});
+    for (int i = 0; i < 5; i++) {
+      Message echoRequest = new Message();
+      echoRequest.proto(HelloWorldFacade.ECHO);
+      echoRequest.msgId(0);
+      echoRequest.packet(new String[]{"Hello", "World", Integer.toString(i)});
 
-    dispatcher.doDispatcher(channel, echoRequest);
-    channel.flush();
+      dispatcher.doDispatcher(channel, echoRequest);
+      channel.flush();
 
-    ByteBuf buf = channel.readOutbound();
+      ByteBuf buf = channel.readOutbound();
 
-    assertTrue(0 < buf.readInt());
-    assertEquals(Math.negateExact(echoRequest.proto()), buf.readInt());
-    assertEquals(echoRequest.optIdx(), buf.readInt());
-    assertArrayEquals((Object[]) echoRequest.packet(), serializer.read(buf));
+      assertTrue(0 < buf.readInt());
+      assertEquals(Math.negateExact(echoRequest.proto()), buf.readInt());
+      assertEquals(echoRequest.msgId(), buf.readInt());
+      assertEquals(echoRequest.status(), buf.readShort());
+      assertArrayEquals((Object[]) echoRequest.packet(), serializer.read(buf));
+    }
 
     channel.finishAndReleaseAll();
   }

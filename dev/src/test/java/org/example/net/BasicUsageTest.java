@@ -1,7 +1,5 @@
 package org.example.net;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 import java.util.concurrent.TimeUnit;
 import org.example.common.ThreadCommonResource;
 import org.example.net.client.RpcClient;
@@ -26,7 +24,7 @@ public class BasicUsageTest {
 
   private static ThreadCommonResource resource;
 
-  private ConnectionHandler handler;
+  private SerTestHandler serHandler;
   private RpcServer rpcServer;
   private RpcClient rpcClient;
   private String address;
@@ -52,19 +50,13 @@ public class BasicUsageTest {
 
     Serializer<Object> serializer = new CommonSerializer();
     ServerHandlerInitializer initializer = new ServerHandlerInitializer(
-        handler = new ConnectionHandler());
+        serHandler = new SerTestHandler());
     initializer.codec(new MessageCodec(serializer));
     rpcServer.handler(initializer);
     rpcServer.start(resource);
     address = rpcServer.ip() + ':' + rpcServer.port();
 
-    ClientHandlerInitializer clientHandler = new ClientHandlerInitializer(
-        new SimpleChannelInboundHandler<Message>() {
-          @Override
-          protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
-            logger.info("echo {}", msg.packet());
-          }
-        });
+    ClientHandlerInitializer clientHandler = new ClientHandlerInitializer(new CliTestHandler());
     clientHandler.codec(new MessageCodec(serializer));
     rpcClient = new RpcClient();
     rpcClient.handler(clientHandler);
@@ -85,13 +77,13 @@ public class BasicUsageTest {
   @Test
   public void testOneway() throws Exception {
     for (int i = 0; i < invokeTimes; i++) {
-      rpcClient.oneway(address, new Message().packet("Hello World"));
+      rpcClient.invoke(address, new Message().packet("Hello World"));
     }
     TimeUnit.MILLISECONDS.sleep(100);
 
     Assertions.assertTrue(rpcClient.getConnection(address).isActive());
-    Assertions.assertEquals(invokeTimes, handler.invokeTimes());
-    Assertions.assertEquals(1, handler.connectionCount());
+    Assertions.assertEquals(invokeTimes, serHandler.invokeTimes());
+    Assertions.assertEquals(1, serHandler.connectionCount());
   }
 
   @Test
@@ -100,8 +92,39 @@ public class BasicUsageTest {
   }
 
   @Test
-  public void testFuture() {
-    throw new UnsupportedOperationException("Make me passed");
+  public void testFuture() throws Exception {
+    String helloWorld = "Hello World";
+    long timeOut = 1000;
+    for (int i = 0; i < invokeTimes; i++) {
+      InvokeFuture messageFuture = rpcClient.invokeWithFuture(address,
+          new Message().proto(1).packet(helloWorld), timeOut);
+      Message message = messageFuture.waitResponse(timeOut);
+      Assertions.assertNotNull(message);
+      Assertions.assertTrue(message.isSuc());
+      Assertions.assertEquals(helloWorld, message.packet());
+      Assertions.assertEquals(-1, message.proto());
+    }
+
+    Assertions.assertTrue(rpcClient.getConnection(address).isActive());
+    Assertions.assertEquals(invokeTimes, serHandler.invokeTimes());
+    Assertions.assertEquals(1, serHandler.connectionCount());
+  }
+
+  @Test
+  public void testFutureTimeOut() throws Exception {
+    String helloWorld = "Hello World";
+    long timeOut = 1000;
+    for (int i = 0; i < invokeTimes; i++) {
+      InvokeFuture messageFuture = rpcClient.invokeWithFuture(address,
+          new Message().proto(1).packet(helloWorld), 1);
+      Message message = messageFuture.waitResponse(timeOut);
+      Assertions.assertNotNull(message);
+      Assertions.assertFalse(message.isSuc());
+      Assertions.assertEquals(message.status(), MessageStatus.TIMEOUT.status());
+    }
+
+    Assertions.assertTrue(rpcClient.getConnection(address).isActive());
+    Assertions.assertEquals(1, serHandler.connectionCount());
   }
 
   @Test

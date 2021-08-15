@@ -1,5 +1,7 @@
 package org.example.net;
 
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,7 +9,7 @@ public class BaseRemoting {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
-  public void oneway(final Connection conn, final Message request) {
+  public void invoke(final Connection conn, final Message request) {
     try {
       conn.channel().writeAndFlush(request).addListener(f -> {
         if (!f.isSuccess()) {
@@ -23,5 +25,49 @@ public class BaseRemoting {
             conn.channel().remoteAddress(), e);
       }
     }
+  }
+
+  /**
+   * Rpc invocation with future returned.<br>
+   *
+   * @param conn 目标链接
+   * @param message 请求消息
+   * @param timeout 超时时间
+   * @since 2021年08月15日 15:45:03
+   */
+  public InvokeFuture invokeWithFuture(final Connection conn, final Message message,
+      final long timeout) {
+    final InvokeFuture future = new InvokeFuture(message.msgId());
+    final int msgId = message.msgId();
+    conn.addInvokeFuture(future);
+    try {
+      Future<?> timeoutFuture = conn.channel().eventLoop().schedule(() -> {
+        InvokeFuture f = conn.removeInvokeFuture(msgId);
+        if (f != null) {
+          f.putResult(Message.of().status(MessageStatus.TIMEOUT));
+        }
+      }, timeout, TimeUnit.MILLISECONDS);
+      future.addTimeout(timeoutFuture);
+
+      conn.channel().writeAndFlush(message).addListener(cf -> {
+        if (!cf.isSuccess()) {
+          InvokeFuture f = conn.removeInvokeFuture(msgId);
+          if (f != null) {
+            f.putResult(Message.of().status(MessageStatus.SEND_ERROR));
+          }
+          logger.error("Invoke send failed. The address is {}",
+              conn.channel().remoteAddress(), cf.cause());
+        }
+      });
+    } catch (Exception e) {
+      InvokeFuture f = conn.removeInvokeFuture(msgId);
+      if (f != null) {
+        f.putResult(Message.of().status(MessageStatus.SEND_ERROR));
+      }
+      logger.error("Exception caught when sending invocation. The address is {}",
+          conn.channel().remoteAddress(), e);
+    }
+
+    return future;
   }
 }

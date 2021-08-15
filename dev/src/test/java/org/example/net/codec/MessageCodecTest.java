@@ -19,7 +19,7 @@ public class MessageCodecTest {
 
     Message message = new Message();
     message.proto(1);
-    message.optIdx(2);
+    message.msgId(2);
     message.packet("Hello World");
     channel.writeOutbound(message);
 
@@ -29,7 +29,8 @@ public class MessageCodecTest {
     assertTrue(0 < length);
 
     assertEquals(message.proto(), out.readInt());
-    assertEquals(message.optIdx(), out.readInt());
+    assertEquals(message.msgId(), out.readInt());
+    assertEquals(message.status(), out.readShort());
     assertEquals(message.packet(), serializer.read(out));
     assertEquals(0, out.readableBytes());
 
@@ -43,12 +44,14 @@ public class MessageCodecTest {
 
     int proto = 1;
     int optIdx = 2;
+    short status = 0;
     String helloWorld = "Hello World";
 
     ByteBuf inBuf = Unpooled.buffer();
     inBuf.writerIndex(Integer.BYTES);
     inBuf.writeInt(proto);
     inBuf.writeInt(optIdx);
+    inBuf.writeShort(status);
     serializer.writeObject(inBuf, helloWorld);
 
     inBuf.setInt(0, inBuf.readableBytes() - Integer.BYTES);
@@ -56,7 +59,8 @@ public class MessageCodecTest {
 
     Message out = channel.readInbound();
     assertEquals(proto, out.proto());
-    assertEquals(optIdx, out.optIdx());
+    assertEquals(optIdx, out.msgId());
+    assertEquals(status, out.status());
     assertEquals(helloWorld, out.packet());
     assertEquals(0, inBuf.readableBytes());
 
