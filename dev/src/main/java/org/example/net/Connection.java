@@ -73,7 +73,8 @@ public class Connection {
 
   private void closeFuture(InvokeFuture future) {
     try {
-      future.putResult(Message.of().status(MessageStatus.SERVER_EXCEPTION));
+      future.putResult(Message.of().status(MessageStatus.CLOSE));
+      future.cancelTimeout();
       future.executeCallBack();
     } catch (Exception e) {
       logger

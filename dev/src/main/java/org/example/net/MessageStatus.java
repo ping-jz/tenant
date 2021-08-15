@@ -8,6 +8,7 @@ public enum MessageStatus {
   TIMEOUT((short) 0x0004),
   SEND_ERROR((short) 0x0005),
   SERVER_EXCEPTION((short) 0x0006),
+  CLOSE((short) 0x0007),
   ;
 
   private short status;
