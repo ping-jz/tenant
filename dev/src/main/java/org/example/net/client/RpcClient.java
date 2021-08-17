@@ -19,6 +19,7 @@ import org.example.net.InvokeFuture;
 import org.example.net.Message;
 import org.example.net.MessageIdGenerator;
 import org.example.net.codec.MessageCodec;
+import org.example.serde.Serializer;
 import org.example.util.NettyEventLoopUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +42,7 @@ public class RpcClient implements AutoCloseable {
   /** connection handler */
   private ChannelHandler handler;
   /** codec */
-  private MessageCodec codec;
+  private Serializer<?> codec;
 
   /** 请求实现 */
   private BaseRemoting remoting;
@@ -67,7 +68,7 @@ public class RpcClient implements AutoCloseable {
             Objects.requireNonNull(codec, "codec Handler can't not be null");
 
             ChannelPipeline pipeline = ch.pipeline();
-            pipeline.addLast("codec", client.codec());
+            pipeline.addLast("codec", new MessageCodec(client.codec()));
             pipeline.addLast("handler", client.handler());
           }
         });
@@ -158,11 +159,11 @@ public class RpcClient implements AutoCloseable {
     return this;
   }
 
-  public MessageCodec codec() {
+  public Serializer codec() {
     return codec;
   }
 
-  public RpcClient codec(MessageCodec codec) {
+  public RpcClient codec(Serializer codec) {
     this.codec = codec;
     return this;
   }
