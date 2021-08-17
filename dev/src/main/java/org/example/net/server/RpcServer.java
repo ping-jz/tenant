@@ -7,7 +7,6 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -15,7 +14,7 @@ import java.net.InetSocketAddress;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.example.common.ThreadCommonResource;
-import org.example.net.ServerIdleHandler;
+import org.example.net.ConnectionManager;
 import org.example.net.codec.MessageCodec;
 import org.example.util.NettyEventLoopUtil;
 import org.slf4j.Logger;
@@ -34,14 +33,14 @@ public class RpcServer implements AutoCloseable {
   private String ip;
   private int port;
 
-  /** server bootstrap */
-  private ServerBootstrap bootstrap;
-
   /** channelFuture of netty */
   private ChannelFuture channelFuture;
-
   /** connection handler */
   private ChannelHandler handler;
+  /** codec */
+  private MessageCodec codec;
+  /** 链接管理 */
+  private ConnectionManager connectionManager;
 
 
   public RpcServer() {
@@ -59,20 +58,34 @@ public class RpcServer implements AutoCloseable {
     }
     this.ip = ip;
     this.port = port;
+    connectionManager = new ConnectionManager(true);
   }
 
   public boolean start(ThreadCommonResource threadCommonResource)
       throws InterruptedException {
     Objects.requireNonNull(handler, "connection can't be null");
 
+    RpcServer server = this;
     ServerBootstrap b = new ServerBootstrap();
     b.option(ChannelOption.SO_BACKLOG, 1024);
     b.group(threadCommonResource.getBoss(), threadCommonResource.getWorker())
         .channel(NettyEventLoopUtil.getServerSocketChannelClass())
         .option(ChannelOption.SO_REUSEADDR, true)
         .handler(new LoggingHandler(LogLevel.INFO))
-        .childHandler(handler);
-    bootstrap = b;
+        .childHandler(new ChannelInitializer<>() {
+          @Override
+          protected void initChannel(Channel ch) {
+            ChannelPipeline pipeline = ch.pipeline();
+            if (server.connectionManager() != null) {
+              pipeline.addLast("idleStateHandler",
+                  new IdleStateHandler(0, 0, ConnectionManager.IDLE_TIME,
+                      TimeUnit.MILLISECONDS));
+              pipeline.addLast("manager", server.connectionManager());
+            }
+            pipeline.addLast("codec", server.codec());
+            pipeline.addLast("handler", server.handler());
+          }
+        });
 
     channelFuture = b.bind(new InetSocketAddress(ip, port)).sync();
     if (port == 0 && channelFuture.isSuccess()) {
@@ -104,73 +117,29 @@ public class RpcServer implements AutoCloseable {
     return this;
   }
 
+  public MessageCodec codec() {
+    return codec;
+  }
+
+  public RpcServer codec(MessageCodec codec) {
+    this.codec = codec;
+    return this;
+  }
+
+  public ConnectionManager connectionManager() {
+    return connectionManager;
+  }
+
   @Override
   public void close() {
+    connectionManager.close();
+
     if (channelFuture != null) {
       logger.info("rpcServer:{}:{}, closing", ip, port);
       channelFuture.channel().close();
       channelFuture = null;
       logger.info("rpcServer:{}:{}, closed", ip, port);
     }
-  }
 
-  /**
-   * Channel处理器
-   *
-   * @author ZJP
-   * @since 2021年08月13日 21:41:18
-   **/
-  public static class ServerHandlerInitializer extends ChannelInitializer<SocketChannel> {
-
-    private MessageCodec codec;
-    private ServerIdleHandler idleHandler;
-
-    private ChannelHandler handler;
-
-    public ServerHandlerInitializer(ChannelHandler handler) {
-      idleHandler = new ServerIdleHandler();
-      this.handler = handler;
-    }
-
-    public ChannelHandler handler() {
-      return handler;
-    }
-
-    public ServerHandlerInitializer handler(ChannelHandler handler) {
-      this.handler = handler;
-      return this;
-    }
-
-    public ServerIdleHandler idleHandler() {
-      return idleHandler;
-    }
-
-    public ServerHandlerInitializer idleHandler(ServerIdleHandler idleHandler) {
-      this.idleHandler = idleHandler;
-      return this;
-    }
-
-    public MessageCodec codec() {
-      return codec;
-    }
-
-    public ServerHandlerInitializer codec(MessageCodec codec) {
-      this.codec = codec;
-      return this;
-    }
-
-    @Override
-    protected void initChannel(SocketChannel ch) throws Exception {
-      Objects.requireNonNull(codec, "codec Handler can't not be null");
-
-      ChannelPipeline pipeline = ch.pipeline();
-      if (idleHandler != null) {
-        pipeline.addLast("idleStateHandler", new IdleStateHandler(0, 0, ServerIdleHandler.IDLE_TIME,
-            TimeUnit.MILLISECONDS));
-        pipeline.addLast("serverIdleHandler", idleHandler);
-      }
-      pipeline.addLast("codec", codec);
-      pipeline.addLast("handler", handler);
-    }
   }
 }

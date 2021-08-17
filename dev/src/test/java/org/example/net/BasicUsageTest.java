@@ -11,10 +11,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.example.common.ThreadCommonResource;
 import org.example.net.client.RpcClient;
-import org.example.net.client.RpcClient.ClientHandlerInitializer;
 import org.example.net.codec.MessageCodec;
 import org.example.net.server.RpcServer;
-import org.example.net.server.RpcServer.ServerHandlerInitializer;
 import org.example.serde.CommonSerializer;
 import org.example.serde.Serializer;
 import org.junit.jupiter.api.AfterAll;
@@ -56,17 +54,14 @@ public class BasicUsageTest {
     rpcServer = new RpcServer();
 
     Serializer<Object> serializer = new CommonSerializer();
-    ServerHandlerInitializer initializer = new ServerHandlerInitializer(
-        serHandler = new SerTestHandler());
-    initializer.codec(new MessageCodec(serializer));
-    rpcServer.handler(initializer);
+    rpcServer.handler(serHandler = new SerTestHandler());
+    rpcServer.codec(new MessageCodec(serializer));
     rpcServer.start(resource);
     address = rpcServer.ip() + ':' + rpcServer.port();
 
-    ClientHandlerInitializer clientHandler = new ClientHandlerInitializer(new CliTestHandler());
-    clientHandler.codec(new MessageCodec(serializer));
     rpcClient = new RpcClient();
-    rpcClient.handler(clientHandler);
+    rpcClient.codec(new MessageCodec(serializer));
+    rpcClient.handler(new CliTestHandler());
     rpcClient.init(resource.getBoss());
   }
 
