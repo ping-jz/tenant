@@ -15,7 +15,7 @@ public class ReqProxyUtilTest {
 
   @Test
   void calcProtoIdsTest() {
-    List<Pair<Integer, Method>> methods = ReqProxyUtil.calcReqMethods(HelloWorld.class);
+    List<Pair<Integer, Method>> methods = ReqUtil.calcModuleMethods(HelloWorld.class);
     assertEquals(2, methods.size());
     assertEquals(HelloWorld.HELLO_WORLD_MODULE, methods.get(0).first());
     assertEquals(HelloWorld.ECHO, methods.get(1).first());
@@ -23,8 +23,8 @@ public class ReqProxyUtilTest {
 
   @Test
   void invalidReqTest() {
-    assertThrows(RuntimeException.class, () -> ReqProxyUtil.calcReqMethods(InvalidReq.class));
-    assertThrows(RuntimeException.class, () -> ReqProxyUtil.calcReqMethods(DuplicatedReq.class));
+    assertThrows(RuntimeException.class, () -> ReqUtil.calcModuleMethods(InvalidReq.class));
+    assertThrows(RuntimeException.class, () -> ReqUtil.calcModuleMethods(DuplicatedReq.class));
   }
 
   @ReqModule(0)

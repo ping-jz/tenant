@@ -8,11 +8,12 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.example.net.Facade;
 import org.example.net.ReqMethod;
 import org.example.net.ReqModule;
 import org.example.util.Pair;
 
-public class ReqProxyUtil {
+public class ReqUtil {
 
   public static int METHOD_LIMIT_PER_MODULE = 100;
 
@@ -22,19 +23,19 @@ public class ReqProxyUtil {
    * @param inter rpc模块接口
    * @since 2021年08月18日 17:26:59
    */
-  public static List<Pair<Integer, Method>> calcReqMethods(Class<?> inter) {
-    Set<Integer> ids = new HashSet<>();
-    List<Pair<Integer, Method>> infos = new ArrayList<>();
-
+  public static List<Pair<Integer, Method>> calcModuleMethods(Class<?> inter) {
     ReqModule module = inter.getAnnotation(ReqModule.class);
     if (module == null) {
-      throw new RuntimeException(String.format("类型:%s, 缺少@RpcModule标记", inter));
+      return Collections.emptyList();
     }
 
     Method[] methods = inter.getDeclaredMethods();
     if (methods.length <= 0) {
       return Collections.emptyList();
     }
+
+    Set<Integer> ids = new HashSet<>(methods.length);
+    List<Pair<Integer, Method>> infos = new ArrayList<>(methods.length);
 
     int start = module.value();
     int end = start + METHOD_LIMIT_PER_MODULE;
@@ -56,6 +57,7 @@ public class ReqProxyUtil {
             String.format("类型:%s 方法:%s, 协议号:%s, 协议错误", inter.getName(), m.getName(), reqId));
       }
 
+      m.setAccessible(true);
       ids.add(reqId);
       infos.add(Pair.of(reqId, m));
     }
@@ -78,8 +80,45 @@ public class ReqProxyUtil {
             String.format("类型:%s 方法:%s, 协议号:%s, 协议错误", inter.getName(), m.getName(), reqId));
       }
 
+      m.setAccessible(true);
       ids.add(reqId);
       infos.add(Pair.of(reqId, m));
+    }
+
+    infos.sort(Comparator.comparingInt(Pair::first));
+    return infos;
+  }
+
+  public static List<Pair<Integer, Method>> calcFacadeMethods(Class<?> clazz) {
+    Facade facade = clazz.getAnnotation(Facade.class);
+    if (facade == null) {
+      return Collections.emptyList();
+    }
+
+    Method[] methods = clazz.getDeclaredMethods();
+    if (methods.length <= 0) {
+      return Collections.emptyList();
+    }
+
+    Set<Integer> ids = new HashSet<>(methods.length);
+    List<Pair<Integer, Method>> infos = new ArrayList<>(methods.length);
+
+    Arrays.sort(methods, Comparator.comparing(Method::getName));
+    for (Method m : methods) {
+      ReqMethod method = m.getAnnotation(ReqMethod.class);
+      if (method == null) {
+        continue;
+      }
+
+      final int reqId = method.value();
+
+      if (ids.add(reqId)) {
+        m.setAccessible(true);
+        infos.add(Pair.of(reqId, m));
+      } else {
+        throw new IllegalArgumentException(
+            String.format("facade:%s has duplicated reqId:%s", clazz, reqId));
+      }
     }
 
     infos.sort(Comparator.comparingInt(Pair::first));

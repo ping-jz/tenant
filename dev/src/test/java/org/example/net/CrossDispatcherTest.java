@@ -9,27 +9,30 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.example.common.ThreadCommonResource;
 import org.example.net.client.ReqClient;
+import org.example.net.handler.HandlerRegistry;
 import org.example.net.server.ReqServer;
 import org.example.serde.CommonSerializer;
-import org.example.serde.Serializer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-;
-
-public class ClientUsageTest {
+public class CrossDispatcherTest {
 
   private static ThreadCommonResource resource;
+  private static final int ECHO = 1;
+  private static final int DO_NOTHING = 2;
+  private static final int REQ_RES = 3;
 
-  private ConnTestHandler serHandler;
   private ReqServer rpcServer;
   private ReqClient rpcClient;
   private String address;
+  private CrossHelloWorldFacade crossFacade;
+  private GameHelloWorldFacade gameFacade;
 
   private final int invokeTimes = 5;
 
@@ -49,16 +52,21 @@ public class ClientUsageTest {
   @BeforeEach
   void start() throws Exception {
     rpcServer = new ReqServer();
-
-    Serializer<Object> serializer = new CommonSerializer();
-    rpcServer.handler(serHandler = new ConnTestHandler("ser"));
-    rpcServer.codec(serializer);
+    crossFacade = new CrossHelloWorldFacade();
+    HandlerRegistry serverRegistry = new HandlerRegistry();
+    serverRegistry.registeHandlers(serverRegistry.findHandler(crossFacade));
+    rpcServer.handler(new DispatcherHandler(new CrossDispatcher(serverRegistry)));
+    rpcServer.codec(new CommonSerializer());
     rpcServer.start(resource);
     address = rpcServer.ip() + ':' + rpcServer.port();
 
+
     rpcClient = new ReqClient();
-    rpcClient.codec(serializer);
-    rpcClient.handler(new ConnTestHandler("cli"));
+    gameFacade = new GameHelloWorldFacade();
+    HandlerRegistry cliRegistry = new HandlerRegistry();
+    cliRegistry.registeHandlers(cliRegistry.findHandler(gameFacade));
+    rpcClient.codec(new CommonSerializer());
+    rpcClient.handler(new DispatcherHandler(new CrossDispatcher(cliRegistry)));
     rpcClient.init(resource.getBoss());
   }
 
@@ -76,13 +84,12 @@ public class ClientUsageTest {
   @Test
   public void testOneway() throws Exception {
     for (int i = 0; i < invokeTimes; i++) {
-      rpcClient.invoke(address, Message.of(-1).packet("Hello World"));
+      rpcClient.invoke(address, Message.of(CrossDispatcherTest.DO_NOTHING));
     }
     TimeUnit.MILLISECONDS.sleep(100);
 
     assertTrue(rpcClient.getConnection(address).isActive());
-    assertEquals(invokeTimes, serHandler.invokeTimes());
-    assertEquals(1, serHandler.connectionCount());
+    assertEquals(invokeTimes, crossFacade.invokeTimes());
   }
 
   @Test
@@ -91,7 +98,7 @@ public class ClientUsageTest {
     long timeOut = 1000;
     for (int i = 0; i < invokeTimes; i++) {
       InvokeFuture messageFuture = rpcClient.invokeWithFuture(address,
-          new Message().proto(1).packet(helloWorld), timeOut);
+          new Message().proto(CrossDispatcherTest.ECHO).packet(helloWorld), timeOut);
       Message message = messageFuture.waitResponse(timeOut);
       assertNotNull(message);
       assertTrue(message.isSuc());
@@ -100,8 +107,7 @@ public class ClientUsageTest {
     }
 
     assertTrue(rpcClient.getConnection(address).isActive());
-    assertEquals(invokeTimes, serHandler.invokeTimes());
-    assertEquals(1, serHandler.connectionCount());
+    assertEquals(invokeTimes, crossFacade.invokeTimes());
   }
 
   @Test
@@ -110,7 +116,7 @@ public class ClientUsageTest {
     long timeOut = 1000;
     for (int i = 0; i < invokeTimes; i++) {
       InvokeFuture messageFuture = rpcClient.invokeWithFuture(address,
-          new Message().proto(1).packet(helloWorld), 0);
+          new Message().proto(CrossDispatcherTest.ECHO).packet(helloWorld), 0);
       Message message = messageFuture.waitResponse(timeOut);
       assertNotNull(message);
       assertFalse(message.isSuc());
@@ -119,8 +125,7 @@ public class ClientUsageTest {
 
     TimeUnit.MILLISECONDS.sleep(10);
     assertTrue(rpcClient.getConnection(address).isActive());
-    assertEquals(invokeTimes, serHandler.invokeTimes());
-    assertEquals(1, serHandler.connectionCount());
+    assertEquals(invokeTimes, crossFacade.invokeTimes());
   }
 
   @Test
@@ -130,7 +135,7 @@ public class ClientUsageTest {
     List<CountDownLatch> latches = new ArrayList<>(invokeTimes);
     for (int i = 0; i < invokeTimes; i++) {
       CountDownLatch latch = new CountDownLatch(1);
-      Message request = Message.of().proto(1).packet(helloWorld);
+      Message request = Message.of().proto(CrossDispatcherTest.ECHO).packet(helloWorld);
       rpcClient.invokeWithCallBack(address, request
           , (Message msg) -> {
             assertNotNull(msg);
@@ -147,9 +152,79 @@ public class ClientUsageTest {
     }
 
     assertTrue(rpcClient.getConnection(address).isActive());
-    assertEquals(invokeTimes, serHandler.invokeTimes());
-    assertEquals(1, serHandler.connectionCount());
+    assertEquals(invokeTimes, crossFacade.invokeTimes());
   }
 
+  @Test
+  public void testHandler() throws Exception {
+    String helloWorld = "Hello World";
+    long timeOut = 100;
+    for (int i = 0; i < invokeTimes; i++) {
+      Message request = Message.of().proto(CrossDispatcherTest.REQ_RES).packet(helloWorld);
+      rpcClient.invoke(address, request);
+    }
 
+    TimeUnit.MILLISECONDS.sleep(timeOut);
+
+    assertTrue(rpcClient.getConnection(address).isActive());
+    assertEquals(invokeTimes, crossFacade.invokeTimes());
+    assertEquals(invokeTimes, gameFacade.invokeTimes());
+  }
+
+  /**
+   * 世界你好，门面
+   *
+   * @author ZJP
+   * @since 2021年07月22日 21:58:02
+   **/
+  @Facade
+  private static class CrossHelloWorldFacade {
+
+
+    private AtomicInteger invokeTimes = new AtomicInteger();
+
+    public int invokeTimes() {
+      return invokeTimes.get();
+    }
+
+    /**
+     * 回声
+     *
+     * @param str 内容
+     * @since 2021年07月22日 21:58:45
+     */
+
+    @ReqMethod(ECHO)
+    public Object echo(Object str) {
+      invokeTimes.incrementAndGet();
+      return str;
+    }
+
+    @ReqMethod(DO_NOTHING)
+    public void doNothing() {
+      invokeTimes.incrementAndGet();
+    }
+
+    @ReqMethod(REQ_RES)
+    public Object req(Object obj) {
+      invokeTimes.incrementAndGet();
+      return obj;
+    }
+  }
+
+  @Facade
+  private static class GameHelloWorldFacade {
+
+    private AtomicInteger invokeTimes = new AtomicInteger();
+
+    public int invokeTimes() {
+      return invokeTimes.get();
+    }
+
+    @ReqMethod(-REQ_RES)
+    public Object req(Object obj) {
+      invokeTimes.incrementAndGet();
+      return obj;
+    }
+  }
 }

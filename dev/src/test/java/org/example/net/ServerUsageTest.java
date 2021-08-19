@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.example.common.ThreadCommonResource;
-import org.example.net.client.RpcClient;
-import org.example.net.server.RpcServer;
+import org.example.net.client.ReqClient;
+import org.example.net.server.ReqServer;
 import org.example.serde.CommonSerializer;
 import org.example.serde.Serializer;
 import org.junit.jupiter.api.AfterAll;
@@ -25,8 +25,8 @@ public class ServerUsageTest {
   private static ThreadCommonResource resource;
 
   private ConnTestHandler handler;
-  private RpcServer rpcServer;
-  private RpcClient rpcClient;
+  private ReqServer rpcServer;
+  private ReqClient rpcClient;
 
   private String address;
 
@@ -47,14 +47,14 @@ public class ServerUsageTest {
 
   @BeforeEach
   void start() throws Exception {
-    rpcServer = new RpcServer();
+    rpcServer = new ReqServer();
 
     Serializer<Object> serializer = new CommonSerializer();
     rpcServer.handler(new ConnTestHandler("ser"));
     rpcServer.codec(serializer);
     rpcServer.start(resource);
 
-    rpcClient = new RpcClient();
+    rpcClient = new ReqClient();
     rpcClient.codec(serializer);
     rpcClient.handler(handler = new ConnTestHandler("cli"));
     rpcClient.init(resource.getBoss());

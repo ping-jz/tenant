@@ -1,13 +1,13 @@
 package org.example.net.handler;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.example.net.ReqMethod;
+import org.example.net.proxy.ReqUtil;
+import org.example.util.Pair;
 
 /**
  * 根据协议号int,提供获取和注册处理者的方法。
@@ -33,31 +33,35 @@ public class HandlerRegistry {
    * @since 2021年07月24日 10:04:05
    */
   public List<Handler> findHandler(Object object) {
-    List<Handler> res = null;
+    List<Handler> res = new ArrayList<>();
     Class<?> clazz = object.getClass();
 
-    Method[] methods = clazz.getMethods();
-    for (Method m : methods) {
-      int modifier = m.getModifiers();
-      if (Modifier.isStatic(modifier)) {
-        continue;
-      }
+    {
+      List<Pair<Integer, Method>> methods = ReqUtil.calcFacadeMethods(clazz);
+      for (Pair<Integer, Method> pair : methods) {
+        Integer req = pair.first();
+        Method method = pair.second();
 
-      ReqMethod packet = m.getAnnotation(ReqMethod.class);
-      if (packet == null) {
-        continue;
+        Handler handler = Handler.of(object, method, req);
+        res.add(handler);
       }
-      m.setAccessible(true);
-
-      if (res == null) {
-        res = new ArrayList<>();
-      }
-
-      Handler handler = Handler.of(object, m, packet.value());
-      res.add(handler);
     }
 
-    return res == null ? Collections.emptyList() : res;
+    {
+      Class<?>[] interfaces = clazz.getInterfaces();
+      for (Class<?> inter : interfaces) {
+        List<Pair<Integer, Method>> interMethods = ReqUtil.calcModuleMethods(inter);
+        for (Pair<Integer, Method> pair : interMethods) {
+          Integer req = pair.first();
+          Method method = pair.second();
+
+          Handler handler = Handler.of(object, method, req);
+          res.add(handler);
+        }
+      }
+    }
+
+    return res;
   }
 
   /**

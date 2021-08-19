@@ -7,6 +7,7 @@ public interface HelloWorld {
 
   /** 回声协议 */
   int ECHO = 110;
+  int DO_NOTHING = 100;
 
   /**
    * 回声
@@ -16,7 +17,7 @@ public interface HelloWorld {
   @ReqMethod(ECHO)
   Object echo(Object o);
 
-  //1
+  @ReqMethod(DO_NOTHING)
   void doNothing();
 
 

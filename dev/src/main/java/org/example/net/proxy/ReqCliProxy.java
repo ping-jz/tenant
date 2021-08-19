@@ -7,6 +7,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.example.net.Connection;
+import org.example.net.ConnectionManager;
+import org.example.net.Message;
 import org.example.net.ReqModule;
 import org.example.util.Pair;
 import org.slf4j.Logger;
@@ -18,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * @author ZJP
  * @since 2021年07月25日 15:36:19
  **/
-public class RpcCliProxy {
+public class ReqCliProxy {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -31,8 +34,10 @@ public class RpcCliProxy {
   private Map<Class<?>, Map<Method, ReqMetaMethodInfo>> rpcMethodInfos;
   /** 类型 -> Proxy对象 */
   private Map<Class<?>, Object> ivkCaches;
+  /** 链接管理 */
+  private ConnectionManager manager;
 
-  public RpcCliProxy() {
+  public ReqCliProxy(ConnectionManager manager) {
     ivkCaches = new ConcurrentHashMap<>();
     methodProxy = new SendProxyInvoker(this);
     rpcMethodInfos = new ConcurrentHashMap<>();
@@ -54,7 +59,7 @@ public class RpcCliProxy {
       throw new IllegalArgumentException(String.format("类型:%s 不是接口", inter));
     }
 
-    List<Pair<Integer, Method>> methods = ReqProxyUtil.calcReqMethods(inter);
+    List<Pair<Integer, Method>> methods = ReqUtil.calcModuleMethods(inter);
     Map<Method, ReqMetaMethodInfo> infos = new HashMap<>();
     for (Pair<Integer, Method> pair : methods) {
       final int reqId = pair.first();
@@ -78,7 +83,7 @@ public class RpcCliProxy {
    */
   public ReqMetaMethodInfo getRpcMetaMethodInfo(Class<?> clazz, Method method) {
     Map<Method, ReqMetaMethodInfo> infos = rpcMethodInfos
-        .computeIfAbsent(clazz, RpcCliProxy::registerRpcMethods);
+        .computeIfAbsent(clazz, ReqCliProxy::registerRpcMethods);
     return infos.get(method);
   }
 
@@ -103,9 +108,10 @@ public class RpcCliProxy {
    **/
   private static class SendProxyInvoker implements InvocationHandler {
 
-    private RpcCliProxy rpcClientProxy;
+    private ReqCliProxy rpcClientProxy;
+    private ThreadLocal<Iterable<Connection>> serverIds;
 
-    public SendProxyInvoker(RpcCliProxy rpcClientProxy) {
+    public SendProxyInvoker(ReqCliProxy rpcClientProxy) {
       this.rpcClientProxy = rpcClientProxy;
     }
 
@@ -122,9 +128,18 @@ public class RpcCliProxy {
                   method.getName()));
         }
 
-        //TODO 如何进行网络发送
-        return null;
+        Message message = Message.of(info.id()).packet(args);
+
+        for (Connection connection : serverIds.get()) {
+          connection.channel().writeAndFlush(message);
+        }
+
+        return defaultReturn(method);
       }
+    }
+
+    private Object defaultReturn(Method method) {
+      return method.getReturnType().isPrimitive() ? 0 : null;
     }
   }
 

@@ -13,7 +13,6 @@ import java.util.Objects;
 import org.example.net.BaseRemoting;
 import org.example.net.Connection;
 import org.example.net.ConnectionManager;
-import org.example.net.DefaultRemoting;
 import org.example.net.InvokeCallback;
 import org.example.net.InvokeFuture;
 import org.example.net.Message;
@@ -30,7 +29,7 @@ import org.slf4j.LoggerFactory;
  * @author ZJP
  * @since 2021年08月13日 14:56:18
  **/
-public class RpcClient implements AutoCloseable {
+public class ReqClient implements AutoCloseable {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -47,15 +46,15 @@ public class RpcClient implements AutoCloseable {
   /** 请求实现 */
   private BaseRemoting remoting;
 
-  public RpcClient() {
+  public ReqClient() {
     manager = new ConnectionManager();
-    remoting = new DefaultRemoting();
+    remoting = new BaseRemoting();
   }
 
   public void init(EventLoopGroup eventExecutors) {
     Objects.requireNonNull(handler, "connection handler can't be null");
 
-    RpcClient client = this;
+    ReqClient client = this;
     bootstrap = new Bootstrap();
     bootstrap.group(eventExecutors)
         .channel(NettyEventLoopUtil.getClientSocketChannelClass())
@@ -64,7 +63,7 @@ public class RpcClient implements AutoCloseable {
         .option(ChannelOption.SO_KEEPALIVE, true)
         .handler(new ChannelInitializer<SocketChannel>() {
           @Override
-          protected void initChannel(SocketChannel ch) throws Exception {
+          protected void initChannel(SocketChannel ch) {
             Objects.requireNonNull(codec, "codec Handler can't not be null");
 
             ChannelPipeline pipeline = ch.pipeline();
@@ -154,7 +153,7 @@ public class RpcClient implements AutoCloseable {
     return handler;
   }
 
-  public RpcClient handler(ChannelHandler handler) {
+  public ReqClient handler(ChannelHandler handler) {
     this.handler = handler;
     return this;
   }
@@ -163,7 +162,7 @@ public class RpcClient implements AutoCloseable {
     return codec;
   }
 
-  public RpcClient codec(Serializer codec) {
+  public ReqClient codec(Serializer codec) {
     this.codec = codec;
     return this;
   }

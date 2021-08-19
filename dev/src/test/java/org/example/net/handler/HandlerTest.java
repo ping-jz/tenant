@@ -6,7 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
-import org.example.net.handler.facde.HelloWorldFacade;
+import org.example.net.Facade;
+import org.example.net.ReqMethod;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -58,4 +59,29 @@ public class HandlerTest {
     assertNull(dispatcher.getHandler(HelloWorldFacade.ECHO_REQ + 1));
   }
 
+  /**
+   * 世界你好，门面
+   *
+   * @author ZJP
+   * @since 2021年07月22日 21:58:02
+   **/
+  @Facade
+  public static class HelloWorldFacade {
+
+    /** 回声协议 */
+    public static final int ECHO_REQ = 1;
+
+
+    /**
+     * 回声
+     *
+     * @param str 内容
+     * @since 2021年07月22日 21:58:45
+     */
+    @ReqMethod(ECHO_REQ)
+    public String echo(String str) {
+      return str;
+    }
+
+  }
 }

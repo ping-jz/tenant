@@ -13,7 +13,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
-public class DispatcherTest {
+public class GameDispatcherTest {
 
   /** 分发器 */
   private static Dispatcher dispatcher;
@@ -24,7 +24,7 @@ public class DispatcherTest {
   static void init() {
     HandlerRegistry registry = new HandlerRegistry();
     registry.registeHandlers(registry.findHandler(new HelloWorldFacade()));
-    dispatcher = new Dispatcher(LoggerFactory.getLogger(Dispatcher.class), registry);
+    dispatcher = new GameDispatcher(LoggerFactory.getLogger(Dispatcher.class), registry);
     serializer = new CommonSerializer();
   }
 
@@ -37,7 +37,7 @@ public class DispatcherTest {
     echoRequest.msgId(0);
     echoRequest.packet("HelloWorld");
 
-    dispatcher.doDispatcher(channel, echoRequest);
+    dispatcher.dispatcher(channel, echoRequest);
     channel.flush();
 
     ByteBuf buf = channel.readOutbound();
@@ -61,7 +61,7 @@ public class DispatcherTest {
       echoRequest.msgId(0);
       echoRequest.packet(new String[]{"Hello", "World", Integer.toString(i)});
 
-      dispatcher.doDispatcher(channel, echoRequest);
+      dispatcher.dispatcher(channel, echoRequest);
       channel.flush();
 
       ByteBuf buf = channel.readOutbound();
@@ -82,6 +82,7 @@ public class DispatcherTest {
    * @author ZJP
    * @since 2021年07月22日 21:58:02
    **/
+  @Facade
   private static class HelloWorldFacade {
 
     private static final int ECHO = 1;

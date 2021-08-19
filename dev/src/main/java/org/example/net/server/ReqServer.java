@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  * @author ZJP
  * @since 2021年08月13日 14:56:18
  **/
-public class RpcServer implements AutoCloseable {
+public class ReqServer implements AutoCloseable {
 
   private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -51,15 +51,15 @@ public class RpcServer implements AutoCloseable {
   /** 调用逻辑 */
   private BaseRemoting remoting;
 
-  public RpcServer() {
+  public ReqServer() {
     this(0);
   }
 
-  public RpcServer(int port) {
+  public ReqServer(int port) {
     this(new InetSocketAddress(port).getAddress().getHostAddress(), port);
   }
 
-  public RpcServer(String ip, int port) {
+  public ReqServer(String ip, int port) {
     if (port < 0 || port > 65535) {
       throw new IllegalArgumentException(String.format(
           "Illegal port value: %d, which should between 0 and 65535.", port));
@@ -146,7 +146,7 @@ public class RpcServer implements AutoCloseable {
       throws InterruptedException {
     Objects.requireNonNull(handler, "connection can't be null");
 
-    final RpcServer server = this;
+    final ReqServer server = this;
     ServerBootstrap b = new ServerBootstrap();
     b.option(ChannelOption.SO_BACKLOG, 1024);
     b.group(threadCommonResource.getBoss(), threadCommonResource.getWorker())
@@ -193,7 +193,7 @@ public class RpcServer implements AutoCloseable {
     return handler;
   }
 
-  public RpcServer handler(ChannelHandler handler) {
+  public ReqServer handler(ChannelHandler handler) {
     this.handler = handler;
     return this;
   }
@@ -202,7 +202,7 @@ public class RpcServer implements AutoCloseable {
     return serializer;
   }
 
-  public RpcServer codec(Serializer codec) {
+  public ReqServer codec(Serializer codec) {
     this.serializer = codec;
     return this;
   }

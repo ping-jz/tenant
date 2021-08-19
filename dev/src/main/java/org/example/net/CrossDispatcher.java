@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
  * @author ZJP
  * @since 2021年07月24日 14:41:27
  **/
-public class CrossDispatcher {
+public class CrossDispatcher implements Dispatcher {
 
   /** 消息处理器集合 */
   private HandlerRegistry handlerRegistry;
@@ -95,24 +95,37 @@ public class CrossDispatcher {
    */
   private void invokeHandler(Channel channel, Message msg, Handler handler) {
     try {
-      Object result = handler.invoke(msg.packet());
+      Object result = null;
+      if (msg.packet() == null) {
+        result = handler.invoke();
+      } else {
+        result = handler.invoke(msg.packet());
+      }
       //
       if (result != null && 0 < msg.proto()) {
         Message response = Message
             .of(Math.negateExact(msg.proto()))
             .msgId(msg.msgId())
+            .status(MessageStatus.SUCCESS)
             .packet(result);
         channel.write(response);
       }
     } catch (Exception e) {
-      channel.write(
-          Message
-              .of(Math.negateExact(msg.proto()))
-              .msgId(msg.msgId())
-              .status(MessageStatus.SERVER_EXCEPTION)
-      );
+      if (0 < msg.proto()) {
+        channel.write(
+            Message
+                .of(Math.negateExact(msg.proto()))
+                .msgId(msg.msgId())
+                .status(MessageStatus.SERVER_EXCEPTION)
+        );
+      }
       logger.error("from:{}, proto:{}, handler error", channel.remoteAddress(), msg.proto(), e);
     }
   }
 
+
+  @Override
+  public void dispatcher(Channel channel, Message message) {
+    doDispatcher(channel, message);
+  }
 }
