@@ -146,7 +146,7 @@ public class RpcServer implements AutoCloseable {
       throws InterruptedException {
     Objects.requireNonNull(handler, "connection can't be null");
 
-    RpcServer server = this;
+    final RpcServer server = this;
     ServerBootstrap b = new ServerBootstrap();
     b.option(ChannelOption.SO_BACKLOG, 1024);
     b.group(threadCommonResource.getBoss(), threadCommonResource.getWorker())
@@ -217,8 +217,7 @@ public class RpcServer implements AutoCloseable {
 
     if (channelFuture != null) {
       logger.info("rpcServer:{}:{}, closing", ip, port);
-      channelFuture.channel().close();
-      channelFuture = null;
+      channelFuture.channel().close().awaitUninterruptibly();
       logger.info("rpcServer:{}:{}, closed", ip, port);
     }
 

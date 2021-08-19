@@ -1,5 +1,6 @@
 package org.example.net.proxy;
 
+import java.lang.reflect.Method;
 import java.util.Objects;
 
 /**
@@ -8,28 +9,28 @@ import java.util.Objects;
  * @author ZJP
  * @since 2021年07月25日 15:36:19
  **/
-public class RpcMetaMethodInfo {
+public class ReqMetaMethodInfo {
 
   /** 唯一调用ID */
   private int id;
   /** 方法名 */
-  private String name;
+  private Method method;
 
   public int id() {
     return id;
   }
 
-  public RpcMetaMethodInfo id(int id) {
+  public ReqMetaMethodInfo id(int id) {
     this.id = id;
     return this;
   }
 
-  public String name() {
-    return name;
+  public Method method() {
+    return method;
   }
 
-  public RpcMetaMethodInfo name(String name) {
-    this.name = name;
+  public ReqMetaMethodInfo method(Method method) {
+    this.method = method;
     return this;
   }
 
@@ -41,12 +42,12 @@ public class RpcMetaMethodInfo {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    RpcMetaMethodInfo info = (RpcMetaMethodInfo) o;
-    return id == info.id && Objects.equals(name, info.name);
+    ReqMetaMethodInfo info = (ReqMetaMethodInfo) o;
+    return id == info.id && Objects.equals(method, info.method);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, name);
+    return Objects.hash(id, method);
   }
 }

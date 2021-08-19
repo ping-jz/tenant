@@ -1,6 +1,6 @@
-package org.example.handler.facde;
+package org.example.net.handler.facde;
 
-import org.example.handler.Packet;
+import org.example.net.ReqMethod;
 
 /**
  * 世界你好，门面
@@ -20,7 +20,7 @@ public class HelloWorldFacade {
    * @param str 内容
    * @since 2021年07月22日 21:58:45
    */
-  @Packet(ECHO_REQ)
+  @ReqMethod(ECHO_REQ)
   public String echo(String str) {
     return str;
   }

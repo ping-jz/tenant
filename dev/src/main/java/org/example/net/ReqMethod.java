@@ -1,4 +1,4 @@
-package org.example.net.proxy;
+package org.example.net;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -13,10 +13,10 @@ import java.lang.annotation.Target;
  **/
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RpcMethod {
+public @interface ReqMethod {
 
   /**
-   * 方法ID,范围：{@link RpcModule#value()} +[0...99]
+   * 方法ID,范围：{@link ReqModule#value()} +[0...99]
    *
    * @return 方法ID
    * <p>手动分配:范围内选一个 </p>
@@ -24,12 +24,5 @@ public @interface RpcMethod {
    * @since 2021年07月25日 14:29:21
    */
   int value() default 0;
-
-  /**
-   * {@link RpcMethod#value()}的负数形式，表示用来接收返回结果
-   *
-   * @since 2021年07月25日 20:57:58
-   */
-  int res() default 0;
 
 }

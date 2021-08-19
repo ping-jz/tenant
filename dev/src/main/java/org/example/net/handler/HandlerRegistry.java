@@ -1,4 +1,4 @@
-package org.example.handler;
+package org.example.net.handler;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.example.net.ReqMethod;
 
 /**
  * 根据协议号int,提供获取和注册处理者的方法。
@@ -26,7 +27,7 @@ public class HandlerRegistry {
   }
 
   /**
-   * 寻找被{@link Packet}标记的非静态公共方法
+   * 寻找被{@link ReqMethod}标记的非静态公共方法
    *
    * @param object 需要被注册的对象
    * @since 2021年07月24日 10:04:05
@@ -42,7 +43,7 @@ public class HandlerRegistry {
         continue;
       }
 
-      Packet packet = m.getAnnotation(Packet.class);
+      ReqMethod packet = m.getAnnotation(ReqMethod.class);
       if (packet == null) {
         continue;
       }

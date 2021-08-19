@@ -1,9 +1,6 @@
-package org.example.net.facde.cross;
+package org.example.net;
 
-import org.example.net.proxy.RpcMethod;
-import org.example.net.proxy.RpcModule;
-
-@RpcModule(HelloWorld.HELLO_WORLD_MODULE)
+@ReqModule(HelloWorld.HELLO_WORLD_MODULE)
 public interface HelloWorld {
 
   int HELLO_WORLD_MODULE = 100;
@@ -16,7 +13,7 @@ public interface HelloWorld {
    *
    * @since 2021年07月25日 19:00:22
    */
-  @RpcMethod(ECHO)
+  @ReqMethod(ECHO)
   Object echo(Object o);
 
   //1

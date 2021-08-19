@@ -24,7 +24,9 @@ public class ConnectionManager extends ChannelInboundHandlerAdapter implements A
 
   private static final Logger logger = LoggerFactory.getLogger(ConnectionManager.class);
 
+  /** ip地址 -> 链接 */
   private ConcurrentHashMap<String, Connection> connections;
+  /** 是否处理空闲链接 */
   private boolean idleHandle;
 
   public ConnectionManager() {

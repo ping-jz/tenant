@@ -6,9 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.example.handler.HandlerRegistry;
-import org.example.handler.Packet;
 import org.example.net.codec.MessageCodec;
+import org.example.net.handler.HandlerRegistry;
 import org.example.serde.CommonSerializer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -94,7 +93,7 @@ public class DispatcherTest {
      * @since 2021年07月22日 21:58:45
      */
 
-    @Packet(ECHO)
+    @ReqMethod(ECHO)
     public Object echo(Object str) {
       return str;
     }

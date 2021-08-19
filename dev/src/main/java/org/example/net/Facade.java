@@ -1,4 +1,4 @@
-package org.example.net.proxy;
+package org.example.net;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

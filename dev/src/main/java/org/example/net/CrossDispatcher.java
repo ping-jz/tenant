@@ -1,8 +1,8 @@
 package org.example.net;
 
 import io.netty.channel.Channel;
-import org.example.handler.Handler;
-import org.example.handler.HandlerRegistry;
+import org.example.net.handler.Handler;
+import org.example.net.handler.HandlerRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

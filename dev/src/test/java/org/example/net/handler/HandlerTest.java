@@ -1,4 +1,4 @@
-package org.example.handler;
+package org.example.net.handler;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
-import org.example.handler.facde.HelloWorldFacade;
+import org.example.net.handler.facde.HelloWorldFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
