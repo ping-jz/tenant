@@ -61,7 +61,7 @@
           <!-- 同一来源的Appender可以定义多个RollingFile，定义按天存储日志 -->
           <RollingFile name="info_file_commom"
             fileName="${LOG_HOME}/commom/console.log"
-            filePattern="${LOG_HOME}/commom/console_%d{yyyy-MM-dd}.log">
+            filePattern="${LOG_HOME}/commom/$${date:yyyy-MM-dd}/console_%d{yyyyMMddHH}.log">
 
             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
             <PatternLayout>
@@ -78,7 +78,7 @@
           <!-- 同一来源的Appender可以定义多个RollingFile，定义按天存储日志 -->
           <RollingFile name="console_file"
             fileName="${LOG_HOME}/${ctx:game_id}/${ctx:game_id}_console.log"
-            filePattern="${LOG_HOME}/${ctx:game_id}/${ctx:game_id}_console_%d{yyyy-MM-dd}.log">
+            filePattern="${LOG_HOME}/${ctx:game_id}/$${date:yyyy-MM-dd}/${ctx:game_id}_console_%d{yyyyMMddHH}.log">
             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
             <PatternLayout>
               <Pattern>%d [%-p] [%t] %c{1}.%M - %m%n</Pattern>
@@ -101,7 +101,7 @@
           <!-- 同一来源的Appender可以定义多个RollingFile，定义按天存储日志 -->
           <RollingFile name="error_file"
             fileName="${LOG_HOME}/commom/error.log"
-            filePattern="${LOG_HOME}/commom/error_%d{yyyy-MM-dd}.log">
+            filePattern="${LOG_HOME}/commom/$${date:yyyy-MM-dd}/error_%d{yyyyMMddHH}.log">
             <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
             <PatternLayout>
               <Pattern>%d [%-p] [%t] %c{1}.%M - %m%n</Pattern>
@@ -119,7 +119,7 @@
           <!-- 同一来源的Appender可以定义多个RollingFile，定义按天存储日志 -->
           <RollingFile name="error_file"
             fileName="${LOG_HOME}/${ctx:game_id}/${ctx:game_id}_error.log"
-            filePattern="${LOG_HOME}/${ctx:game_id}/${ctx:game_id}_error_%d{yyyy-MM-dd}.log">
+            filePattern="${LOG_HOME}/${ctx:game_id}/$${date:yyyy-MM-dd}/${ctx:game_id}_error_%d{yyyyMMddHH}.log">
             <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
             <PatternLayout>
               <Pattern>%d [%-p] [%t] %c{1}.%M - %m%n</Pattern>
