@@ -66,7 +66,11 @@ public class InvokeFuture {
   public void executeCallBack() {
     if (callback != null) {
       if (executeCallbackOnlyOnce.compareAndSet(false, true)) {
-        callback.onResponse(result);
+        try {
+          callback.onResponse(result);
+        } catch (Exception e) {
+          callback.onException(e);
+        }
       }
     }
   }

@@ -22,8 +22,8 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
   /** 一次最多少解码多少个包 */
   private int maxDecodeAtOnce;
 
-  public MessageCodec(Serializer<Object> serializer) {
-    this(Integer.BYTES, serializer);
+  public MessageCodec(Serializer<?> serializer) {
+    this(Integer.BYTES, (Serializer<Object>) serializer);
   }
 
   public MessageCodec(int lengthFieldLength,

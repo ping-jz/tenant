@@ -10,11 +10,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.example.common.ThreadCommonResource;
-import org.example.net.client.RpcClient;
-import org.example.net.client.RpcClient.ClientHandlerInitializer;
-import org.example.net.codec.MessageCodec;
-import org.example.net.server.RpcServer;
-import org.example.net.server.RpcServer.ServerHandlerInitializer;
+import org.example.net.client.ReqClient;
+import org.example.net.server.ReqServer;
 import org.example.serde.CommonSerializer;
 import org.example.serde.Serializer;
 import org.junit.jupiter.api.AfterAll;
@@ -22,18 +19,16 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class BasicUsageTest {
+;
 
-  private Logger logger = LoggerFactory.getLogger(BasicUsageTest.class);
+public class ClientUsageTest {
 
   private static ThreadCommonResource resource;
 
-  private SerTestHandler serHandler;
-  private RpcServer rpcServer;
-  private RpcClient rpcClient;
+  private ConnTestHandler serHandler;
+  private ReqServer rpcServer;
+  private ReqClient rpcClient;
   private String address;
 
   private final int invokeTimes = 5;
@@ -53,20 +48,17 @@ public class BasicUsageTest {
 
   @BeforeEach
   void start() throws Exception {
-    rpcServer = new RpcServer();
+    rpcServer = new ReqServer();
 
     Serializer<Object> serializer = new CommonSerializer();
-    ServerHandlerInitializer initializer = new ServerHandlerInitializer(
-        serHandler = new SerTestHandler());
-    initializer.codec(new MessageCodec(serializer));
-    rpcServer.handler(initializer);
+    rpcServer.handler(serHandler = new ConnTestHandler("ser"));
+    rpcServer.codec(serializer);
     rpcServer.start(resource);
     address = rpcServer.ip() + ':' + rpcServer.port();
 
-    ClientHandlerInitializer clientHandler = new ClientHandlerInitializer(new CliTestHandler());
-    clientHandler.codec(new MessageCodec(serializer));
-    rpcClient = new RpcClient();
-    rpcClient.handler(clientHandler);
+    rpcClient = new ReqClient();
+    rpcClient.codec(serializer);
+    rpcClient.handler(new ConnTestHandler("cli"));
     rpcClient.init(resource.getBoss());
   }
 
@@ -84,7 +76,7 @@ public class BasicUsageTest {
   @Test
   public void testOneway() throws Exception {
     for (int i = 0; i < invokeTimes; i++) {
-      rpcClient.invoke(address, new Message().packet("Hello World"));
+      rpcClient.invoke(address, Message.of(-1).packet("Hello World"));
     }
     TimeUnit.MILLISECONDS.sleep(100);
 

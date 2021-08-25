@@ -1,5 +1,7 @@
 package org.example.net.facde.cross;
 
+import org.example.net.HelloWorld;
+
 /**
  * 世界你好，门面
  *

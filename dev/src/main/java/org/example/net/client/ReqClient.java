@@ -8,21 +8,17 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.timeout.IdleStateHandler;
 import java.net.InetSocketAddress;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import org.example.net.BaseRemoting;
 import org.example.net.Connection;
-import org.example.net.DefaultRemoting;
+import org.example.net.ConnectionManager;
 import org.example.net.InvokeCallback;
 import org.example.net.InvokeFuture;
 import org.example.net.Message;
 import org.example.net.MessageIdGenerator;
-import org.example.net.ServerIdleHandler;
 import org.example.net.codec.MessageCodec;
+import org.example.serde.Serializer;
 import org.example.util.NettyEventLoopUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,35 +29,48 @@ import org.slf4j.LoggerFactory;
  * @author ZJP
  * @since 2021年08月13日 14:56:18
  **/
-public class RpcClient implements AutoCloseable {
+public class ReqClient implements AutoCloseable {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
-  /** connection manager */
-  private Map<String, Connection> connections;
+  /** 链接管理 */
+  private ConnectionManager manager;
 
   /** client bootstrap */
   private Bootstrap bootstrap;
   /** connection handler */
   private ChannelHandler handler;
+  /** codec */
+  private Serializer<?> codec;
 
   /** 请求实现 */
   private BaseRemoting remoting;
 
-  public RpcClient() {
-    connections = new ConcurrentHashMap<>();
-    remoting = new DefaultRemoting();
+  public ReqClient() {
+    manager = new ConnectionManager();
+    remoting = new BaseRemoting();
   }
 
   public void init(EventLoopGroup eventExecutors) {
     Objects.requireNonNull(handler, "connection handler can't be null");
+
+    ReqClient client = this;
     bootstrap = new Bootstrap();
     bootstrap.group(eventExecutors)
         .channel(NettyEventLoopUtil.getClientSocketChannelClass())
         .option(ChannelOption.TCP_NODELAY, true)
         .option(ChannelOption.SO_REUSEADDR, true)
         .option(ChannelOption.SO_KEEPALIVE, true)
-        .handler(handler);
+        .handler(new ChannelInitializer<SocketChannel>() {
+          @Override
+          protected void initChannel(SocketChannel ch) {
+            Objects.requireNonNull(codec, "codec Handler can't not be null");
+
+            ChannelPipeline pipeline = ch.pipeline();
+            pipeline.addLast("codec", new MessageCodec(client.codec()));
+            pipeline.addLast("handler", client.handler());
+          }
+        });
   }
 
 
@@ -110,12 +119,13 @@ public class RpcClient implements AutoCloseable {
    * @since 2021年08月13日 18:47:18
    */
   public Connection getConnection(String addr) {
-    return connections.computeIfAbsent(addr, this::createConnection);
+    return manager.connections().computeIfAbsent(addr, this::createConnection);
   }
 
 
-  private Connection createConnection(String addr) {
+  private Connection createConnection(String original) {
     try {
+      String addr = original;
       if (addr.startsWith("/")) {
         addr = addr.substring(1);
       }
@@ -127,12 +137,13 @@ public class RpcClient implements AutoCloseable {
       ChannelFuture future = bootstrap.connect(new InetSocketAddress(ip, port));
       boolean suc = future.awaitUninterruptibly().isSuccess();
       if (suc) {
-        return new Connection(future.channel(), addr);
+        future.channel().pipeline().addLast("manager", manager);
+        return new Connection(future.channel(), original);
       } else {
-        logger.error("connect to {} failed", addr);
+        logger.error("connect to {} failed", original);
       }
     } catch (Exception e) {
-      logger.error("create connection for addr:{}, error", addr);
+      logger.error("create connection for addr:{}, error", original);
     }
 
     return null;
@@ -142,74 +153,24 @@ public class RpcClient implements AutoCloseable {
     return handler;
   }
 
-  public RpcClient handler(ChannelHandler handler) {
+  public ReqClient handler(ChannelHandler handler) {
     this.handler = handler;
+    return this;
+  }
+
+  public Serializer codec() {
+    return codec;
+  }
+
+  public ReqClient codec(Serializer codec) {
+    this.codec = codec;
     return this;
   }
 
   @Override
   public void close() {
-    for (Connection connection : connections.values()) {
-      connection.close();
-    }
+    manager.close();
   }
 
-  /**
-   * Channel处理器
-   *
-   * @author ZJP
-   * @since 2021年08月13日 21:41:18
-   **/
-  public static class ClientHandlerInitializer extends ChannelInitializer<SocketChannel> {
 
-    private MessageCodec codec;
-    private ChannelHandler hearBeatHander;
-
-    private ChannelHandler handler;
-
-    public ClientHandlerInitializer(ChannelHandler handler) {
-      this.handler = handler;
-    }
-
-    public ChannelHandler handler() {
-      return handler;
-    }
-
-    public ClientHandlerInitializer handler(ChannelHandler handler) {
-      this.handler = handler;
-      return this;
-    }
-
-    public ChannelHandler hearBeatHander() {
-      return hearBeatHander;
-    }
-
-    public ClientHandlerInitializer hearBeatHander(ChannelHandler hearBeatHander) {
-      this.hearBeatHander = hearBeatHander;
-      return this;
-    }
-
-    public MessageCodec codec() {
-      return codec;
-    }
-
-    public ClientHandlerInitializer codec(MessageCodec codec) {
-      this.codec = codec;
-      return this;
-    }
-
-    @Override
-    protected void initChannel(SocketChannel ch) throws Exception {
-      Objects.requireNonNull(codec, "codec Handler can't not be null");
-
-      ChannelPipeline pipeline = ch.pipeline();
-      if (hearBeatHander != null) {
-        pipeline.addLast("idleStateHandler", new IdleStateHandler(0, 0, ServerIdleHandler.IDLE_TIME,
-            TimeUnit.MILLISECONDS));
-        pipeline.addLast("hearBeat", hearBeatHander);
-      }
-      pipeline.addLast("codec", codec);
-      pipeline.addLast("handler", handler);
-    }
-  }
 }

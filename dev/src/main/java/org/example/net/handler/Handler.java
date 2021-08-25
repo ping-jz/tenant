@@ -1,4 +1,4 @@
-package org.example.handler;
+package org.example.net.handler;
 
 import java.lang.reflect.Method;
 
