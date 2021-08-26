@@ -33,7 +33,7 @@ public class ReqCliProxy {
   private Map<Class<?>, Map<Method, ReqMetaMethodInfo>> rpcMethodInfos;
   /** 类型 -> Proxy对象 */
   private Map<Class<?>, Object> ivkCaches;
-  /** 链接管理 (直接拿就行了，创建和管理proxy不要管) */
+  /** 链接管理 (直接拿就行了，创建和管理链接，proxy不要管) */
   private ConnectionManager manager;
   /** 调用逻辑 */
   private BaseRemoting remoting;
