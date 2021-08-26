@@ -95,20 +95,25 @@ public class CrossDispatcher implements Dispatcher {
    */
   private void invokeHandler(Channel channel, Message msg, Handler handler) {
     try {
-      Object result = null;
-      if (msg.packet() == null) {
-        result = handler.invoke();
+      if (msg.isSuc()) {
+        Object result = null;
+        if (msg.packet() == null) {
+          result = handler.invoke();
+        } else {
+          result = handler.invoke(msg.packet());
+        }
+        //
+        if (result != null && 0 < msg.proto()) {
+          Message response = Message
+              .of(Math.negateExact(msg.proto()))
+              .msgId(msg.msgId())
+              .status(MessageStatus.SUCCESS)
+              .packet(result);
+          channel.write(response);
+        }
       } else {
-        result = handler.invoke(msg.packet());
-      }
-      //
-      if (result != null && 0 < msg.proto()) {
-        Message response = Message
-            .of(Math.negateExact(msg.proto()))
-            .msgId(msg.msgId())
-            .status(MessageStatus.SUCCESS)
-            .packet(result);
-        channel.write(response);
+        logger.error("from:{}, proto:{}, 错误代码:{}", channel.remoteAddress(), msg.proto(),
+            msg.status());
       }
     } catch (Exception e) {
       if (0 < msg.proto()) {

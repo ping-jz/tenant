@@ -8,7 +8,7 @@ package org.example.net;
  **/
 public class Message {
 
-  /** 协议编号 (0 < 为收到/发送请求,  收到/发送结果 < 0) */
+  /** 协议编号 (0 < 接收/发送请求,  接收/发送结果 < 0) */
   private int proto;
   /** 序列号(客户端发什么，服务端就返回什么) */
   private int msgId;
@@ -16,6 +16,10 @@ public class Message {
   private short status;
   /** 内容 */
   private Object packet;
+
+  public Message() {
+    status = MessageStatus.SUCCESS.status();
+  }
 
   public static Message of() {
     return new Message();

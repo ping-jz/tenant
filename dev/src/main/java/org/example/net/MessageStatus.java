@@ -2,13 +2,13 @@ package org.example.net;
 
 public enum MessageStatus {
 
-  SUCCESS((short) 0x0200),
-  ERROR((short) 0x0201),
-  UNKNOWN((short) 0x0203),
-  TIMEOUT((short) 0x0204),
-  SEND_ERROR((short) 0x0205),
-  SERVER_EXCEPTION((short) 0x0206),
-  CLOSE((short) 0x0207),
+  SUCCESS((short) 200),
+  ERROR((short) 500),
+  UNKNOWN((short) 501),
+  TIMEOUT((short) 502),
+  SEND_ERROR((short) 503),
+  SERVER_EXCEPTION((short) 504),
+  CLOSE((short) 504),
   ;
 
   private short status;

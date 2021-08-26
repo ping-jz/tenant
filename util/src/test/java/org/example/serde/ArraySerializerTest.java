@@ -20,6 +20,8 @@ public class ArraySerializerTest {
   @BeforeEach
   private void beforeEach() {
     serializer = new CommonSerializer();
+    serializer.registerSerializer(10, Object.class, new MarkSerializer());
+    serializer.registerSerializer(11, ArrayWrapper.class);
     buf = Unpooled.buffer();
   }
 
@@ -55,7 +57,8 @@ public class ArraySerializerTest {
 
   @Test
   void simpleArrayTest() {
-    int[] test = {1999999, 1999922, 199999955, 19999444, 1999999, 1999999, 1999999, 1999999, 1999999, 3999999};
+    int[] test = {1999999, 1999922, 199999955, 19999444, 1999999, 1999999, 1999999, 1999999,
+        1999999, 3999999};
     serializer.writeObject(buf, test);
 
     int[] res = serializer.read(buf);
@@ -112,7 +115,6 @@ public class ArraySerializerTest {
   @Test
   void fourDimensionObjectArrayTest() {
     Random random = ThreadLocalRandom.current();
-    serializer.registerSerializer(10, ArrayWrapper.class);
     int one = 5, two = 2, three = 3, four = 4;
     ArrayWrapper[][][][] test = new ArrayWrapper[one][two][three][four];
     int special = 2;
@@ -143,6 +145,15 @@ public class ArraySerializerTest {
     serializer.writeObject(buf, test);
     ArrayWrapper[][][][] res = serializer.read(buf);
     assertArrayEquals(test, res);
+  }
+
+  @Test
+  void objectArraySerializerTest() {
+    Object[] objects = {1, 2L, "asdfasdf", new ArrayWrapper()};
+
+    serializer.writeObject(buf, objects);
+    Object[] res = serializer.read(buf);
+    assertArrayEquals(objects, res);
   }
 
   private static class ArrayWrapper {

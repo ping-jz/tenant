@@ -19,12 +19,12 @@ public class DispatcherHandler extends SimpleChannelInboundHandler<Message> {
   }
 
   @Override
-  protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
+  protected void channelRead0(ChannelHandlerContext ctx, Message msg) {
     dispatcher.dispatcher(ctx.channel(), msg);
   }
 
   @Override
-  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+  public void channelReadComplete(ChannelHandlerContext ctx) {
     ctx.flush();
     ctx.fireChannelReadComplete();
   }

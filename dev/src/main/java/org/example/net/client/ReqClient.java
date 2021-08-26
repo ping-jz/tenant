@@ -73,6 +73,9 @@ public class ReqClient implements AutoCloseable {
         });
   }
 
+  public ConnectionManager manager() {
+    return manager;
+  }
 
   /**
    * send a oneway message(no response, just push the message to the remote)

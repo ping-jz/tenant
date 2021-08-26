@@ -108,7 +108,7 @@ public class ArraySerializer implements Serializer<Object> {
       final int typeId = NettyByteBufUtil.readInt32(buf);
       Class<?> componentType = serializer.getClazz(typeId);
       if (componentType == null) {
-        throw new RuntimeException("类型ID:" + typeId + ",没有注册");
+        throw new RuntimeException("数组类型ID:" + typeId + ",没有注册");
       }
 
       Object array = Array.newInstance(componentType, dimensions);
@@ -159,7 +159,7 @@ public class ArraySerializer implements Serializer<Object> {
 
     Integer typeId = serializer.getTypeId(componentType);
     if (typeId == null) {
-      throw new RuntimeException("类型:" + object.getClass() + ",没有注册");
+      throw new RuntimeException("数组类型:" + componentType + ",没有注册");
     }
     NettyByteBufUtil.writeInt32(buf, typeId);
     writeArray(buf, object, 0, dimensions);

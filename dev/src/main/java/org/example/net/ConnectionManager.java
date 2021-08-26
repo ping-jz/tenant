@@ -99,6 +99,10 @@ public class ConnectionManager extends ChannelInboundHandlerAdapter implements A
     return connections;
   }
 
+  public Connection connection(String address) {
+    return connections.get(address);
+  }
+
   @Override
   public void close() {
     for (Connection connection : connections.values()) {

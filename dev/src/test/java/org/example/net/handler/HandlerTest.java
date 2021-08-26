@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import org.example.net.Facade;
+import org.example.net.HelloWorld;
 import org.example.net.ReqMethod;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -20,23 +21,23 @@ import org.junit.jupiter.api.Test;
 public class HandlerTest {
 
   /** 分发器，测试对象 */
-  private static HandlerRegistry dispatcher;
+  private static HandlerRegistry registry;
   /** 测试门面 */
   private static HelloWorldFacade facade;
 
   @BeforeAll
   static void init() {
-    dispatcher = new HandlerRegistry();
+    registry = new HandlerRegistry();
     facade = new HelloWorldFacade();
-    List<Handler> handlers = dispatcher.findHandler(facade);
-    assertEquals(1, handlers.size());
+    List<Handler> handlers = registry.findHandler(facade);
+    assertEquals(3, handlers.size());
 
-    dispatcher.registeHandlers(handlers);
+    registry.registeHandlers(handlers);
   }
 
   @Test
-  void registeTest() throws Exception {
-    Handler echoHandler = dispatcher.getHandler(HelloWorldFacade.ECHO_REQ);
+  void facadeTest() throws Exception {
+    Handler echoHandler = registry.getHandler(HelloWorldFacade.TEST_REQ);
     assertNotNull(echoHandler);
 
     String hi = "Hi";
@@ -44,19 +45,32 @@ public class HandlerTest {
   }
 
   @Test
-  void duplicateRegisteTest() {
-    Handler old = dispatcher.getHandler(HelloWorldFacade.ECHO_REQ);
+  void moduleTest() throws Exception {
+    Handler echoHandler = registry.getHandler(HelloWorld.ECHO);
+    Handler doNothing = registry.getHandler(HelloWorld.DO_NOTHING);
+    assertNotNull(echoHandler);
+    assertNotNull(doNothing);
 
-    assertThrows(RuntimeException.class,
-        () -> dispatcher.registeHandlers(dispatcher.findHandler(facade)));
+    String hi = "Hi";
+    assertEquals(hi, echoHandler.invoke(hi));
 
-    //确保重复注册不会破坏之前的关系
-    assertEquals(old, dispatcher.getHandler(HelloWorldFacade.ECHO_REQ));
+    doNothing.invoke();
   }
 
   @Test
-  void noRegisteTest() {
-    assertNull(dispatcher.getHandler(HelloWorldFacade.ECHO_REQ + 1));
+  void duplicateRegistryTest() {
+    Handler old = registry.getHandler(HelloWorldFacade.TEST_REQ);
+
+    assertThrows(RuntimeException.class,
+        () -> registry.registeHandlers(registry.findHandler(facade)));
+
+    //确保重复注册不会破坏之前的关系
+    assertEquals(old, registry.getHandler(HelloWorldFacade.TEST_REQ));
+  }
+
+  @Test
+  void noRegistryTest() {
+    assertNull(registry.getHandler(HelloWorldFacade.TEST_REQ + 1));
   }
 
   /**
@@ -66,22 +80,31 @@ public class HandlerTest {
    * @since 2021年07月22日 21:58:02
    **/
   @Facade
-  public static class HelloWorldFacade {
+  private static class HelloWorldFacade implements HelloWorld {
 
-    /** 回声协议 */
-    public static final int ECHO_REQ = 1;
+    /** 测试 */
+    public static final int TEST_REQ = 1;
 
 
     /**
-     * 回声
+     * 测试
      *
      * @param str 内容
      * @since 2021年07月22日 21:58:45
      */
-    @ReqMethod(ECHO_REQ)
-    public String echo(String str) {
+    @ReqMethod(TEST_REQ)
+    public String test(String str) {
       return str;
     }
 
+    @Override
+    public Object echo(Object o) {
+      return o;
+    }
+
+    @Override
+    public void doNothing() {
+
+    }
   }
 }

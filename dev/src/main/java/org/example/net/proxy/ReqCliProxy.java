@@ -3,10 +3,12 @@ package org.example.net.proxy;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.example.net.BaseRemoting;
 import org.example.net.Connection;
 import org.example.net.ConnectionManager;
 import org.example.net.Message;
@@ -25,22 +27,23 @@ public class ReqCliProxy {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
-  /** 每个某块可以注册的方法 */
-  private static int METHOD_LIMIT = 100;
-
   /** 动态代理处理者 */
-  private InvocationHandler methodProxy;
+  private SendProxyInvoker methodProxy;
   /** 类型 -> [方法名, 方法信息] */
   private Map<Class<?>, Map<Method, ReqMetaMethodInfo>> rpcMethodInfos;
   /** 类型 -> Proxy对象 */
   private Map<Class<?>, Object> ivkCaches;
-  /** 链接管理 */
+  /** 链接管理 (直接拿就行了，创建和管理proxy不要管) */
   private ConnectionManager manager;
+  /** 调用逻辑 */
+  private BaseRemoting remoting;
 
   public ReqCliProxy(ConnectionManager manager) {
     ivkCaches = new ConcurrentHashMap<>();
     methodProxy = new SendProxyInvoker(this);
     rpcMethodInfos = new ConcurrentHashMap<>();
+    remoting = new BaseRemoting();
+    this.manager = manager;
   }
 
   /**
@@ -87,18 +90,36 @@ public class ReqCliProxy {
     return infos.get(method);
   }
 
+  /**
+   * 获取代理对象
+   *
+   * @param address ip地址
+   * @param clz 代理接口
+   * @since 2021年08月26日 16:29:36
+   */
   @SuppressWarnings("unchecked")
-  public <T> T getProxy(Class<T> clz) {
+  public <T> T getProxy(String address, Class<T> clz) {
     T proxy = (T) ivkCaches.get(clz);
-    if (proxy != null) {
-      return proxy;
-    } else {
-      T insta = (T) Proxy.newProxyInstance(clz.getClassLoader(), new Class[]{clz}, methodProxy);
-      ivkCaches.putIfAbsent(clz, insta);
-      return insta;
+    SendProxyInvoker invoker = resetProxy();
+    if (proxy == null) {
+      proxy = (T) Proxy.newProxyInstance(clz.getClassLoader(), new Class[]{clz}, invoker);
+      ivkCaches.putIfAbsent(clz, proxy);
     }
+
+    Connection connection = manager.connection(address);
+    if (connection != null) {
+      invoker.connections.set(Collections.singleton(connection));
+    } else {
+      logger.error("{} 未链接", address);
+    }
+
+    return proxy;
   }
 
+  private SendProxyInvoker resetProxy() {
+    methodProxy.connections.set(Collections.emptyList());
+    return methodProxy;
+  }
 
   /**
    * 这个最后在测试吧
@@ -109,16 +130,17 @@ public class ReqCliProxy {
   private static class SendProxyInvoker implements InvocationHandler {
 
     private ReqCliProxy rpcClientProxy;
-    private ThreadLocal<Iterable<Connection>> serverIds;
+    private ThreadLocal<Iterable<Connection>> connections;
 
     public SendProxyInvoker(ReqCliProxy rpcClientProxy) {
       this.rpcClientProxy = rpcClientProxy;
+      this.connections = ThreadLocal.withInitial(Collections::emptyList);
     }
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
       if (method.getDeclaringClass() == Object.class) {
-        return method.invoke(proxy, args);
+        return method.invoke(this, args);
       } else {
         ReqMetaMethodInfo info = rpcClientProxy
             .getRpcMetaMethodInfo(method.getDeclaringClass(), method);
@@ -130,8 +152,8 @@ public class ReqCliProxy {
 
         Message message = Message.of(info.id()).packet(args);
 
-        for (Connection connection : serverIds.get()) {
-          connection.channel().writeAndFlush(message);
+        for (Connection connection : connections.get()) {
+          rpcClientProxy.remoting.invoke(connection, message);
         }
 
         return defaultReturn(method);
