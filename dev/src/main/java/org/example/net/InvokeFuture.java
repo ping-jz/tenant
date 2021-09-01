@@ -4,6 +4,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.example.net.InvokeCallback.DefaultCallBack;
 
 /**
  * 回调任务
@@ -15,12 +16,12 @@ public class InvokeFuture<T> {
 
   /** 回调ID */
   private int id;
-  /** 回调 */
-  private InvokeCallback<Message> callback;
   /** 返回消息 */
-  private Message message;
+  private volatile Message message;
   /** 结果 */
   private Object result;
+  /** 回调 */
+  private volatile InvokeCallback<Message> callback;
   /** 异常 */
   private Throwable cause;
   /** 超时任务 */
@@ -68,6 +69,31 @@ public class InvokeFuture<T> {
     latch.countDown();
   }
 
+
+  /**
+   * 只处理成功的结果，成功的判断请看{@link Message#isSuc()},如果需要完整的流程，使用{@link InvokeFuture#onMsg(InvokeCallback)}
+   *
+   * @param callback 回调方法
+   * @since 2021年09月01日 18:05:17
+   */
+  public void onSuc(DefaultCallBack<T> callback) {
+    onMsg(callback);
+  }
+
+  /**
+   * 当回调完成时,如果此Future已完成。则在调用者线程执行
+   *
+   * @param callback 回调方法
+   * @since 2021年09月01日 18:05:17
+   */
+  public void onMsg(InvokeCallback<Message> callback) {
+    this.callback = callback;
+    if (message != null) {
+      executeCallBack();
+    }
+  }
+
+
   public void putCause(Throwable cause) {
     this.cause = cause;
     latch.countDown();
@@ -83,7 +109,7 @@ public class InvokeFuture<T> {
     if (callback != null) {
       if (executeCallbackOnlyOnce.compareAndSet(false, true)) {
         try {
-          callback.onResponse(message);
+          callback.onMessage(message);
         } catch (Exception e) {
           callback.onException(e);
         }

@@ -2,6 +2,7 @@ package org.example.net.proxy;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.example.common.ThreadCommonResource;
@@ -129,7 +130,7 @@ public class ReqCliProxyTest {
   }
 
   @Test
-  void callBackTest() throws InterruptedException {
+  void futureTest() throws InterruptedException {
     String hi = "Hi";
     CallBackReq req = proxy.getProxy(address, CallBackReq.class);
     List<InvokeFuture<String>> futures = new ArrayList<>(invokeTimes);
@@ -148,7 +149,7 @@ public class ReqCliProxyTest {
   }
 
   @Test
-  void callBackArgsTest() throws InterruptedException {
+  void futureArgsTest() throws InterruptedException {
     CallBackReq req = proxy.getProxy(address, CallBackReq.class);
     List<InvokeFuture<Long>> futures = new ArrayList<>(invokeTimes);
 
@@ -162,6 +163,39 @@ public class ReqCliProxyTest {
       Assertions.assertEquals(2012L, message.packet());
     }
 
+    Assertions.assertEquals(invokeTimes, serFacade.integer.get());
+  }
+
+  @Test
+  void callBackArgsTest() throws InterruptedException {
+    CallBackReq req = proxy.getProxy(address, CallBackReq.class);
+    CountDownLatch latch = new CountDownLatch(invokeTimes);
+    long answer = 2012;
+    for (int i = 0; i < invokeTimes; i++) {
+      req.callBackArgs("Hi", i, answer).onSuc(l -> {
+        Assertions.assertEquals(answer, l);
+        latch.countDown();
+      });
+    }
+
+    Assertions.assertTrue(latch.await(1000, TimeUnit.MILLISECONDS));
+    Assertions.assertEquals(invokeTimes, serFacade.integer.get());
+  }
+
+  @Test
+  void callBackArgsMessageTest() throws InterruptedException {
+    CallBackReq req = proxy.getProxy(address, CallBackReq.class);
+    CountDownLatch latch = new CountDownLatch(invokeTimes);
+    long answer = 2012;
+    for (int i = 0; i < invokeTimes; i++) {
+      req.callBackArgs("Hi", i, answer).onMsg(msg -> {
+        Assertions.assertTrue(msg.isSuc());
+        Assertions.assertEquals(answer, msg.packet());
+        latch.countDown();
+      });
+    }
+
+    Assertions.assertTrue(latch.await(1000, TimeUnit.MILLISECONDS));
     Assertions.assertEquals(invokeTimes, serFacade.integer.get());
   }
 
