@@ -51,7 +51,12 @@ public class Message {
     return packet;
   }
 
-  public Message packet(Object packet) {
+  public Message packet(Object o) {
+    this.packet = o;
+    return this;
+  }
+
+  public Message packets(Object... packet) {
     this.packet = packet;
     return this;
   }

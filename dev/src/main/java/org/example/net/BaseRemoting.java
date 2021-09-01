@@ -35,33 +35,33 @@ public class BaseRemoting {
    * @param timeout 超时时间
    * @since 2021年08月15日 15:45:03
    */
-  public InvokeFuture invokeWithFuture(final Connection conn, final Message message,
+  public <T> InvokeFuture<T> invokeWithFuture(final Connection conn, final Message message,
       final long timeout) {
-    final InvokeFuture future = new InvokeFuture(message.msgId());
+    final InvokeFuture<T> future = new InvokeFuture<>(message.msgId());
     final int msgId = message.msgId();
     conn.addInvokeFuture(future);
     try {
       Future<?> timeoutFuture = conn.channel().eventLoop().schedule(() -> {
-        InvokeFuture f = conn.removeInvokeFuture(msgId);
+        InvokeFuture<T> f = conn.removeInvokeFuture(msgId);
         if (f != null) {
-          f.putResult(Message.of().status(MessageStatus.TIMEOUT));
+          f.putMessage(Message.of().status(MessageStatus.TIMEOUT));
         }
       }, timeout, TimeUnit.MILLISECONDS);
       future.addTimeout(timeoutFuture);
 
       conn.channel().writeAndFlush(message).addListener(cf -> {
         if (!cf.isSuccess()) {
-          InvokeFuture f = conn.removeInvokeFuture(msgId);
+          InvokeFuture<T> f = conn.removeInvokeFuture(msgId);
           if (f != null) {
             f.cancelTimeout();
-            f.putResult(Message.of().status(MessageStatus.SEND_ERROR));
+            f.putMessage(Message.of().status(MessageStatus.SEND_ERROR));
           }
           logger.error("Invoke send failed. The address is {}",
               conn.channel().remoteAddress(), cf.cause());
         }
       });
     } catch (Exception e) {
-      InvokeFuture f = conn.removeInvokeFuture(msgId);
+      InvokeFuture<T> f = conn.removeInvokeFuture(msgId);
       if (f != null) {
         f.cancelTimeout();
         f.putCause(e);
@@ -85,14 +85,14 @@ public class BaseRemoting {
   public void invokeWithCallBack(final Connection conn, final Message message,
       InvokeCallback<?> callback,
       final long timeout) {
-    final InvokeFuture future = new InvokeFuture(message.msgId(), callback);
+    final InvokeFuture<?> future = new InvokeFuture(message.msgId(), callback);
     final int msgId = message.msgId();
     conn.addInvokeFuture(future);
     try {
       Future<?> timeoutFuture = conn.channel().eventLoop().schedule(() -> {
-        InvokeFuture f = conn.removeInvokeFuture(msgId);
+        InvokeFuture<?> f = conn.removeInvokeFuture(msgId);
         if (f != null) {
-          f.putResult(Message.of().status(MessageStatus.TIMEOUT));
+          f.putMessage(Message.of().status(MessageStatus.TIMEOUT));
           f.executeCallBack();
         }
       }, timeout, TimeUnit.MILLISECONDS);
@@ -100,10 +100,10 @@ public class BaseRemoting {
 
       conn.channel().writeAndFlush(message).addListener(cf -> {
         if (!cf.isSuccess()) {
-          InvokeFuture f = conn.removeInvokeFuture(msgId);
+          InvokeFuture<?> f = conn.removeInvokeFuture(msgId);
           if (f != null) {
             f.cancelTimeout();
-            f.putResult(Message.of().status(MessageStatus.SEND_ERROR));
+            f.putMessage(Message.of().status(MessageStatus.SEND_ERROR));
             f.executeCallBack();
           }
           logger.error("Invoke send failed. The address is {}",
@@ -111,10 +111,10 @@ public class BaseRemoting {
         }
       });
     } catch (Exception e) {
-      InvokeFuture f = conn.removeInvokeFuture(msgId);
+      InvokeFuture<?> f = conn.removeInvokeFuture(msgId);
       if (f != null) {
         f.cancelTimeout();
-        f.putResult(Message.of().status(MessageStatus.SEND_ERROR));
+        f.putMessage(Message.of().status(MessageStatus.SEND_ERROR));
         f.putCause(e);
         f.executeThrowAble();
       }

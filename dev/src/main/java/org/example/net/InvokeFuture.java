@@ -11,44 +11,60 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author ZJP
  * @since 2021年08月14日 19:39:25
  **/
-public class InvokeFuture {
+public class InvokeFuture<T> {
 
   /** 回调ID */
   private int id;
   /** 回调 */
-  private InvokeCallback<Object> callback;
+  private InvokeCallback<Message> callback;
+  /** 返回消息 */
+  private Message message;
   /** 结果 */
-  private Message result;
+  private Object result;
   /** 异常 */
   private Throwable cause;
   /** 超时任务 */
   private Future<?> timeout;
   /** 执行标记 */
-  private final AtomicBoolean executeCallbackOnlyOnce = new AtomicBoolean(false);
+  private AtomicBoolean executeCallbackOnlyOnce;
+  /** 同步组件 */
+  private CountDownLatch latch;
 
-  private final CountDownLatch latch = new CountDownLatch(1);
-
-  public InvokeFuture(int invokeId) {
-    id = invokeId;
+  public static <T> InvokeFuture<T> withResult(T t) {
+    InvokeFuture<T> result = new InvokeFuture<>();
+    result.result = t;
+    return result;
   }
 
-  public InvokeFuture(int invokeId, InvokeCallback<?> callback) {
+  private InvokeFuture() {
+    executeCallbackOnlyOnce = new AtomicBoolean(true);
+    latch = new CountDownLatch(0);
+  }
+
+  public InvokeFuture(int invokeId) {
+    this(invokeId, null);
+  }
+
+  public InvokeFuture(int invokeId, InvokeCallback<Message> callback) {
     id = invokeId;
-    this.callback = (InvokeCallback<Object>) callback;
+    latch = new CountDownLatch(1);
+    executeCallbackOnlyOnce = new AtomicBoolean(false);
+    this.callback = callback;
   }
 
   public Message waitResponse(long timeoutMillis) throws InterruptedException {
     latch.await(timeoutMillis, TimeUnit.MILLISECONDS);
-    return result;
+    return message;
   }
 
   public Message waitResponse() throws InterruptedException {
     latch.await();
-    return result;
+    return message;
   }
 
-  public void putResult(Message response) {
-    result = response;
+  public void putMessage(Message response) {
+    message = response;
+    result = response.packet();
     latch.countDown();
   }
 
@@ -67,7 +83,7 @@ public class InvokeFuture {
     if (callback != null) {
       if (executeCallbackOnlyOnce.compareAndSet(false, true)) {
         try {
-          callback.onResponse(result);
+          callback.onResponse(message);
         } catch (Exception e) {
           callback.onException(e);
         }
@@ -86,9 +102,12 @@ public class InvokeFuture {
     }
   }
 
-
   public boolean isDone() {
     return latch.getCount() <= 0;
+  }
+
+  public T result() {
+    return (T) result;
   }
 
   public int id() {

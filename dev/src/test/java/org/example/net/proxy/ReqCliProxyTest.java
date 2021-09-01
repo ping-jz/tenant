@@ -1,5 +1,7 @@
 package org.example.net.proxy;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.example.common.ThreadCommonResource;
@@ -7,7 +9,10 @@ import org.example.net.CrossDispatcher;
 import org.example.net.DispatcherHandler;
 import org.example.net.Facade;
 import org.example.net.HelloWorld;
+import org.example.net.InvokeFuture;
+import org.example.net.Message;
 import org.example.net.ReqMethod;
+import org.example.net.ReqModule;
 import org.example.net.client.ReqClient;
 import org.example.net.handler.HandlerRegistry;
 import org.example.net.server.ReqServer;
@@ -25,11 +30,17 @@ public class ReqCliProxyTest {
 
   private static ThreadCommonResource resource;
 
+  /** 服务端消息处理 */
   private SerHelloWorldFacade serFacade;
+  /** 客户端消息处理 */
   private CliHelloWorldFacade cliFacade;
+  /** 服务端 */
   private ReqServer rpcServer;
+  /** 客户端 */
   private ReqClient rpcClient;
+  /** 请求代理 */
   private ReqCliProxy proxy;
+  /** 服务端地址 */
   private String address;
 
   private final int invokeTimes = 5;
@@ -117,9 +128,53 @@ public class ReqCliProxyTest {
     Assertions.assertEquals(invokeTimes, cliFacade.integer.get());
   }
 
+  @Test
+  void callBackTest() throws InterruptedException {
+    String hi = "Hi";
+    CallBackReq req = proxy.getProxy(address, CallBackReq.class);
+    List<InvokeFuture<String>> futures = new ArrayList<>(invokeTimes);
 
-  /** 测试 */
-  public static final int TEST_REQ = -1;
+    for (int i = 0; i < invokeTimes; i++) {
+      futures.add(req.callBack(hi));
+    }
+
+    for (InvokeFuture<String> callBack : futures) {
+      Message message = callBack.waitResponse();
+      Assertions.assertTrue(message.isSuc());
+      Assertions.assertEquals(hi, message.packet());
+    }
+
+    Assertions.assertEquals(invokeTimes, serFacade.integer.get());
+  }
+
+  @Test
+  void callBackArgsTest() throws InterruptedException {
+    CallBackReq req = proxy.getProxy(address, CallBackReq.class);
+    List<InvokeFuture<Long>> futures = new ArrayList<>(invokeTimes);
+
+    for (int i = 0; i < invokeTimes; i++) {
+      futures.add(req.callBackArgs("Hi", i, 2012L));
+    }
+
+    for (InvokeFuture<Long> callBack : futures) {
+      Message message = callBack.waitResponse();
+      Assertions.assertTrue(message.isSuc());
+      Assertions.assertEquals(2012L, message.packet());
+    }
+
+    Assertions.assertEquals(invokeTimes, serFacade.integer.get());
+  }
+
+  /** 回调 */
+  private static final int CALL_BACK = 200;
+
+  @ReqModule(CALL_BACK)
+  interface CallBackReq {
+
+    InvokeFuture<String> callBack(String str);
+
+    InvokeFuture<Long> callBackArgs(String str, Integer i, Long a);
+  }
 
   /**
    * 世界你好，门面
@@ -128,20 +183,9 @@ public class ReqCliProxyTest {
    * @since 2021年07月22日 21:58:02
    **/
   @Facade
-  private static class SerHelloWorldFacade implements HelloWorld {
-
+  private static class SerHelloWorldFacade implements HelloWorld, CallBackReq {
 
     public AtomicInteger integer = new AtomicInteger();
-
-
-    /**
-     * 测试
-     */
-    @ReqMethod(TEST_REQ)
-    public String push(String str) {
-      integer.incrementAndGet();
-      return str;
-    }
 
     @Override
     public Object echo(Object o) {
@@ -152,6 +196,18 @@ public class ReqCliProxyTest {
     @Override
     public void doNothing() {
       integer.incrementAndGet();
+    }
+
+    @Override
+    public InvokeFuture<String> callBack(String str) {
+      integer.incrementAndGet();
+      return InvokeFuture.withResult(str);
+    }
+
+    @Override
+    public InvokeFuture<Long> callBackArgs(String str, Integer i, Long a) {
+      integer.incrementAndGet();
+      return InvokeFuture.withResult(a);
     }
   }
 

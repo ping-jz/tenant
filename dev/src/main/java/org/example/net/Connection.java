@@ -26,21 +26,20 @@ public class Connection {
   /** a netty channel */
   private Channel channel;
   /** callBack future */
-  private final ConcurrentHashMap<Integer, InvokeFuture> invokeFutures = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<Integer, InvokeFuture<?>> invokeFutures = new ConcurrentHashMap<>();
 
-  public InvokeFuture addInvokeFuture(InvokeFuture future) {
+  public <T> InvokeFuture<T> addInvokeFuture(InvokeFuture<T> future) {
     if (isActive()) {
-      return invokeFutures.putIfAbsent(future.id(), future);
+      return (InvokeFuture<T>) invokeFutures.putIfAbsent(future.id(), future);
     } else {
       closeFuture(future);
       return null;
     }
   }
 
-  public InvokeFuture removeInvokeFuture(int msgId) {
-    return invokeFutures.remove(msgId);
+  public <T> InvokeFuture<T> removeInvokeFuture(int msgId) {
+    return (InvokeFuture<T>) invokeFutures.remove(msgId);
   }
-
 
   public Connection(Channel channel, String address) {
     this.channel = channel;
@@ -65,15 +64,15 @@ public class Connection {
       channel.close();
     }
 
-    for (InvokeFuture future : invokeFutures.values()) {
+    for (InvokeFuture<?> future : invokeFutures.values()) {
       closeFuture(future);
     }
     invokeFutures.clear();
   }
 
-  private void closeFuture(InvokeFuture future) {
+  private void closeFuture(InvokeFuture<?> future) {
     try {
-      future.putResult(Message.of().status(MessageStatus.CLOSE));
+      future.putMessage(Message.of().status(MessageStatus.CLOSE));
       future.cancelTimeout();
       future.executeCallBack();
     } catch (Exception e) {

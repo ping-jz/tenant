@@ -3,6 +3,7 @@ package org.example.net.proxy;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +12,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.example.net.BaseRemoting;
 import org.example.net.Connection;
 import org.example.net.ConnectionManager;
+import org.example.net.InvokeFuture;
 import org.example.net.Message;
+import org.example.net.MessageIdGenerator;
 import org.example.net.ReqModule;
 import org.example.util.Pair;
 import org.slf4j.Logger;
@@ -130,7 +133,7 @@ public class ReqCliProxy {
   private static class SendProxyInvoker implements InvocationHandler {
 
     private ReqCliProxy rpcClientProxy;
-    private ThreadLocal<Iterable<Connection>> connections;
+    private ThreadLocal<Collection<Connection>> connections;
 
     public SendProxyInvoker(ReqCliProxy rpcClientProxy) {
       this.rpcClientProxy = rpcClientProxy;
@@ -149,15 +152,45 @@ public class ReqCliProxy {
               String.format("类型:%s 方法:%s，不是RPC方法", method.getDeclaringClass(),
                   method.getName()));
         }
+        Collection<Connection> conns = connections.get();
 
-        Message message = Message.of(info.id()).packet(args);
-
-        for (Connection connection : connections.get()) {
-          rpcClientProxy.remoting.invoke(connection, message);
+        if (conns.isEmpty()) {
+          rpcClientProxy.logger.error("[{}][{}],无链接", info.id(), method.getName());
+          return defaultReturn(method);
         }
 
-        return defaultReturn(method);
+        boolean isCallBack = method.getReturnType() == InvokeFuture.class;
+        if (isCallBack) {
+          if (1 < conns.size()) {
+            throw new RuntimeException(
+                String.format("类型:%s 方法:%s，广播不能走回调", method.getDeclaringClass(),
+                    method.getName()));
+          }
+
+          Message message = Message.of(info.id()).msgId(MessageIdGenerator.nextId()).packets(args);
+          Connection connection = conns.iterator().next();
+          return rpcClientProxy.remoting
+              .invokeWithFuture(connection, message, getInvokeTimeOut(method, info));
+        } else {
+          Message message = Message.of(info.id()).packets(args);
+          for (Connection connection : conns) {
+            rpcClientProxy.remoting.invoke(connection, message);
+          }
+          return defaultReturn(method);
+        }
       }
+    }
+
+    /**
+     * 获取回调超时
+     *
+     * @param method 调用方法
+     * @param info 方法信息
+     * @since 2021年08月31日 12:12:31
+     */
+    private long getInvokeTimeOut(Method method, ReqMetaMethodInfo info) {
+      //先写死
+      return 3000L;
     }
 
     private Object defaultReturn(Method method) {

@@ -68,9 +68,9 @@ public class CrossDispatcher implements Dispatcher {
       return;
     }
 
-    InvokeFuture future = connection.removeInvokeFuture(msg.msgId());
+    InvokeFuture<?> future = connection.removeInvokeFuture(msg.msgId());
     if (future != null) {
-      future.putResult(msg);
+      future.putMessage(msg);
       future.cancelTimeout();
       try {
         future.executeCallBack();
@@ -99,6 +99,8 @@ public class CrossDispatcher implements Dispatcher {
         Object result = null;
         if (msg.packet() == null) {
           result = handler.invoke();
+        } else if (msg.packet().getClass().isArray()) {
+          result = handler.invoke((Object[]) msg.packet());
         } else {
           result = handler.invoke(msg.packet());
         }
@@ -108,7 +110,7 @@ public class CrossDispatcher implements Dispatcher {
               .of(Math.negateExact(msg.proto()))
               .msgId(msg.msgId())
               .status(MessageStatus.SUCCESS)
-              .packet(result);
+              .packet(extractResult(result));
           channel.write(response);
         }
       } else {
@@ -126,6 +128,20 @@ public class CrossDispatcher implements Dispatcher {
       }
       logger.error("from:{}, proto:{}, handler error", channel.remoteAddress(), msg.proto(), e);
     }
+  }
+
+  /**
+   * 处理特殊返回值，如{@link InvokeFuture}
+   *
+   * @param obj 调用返回值
+   * @since 2021年08月31日 15:49:56
+   */
+  private Object extractResult(Object obj) {
+    Object res = obj;
+    if (obj instanceof InvokeFuture) {
+      res = ((InvokeFuture<?>) obj).result();
+    }
+    return res;
   }
 
 
