@@ -54,7 +54,6 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
 
     int length = in.getInt(in.readerIndex());
     if (length <= 0) {
-      out.clear();
       throw new RuntimeException(String
           .format("address:%s, Body Size is incorrect:%s", ctx.channel().remoteAddress(),
               length));
