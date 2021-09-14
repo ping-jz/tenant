@@ -1,6 +1,7 @@
-module org.exmaple.dev {
+open module org.exmaple.dev {
   requires java.annotation;
   requires java.management;
+  requires java.scripting;
   requires spring.core;
   requires spring.context;
   requires spring.beans;
