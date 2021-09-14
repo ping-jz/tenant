@@ -48,19 +48,19 @@ public class ReqCliProxyTest {
 
 
   @BeforeAll
-  static void beforeAll() {
+  public static void beforeAll() {
     resource = new ThreadCommonResource();
   }
 
   @AfterAll
-  static void afterAll() {
+  public static void afterAll() {
     if (resource != null) {
       resource.close();
     }
   }
 
   @BeforeEach
-  void start() throws Exception {
+  public void start() throws Exception {
     Serializer<Object> serializer = createSerializer();
 
     {
@@ -96,7 +96,7 @@ public class ReqCliProxyTest {
   }
 
   @AfterEach
-  void close() {
+  public void close() {
     if (rpcServer != null) {
       rpcServer.close();
     }
@@ -107,7 +107,7 @@ public class ReqCliProxyTest {
   }
 
   @Test
-  void doNothingTest() throws Exception {
+  public void doNothingTest() throws Exception {
     HelloWorld world = proxy.getProxy(address, HelloWorld.class);
     for (int i = 0; i < invokeTimes; i++) {
       world.doNothing();
@@ -118,7 +118,7 @@ public class ReqCliProxyTest {
   }
 
   @Test
-  void echoTest() throws Exception {
+  public void echoTest() throws Exception {
     HelloWorld world = proxy.getProxy(address, HelloWorld.class);
     for (int i = 0; i < invokeTimes; i++) {
       world.echo("hi");
@@ -130,7 +130,7 @@ public class ReqCliProxyTest {
   }
 
   @Test
-  void futureTest() throws InterruptedException {
+  public void futureTest() throws InterruptedException {
     String hi = "Hi";
     CallBackReq req = proxy.getProxy(address, CallBackReq.class);
     List<InvokeFuture<String>> futures = new ArrayList<>(invokeTimes);
@@ -149,7 +149,7 @@ public class ReqCliProxyTest {
   }
 
   @Test
-  void futureArgsTest() throws InterruptedException {
+  public void futureArgsTest() throws InterruptedException {
     CallBackReq req = proxy.getProxy(address, CallBackReq.class);
     List<InvokeFuture<Long>> futures = new ArrayList<>(invokeTimes);
 
@@ -167,7 +167,7 @@ public class ReqCliProxyTest {
   }
 
   @Test
-  void callBackArgsTest() throws InterruptedException {
+  public void callBackArgsTest() throws InterruptedException {
     CallBackReq req = proxy.getProxy(address, CallBackReq.class);
     CountDownLatch latch = new CountDownLatch(invokeTimes);
     long answer = 2012;
@@ -183,7 +183,7 @@ public class ReqCliProxyTest {
   }
 
   @Test
-  void callBackArgsMessageTest() throws InterruptedException {
+  public void callBackArgsMessageTest() throws InterruptedException {
     CallBackReq req = proxy.getProxy(address, CallBackReq.class);
     CountDownLatch latch = new CountDownLatch(invokeTimes);
     long answer = 2012;

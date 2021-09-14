@@ -18,7 +18,7 @@ public class ArraySerializerTest {
   private ByteBuf buf;
 
   @BeforeEach
-  private void beforeEach() {
+  public void beforeEach() {
     serializer = new CommonSerializer();
     serializer.registerSerializer(10, Object.class, new MarkSerializer());
     serializer.registerSerializer(11, ArrayWrapper.class);
@@ -26,7 +26,7 @@ public class ArraySerializerTest {
   }
 
   @Test
-  void oneDimensionsCheckTest() {
+  public void oneDimensionsCheckTest() {
     int[] array = {};
     assertArrayEquals(new int[]{0}, ArraySerializer.getDimensions(array));
     int[] arrayTwo = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
@@ -34,20 +34,20 @@ public class ArraySerializerTest {
   }
 
   @Test
-  void fourDimensionsCheckTest() {
+  public void fourDimensionsCheckTest() {
     int[][][][] array = new int[3][2][4][6];
     assertArrayEquals(new int[]{3, 2, 4, 6}, ArraySerializer.getDimensions(array));
   }
 
   @Test
-  void diffLengthDimensionCheckTest() {
+  public void diffLengthDimensionCheckTest() {
     int[][][][] array = new int[2][2][4][6];
     array[0] = new int[10][11][12];
     assertThrows(RuntimeException.class, () -> ArraySerializer.getDimensions(array));
   }
 
   @Test
-  void emptyArrayTest() {
+  public void emptyArrayTest() {
     int[] test = {};
     serializer.writeObject(buf, test);
 
@@ -56,7 +56,7 @@ public class ArraySerializerTest {
   }
 
   @Test
-  void simpleArrayTest() {
+  public void simpleArrayTest() {
     int[] test = {1999999, 1999922, 199999955, 19999444, 1999999, 1999999, 1999999, 1999999,
         1999999, 3999999};
     serializer.writeObject(buf, test);
@@ -66,7 +66,7 @@ public class ArraySerializerTest {
   }
 
   @Test
-  void twoDimensionIntArrayTest() {
+  public void twoDimensionIntArrayTest() {
     int[][] test = {{1, 10}, {10, 1}};
     serializer.writeObject(buf, test);
     int[][] res = serializer.read(buf);
@@ -74,7 +74,7 @@ public class ArraySerializerTest {
   }
 
   @Test
-  void threeDimensionDoubleArrayTest() {
+  public void threeDimensionDoubleArrayTest() {
     Random random = ThreadLocalRandom.current();
     double[][][] test = new double[2][3][4];
     for (int o = 0; o < 2; o++) {
@@ -90,7 +90,7 @@ public class ArraySerializerTest {
   }
 
   @Test
-  void fourDimensionStringArrayTest() {
+  public void fourDimensionStringArrayTest() {
     Random random = ThreadLocalRandom.current();
     String[][][][] test = new String[1][2][3][4];
     for (int f = 0; f < 1; f++) {
@@ -113,7 +113,7 @@ public class ArraySerializerTest {
   }
 
   @Test
-  void fourDimensionObjectArrayTest() {
+  public void fourDimensionObjectArrayTest() {
     Random random = ThreadLocalRandom.current();
     int one = 5, two = 2, three = 3, four = 4;
     ArrayWrapper[][][][] test = new ArrayWrapper[one][two][three][four];
@@ -148,7 +148,7 @@ public class ArraySerializerTest {
   }
 
   @Test
-  void objectArraySerializerTest() {
+  public void objectArraySerializerTest() {
     Object[] objects = {1, 2L, "asdfasdf", new ArrayWrapper()};
 
     serializer.writeObject(buf, objects);

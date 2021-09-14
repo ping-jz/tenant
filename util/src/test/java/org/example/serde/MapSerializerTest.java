@@ -21,7 +21,7 @@ public class MapSerializerTest {
   private ByteBuf buf;
 
   @BeforeEach
-  void beforeEach() {
+  public void beforeEach() {
     serializer = new CommonSerializer();
     buf = Unpooled.buffer();
 
@@ -31,7 +31,7 @@ public class MapSerializerTest {
   }
 
   @Test
-  void intDoubleHashMapTest() {
+  public void intDoubleHashMapTest() {
     Random random = ThreadLocalRandom.current();
     Map<Integer, Double> col = new HashMap<>();
     int size = random.nextInt(Short.MAX_VALUE);
@@ -45,7 +45,7 @@ public class MapSerializerTest {
   }
 
   @Test
-  void strCollectionLinkedHashMapTest() {
+  public void strCollectionLinkedHashMapTest() {
     Random random = ThreadLocalRandom.current();
     Map<String, Double> col = new LinkedHashMap<>();
     int size = random.nextInt(Short.MAX_VALUE);
@@ -59,7 +59,7 @@ public class MapSerializerTest {
   }
 
   @Test
-  void colCollectionTreeMapTest() {
+  public void colCollectionTreeMapTest() {
     Random random = ThreadLocalRandom.current();
     Map<Integer, Map<String, Double>> col = new TreeMap<>();
     int size = Byte.MAX_VALUE;

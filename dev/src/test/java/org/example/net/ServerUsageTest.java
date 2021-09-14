@@ -34,19 +34,19 @@ public class ServerUsageTest {
 
 
   @BeforeAll
-  static void beforeAll() {
+  public static void beforeAll() {
     resource = new ThreadCommonResource();
   }
 
   @AfterAll
-  static void afterAll() {
+  public static void afterAll() {
     if (resource != null) {
       resource.close();
     }
   }
 
   @BeforeEach
-  void start() throws Exception {
+  public void start() throws Exception {
     rpcServer = new ReqServer();
 
     Serializer<Object> serializer = new CommonSerializer();
@@ -66,7 +66,7 @@ public class ServerUsageTest {
   }
 
   @AfterEach
-  void close() {
+  public void close() {
     if (rpcServer != null) {
       rpcServer.close();
     }

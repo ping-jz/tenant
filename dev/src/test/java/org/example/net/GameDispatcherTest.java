@@ -21,7 +21,7 @@ public class GameDispatcherTest {
   private static CommonSerializer serializer;
 
   @BeforeAll
-  static void init() {
+  public static void init() {
     HandlerRegistry registry = new HandlerRegistry();
     registry.registeHandlers(registry.findHandler(new HelloWorldFacade()));
     dispatcher = new GameDispatcher(LoggerFactory.getLogger(Dispatcher.class), registry);
@@ -29,7 +29,7 @@ public class GameDispatcherTest {
   }
 
   @Test
-  void helloWorldTest() {
+  public void helloWorldTest() {
     EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(Integer.BYTES, serializer));
 
     Message echoRequest = new Message();
@@ -52,7 +52,7 @@ public class GameDispatcherTest {
   }
 
   @Test
-  void multiHelloWorldTest() {
+  public void multiHelloWorldTest() {
     EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(Integer.BYTES, serializer));
 
     for (int i = 0; i < 5; i++) {

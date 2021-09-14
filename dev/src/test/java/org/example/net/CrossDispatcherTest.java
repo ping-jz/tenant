@@ -38,19 +38,19 @@ public class CrossDispatcherTest {
 
 
   @BeforeAll
-  static void beforeAll() {
+  public static void beforeAll() {
     resource = new ThreadCommonResource();
   }
 
   @AfterAll
-  static void afterAll() {
+  public static void afterAll() {
     if (resource != null) {
       resource.close();
     }
   }
 
   @BeforeEach
-  void start() throws Exception {
+  public void start() throws Exception {
     rpcServer = new ReqServer();
     crossFacade = new CrossHelloWorldFacade();
     HandlerRegistry serverRegistry = new HandlerRegistry();
@@ -71,7 +71,7 @@ public class CrossDispatcherTest {
   }
 
   @AfterEach
-  void close() {
+  public void close() {
     if (rpcServer != null) {
       rpcServer.close();
     }
@@ -97,7 +97,7 @@ public class CrossDispatcherTest {
     String helloWorld = "Hello World";
     long timeOut = 1000;
     for (int i = 0; i < invokeTimes; i++) {
-      InvokeFuture messageFuture = rpcClient.invokeWithFuture(address,
+      InvokeFuture<?> messageFuture = rpcClient.invokeWithFuture(address,
           new Message().proto(CrossDispatcherTest.ECHO).packet(helloWorld), timeOut);
       Message message = messageFuture.waitResponse(timeOut);
       assertNotNull(message);
@@ -115,7 +115,7 @@ public class CrossDispatcherTest {
     String helloWorld = "Hello World";
     long timeOut = 1000;
     for (int i = 0; i < invokeTimes; i++) {
-      InvokeFuture messageFuture = rpcClient.invokeWithFuture(address,
+      InvokeFuture<?> messageFuture = rpcClient.invokeWithFuture(address,
           new Message().proto(CrossDispatcherTest.ECHO).packet(helloWorld), 0);
       Message message = messageFuture.waitResponse(timeOut);
       assertNotNull(message);
@@ -123,7 +123,7 @@ public class CrossDispatcherTest {
       assertEquals(message.status(), MessageStatus.TIMEOUT.status());
     }
 
-    TimeUnit.MILLISECONDS.sleep(10);
+    TimeUnit.MILLISECONDS.sleep(100);
     assertTrue(rpcClient.getConnection(address).isActive());
     assertEquals(invokeTimes, crossFacade.invokeTimes());
   }

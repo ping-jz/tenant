@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 public class NettyByteBufUtilTest {
 
   @Test
-  void varaint64Test() {
+  public void varaint64Test() {
     ByteBuf buf = Unpooled.buffer();
     for (long i = -10000000L; i <= 10000000L; i++) {
       buf.clear();
@@ -25,7 +25,7 @@ public class NettyByteBufUtilTest {
   }
 
   @Test
-  void varaint64SlowTest() {
+  public void varaint64SlowTest() {
     ByteBuf buf = Unpooled.buffer();
     for (long i = -10000000L; i <= 10000000L; i++) {
       buf.clear();
@@ -35,7 +35,7 @@ public class NettyByteBufUtilTest {
   }
 
   @Test
-  void zigZag64Test() {
+  public void zigZag64Test() {
     for (long i = -10000000L; i <= 10000000L; i++) {
       long encoded = NettyByteBufUtil.encodeZigZag64(i);
       assertEquals(i, NettyByteBufUtil.decodeZigZag64(encoded));
@@ -43,7 +43,7 @@ public class NettyByteBufUtilTest {
   }
 
   @Test
-  void int64Test() {
+  public void int64Test() {
     ByteBuf buf = Unpooled.buffer();
     for (long i = -10000000L; i <= 10000000L; i++) {
       buf.clear();
@@ -61,7 +61,7 @@ public class NettyByteBufUtilTest {
   }
 
   @Test
-  void zigZag32Test() {
+  public void zigZag32Test() {
     for (int i = -10000000; i <= 10000000; i++) {
       int encoded = NettyByteBufUtil.encodeZigZag32(i);
       assertEquals(i, NettyByteBufUtil.decodeZigZag32(encoded));
@@ -69,7 +69,7 @@ public class NettyByteBufUtilTest {
   }
 
   @Test
-  void varaint32Test() {
+  public void varaint32Test() {
     ByteBuf buf = Unpooled.buffer();
     for (int i = -10000000; i <= 10000000; i++) {
       buf.clear();
@@ -79,7 +79,7 @@ public class NettyByteBufUtilTest {
   }
 
   @Test
-  void int32Test() {
+  public void int32Test() {
     ByteBuf buf = Unpooled.buffer();
     for (int i = -10000000; i <= 10000000; i++) {
       buf.clear();

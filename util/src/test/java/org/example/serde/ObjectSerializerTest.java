@@ -20,13 +20,13 @@ public class ObjectSerializerTest {
   private ByteBuf buf;
 
   @BeforeEach
-  void before() {
+  public void before() {
     serializer = new CommonSerializer();
     buf = Unpooled.buffer();
   }
 
   @Test
-  void checkTest() {
+  public void checkTest() {
     //primitive check
     assertThrows(RuntimeException.class, () -> ObjectSerializer.checkClass(Integer.TYPE));
 
@@ -52,7 +52,7 @@ public class ObjectSerializerTest {
   }
 
   @Test
-  void primitiveTest() {
+  public void primitiveTest() {
     PrimitiveObj obj = new PrimitiveObj();
     obj.d = Double.MIN_VALUE;
 
@@ -64,7 +64,7 @@ public class ObjectSerializerTest {
   }
 
   @Test
-  void wrapperTest() {
+  public void wrapperTest() {
     WrapperObj obj = new WrapperObj();
     obj.d = Double.MIN_VALUE;
     obj.str = "Hello World!";
@@ -78,7 +78,7 @@ public class ObjectSerializerTest {
   }
 
   @Test
-  void composeTest() {
+  public void composeTest() {
     serializer.registerSerializer(10, ComposeObj.class);
     serializer.registerSerializer(11, PrimitiveObj.class);
     serializer.registerSerializer(12, WrapperObj.class);
@@ -101,7 +101,7 @@ public class ObjectSerializerTest {
   }
 
   @Test
-  void inheritanceTest() {
+  public void inheritanceTest() {
     serializer.registerSerializer(11, PrimitiveObj.class);
     serializer.registerSerializer(12, WrapperObj.class);
     serializer.registerSerializer(13, Child.class);

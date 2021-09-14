@@ -29,7 +29,7 @@ public class CollectionSerializerTest {
   private ByteBuf buf;
 
   @BeforeEach
-  void beforeEach() {
+  public void beforeEach() {
     serializer = new CommonSerializer();
     buf = Unpooled.buffer();
 
@@ -39,7 +39,7 @@ public class CollectionSerializerTest {
   }
 
   @RepeatedTest(3)
-  void intCollectionTest() {
+  public void intCollectionTest() {
     Random random = ThreadLocalRandom.current();
     List<Integer> col = new ArrayList<>();
     int size = random.nextInt(Short.MAX_VALUE);
@@ -53,7 +53,7 @@ public class CollectionSerializerTest {
   }
 
   @Test
-  void doubleCollectionLinkedTest() {
+  public void doubleCollectionLinkedTest() {
     Random random = ThreadLocalRandom.current();
     List<Double> col = new LinkedList<>();
     int size = random.nextInt(Short.MAX_VALUE);
@@ -67,7 +67,7 @@ public class CollectionSerializerTest {
   }
 
   @Test
-  void strCollectionTest() {
+  public void strCollectionTest() {
     Random random = ThreadLocalRandom.current();
     List<String> col = new ArrayList<>();
     int size = random.nextInt(Short.MAX_VALUE);
@@ -83,7 +83,7 @@ public class CollectionSerializerTest {
   }
 
   @Test
-  void colCollectionTest() {
+  public void colCollectionTest() {
     Random random = ThreadLocalRandom.current();
     List<List<String>> col = new ArrayList<>();
     int size = Byte.MAX_VALUE;

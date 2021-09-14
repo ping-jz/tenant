@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 public class ReqProxyUtilTest {
 
   @Test
-  void calcModuleTest() {
+  public void calcModuleTest() {
     List<Pair<Integer, Method>> methods = ReqUtil.calcModuleMethods(HelloWorldFacade.class.getInterfaces()[0]);
     assertEquals(2, methods.size());
     assertEquals(HelloWorld.HELLO_WORLD_MODULE, methods.get(0).first());
@@ -23,14 +23,14 @@ public class ReqProxyUtilTest {
   }
 
   @Test
-  void calcFacadeTest() {
+  public void calcFacadeTest() {
     List<Pair<Integer, Method>> methods = ReqUtil.calcFacadeMethods(HelloWorldFacade.class);
     assertEquals(1, methods.size());
     assertEquals(HelloWorldFacade.TEST_REQ, methods.get(0).first());
   }
 
   @Test
-  void invalidReqTest() {
+  public void invalidReqTest() {
     assertThrows(RuntimeException.class, () -> ReqUtil.calcModuleMethods(InvalidReq.class));
     assertThrows(RuntimeException.class, () -> ReqUtil.calcModuleMethods(DuplicatedReq.class));
   }

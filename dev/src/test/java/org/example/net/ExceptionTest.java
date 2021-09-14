@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 public class ExceptionTest {
 
   @Test
-  void illegalPort() {
+  public void illegalPort() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> new ReqServer(-1));
   }
 

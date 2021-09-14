@@ -26,7 +26,7 @@ public class HandlerTest {
   private static HelloWorldFacade facade;
 
   @BeforeAll
-  static void init() {
+  public static void init() {
     registry = new HandlerRegistry();
     facade = new HelloWorldFacade();
     List<Handler> handlers = registry.findHandler(facade);
@@ -36,7 +36,7 @@ public class HandlerTest {
   }
 
   @Test
-  void facadeTest() throws Exception {
+  public void facadeTest() throws Exception {
     Handler echoHandler = registry.getHandler(HelloWorldFacade.TEST_REQ);
     assertNotNull(echoHandler);
 
@@ -45,7 +45,7 @@ public class HandlerTest {
   }
 
   @Test
-  void moduleTest() throws Exception {
+  public void moduleTest() throws Exception {
     Handler echoHandler = registry.getHandler(HelloWorld.ECHO);
     Handler doNothing = registry.getHandler(HelloWorld.DO_NOTHING);
     assertNotNull(echoHandler);
@@ -58,7 +58,7 @@ public class HandlerTest {
   }
 
   @Test
-  void duplicateRegistryTest() {
+  public void duplicateRegistryTest() {
     Handler old = registry.getHandler(HelloWorldFacade.TEST_REQ);
 
     assertThrows(RuntimeException.class,
@@ -69,7 +69,7 @@ public class HandlerTest {
   }
 
   @Test
-  void noRegistryTest() {
+  public void noRegistryTest() {
     assertNull(registry.getHandler(HelloWorldFacade.TEST_REQ + 1));
   }
 

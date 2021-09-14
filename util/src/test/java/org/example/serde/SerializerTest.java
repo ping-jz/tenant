@@ -17,18 +17,18 @@ public class SerializerTest {
 
 
   @BeforeEach
-  void before() {
+  public void before() {
     buf.clear();
   }
 
   @Test
-  void serdeNullTest() {
+  public void serdeNullTest() {
     serializer.writeObject(buf, null);
     assertNull(serializer.read(buf));
   }
 
   @Test
-  void byteSerdeTest() {
+  public void byteSerdeTest() {
     for (int i = Byte.MIN_VALUE; i <= Byte.MAX_VALUE; i++) {
       buf.clear();
       Byte v = (byte) i;
@@ -38,7 +38,7 @@ public class SerializerTest {
   }
 
   @Test
-  void shortSerdeTest() {
+  public void shortSerdeTest() {
     for (int i = Short.MIN_VALUE; i <= Short.MAX_VALUE; i++) {
       buf.clear();
       Short v = (short) i;
@@ -48,7 +48,7 @@ public class SerializerTest {
   }
 
   @Test
-  void intSerdeTest() {
+  public void intSerdeTest() {
     for (int i = Short.MIN_VALUE; i <= Short.MAX_VALUE; i++) {
       buf.clear();
       Integer v = i;
@@ -66,7 +66,7 @@ public class SerializerTest {
   }
 
   @Test
-  void longSerdeTest() {
+  public void longSerdeTest() {
     for (long i = Short.MIN_VALUE; i <= Short.MAX_VALUE; i++) {
       buf.clear();
       Long v = i;
@@ -76,7 +76,7 @@ public class SerializerTest {
   }
 
   @Test
-  void floatSerdeTest() {
+  public void floatSerdeTest() {
     for (float i = Short.MIN_VALUE; i <= Short.MAX_VALUE; i++) {
       buf.clear();
       Float v = i;
@@ -86,7 +86,7 @@ public class SerializerTest {
   }
 
   @Test
-  void doubleSerdeTest() {
+  public void doubleSerdeTest() {
     for (double i = Short.MIN_VALUE; i <= Short.MAX_VALUE; i++) {
       buf.clear();
       Double v = i;
@@ -96,14 +96,14 @@ public class SerializerTest {
   }
 
   @Test
-  void charSerdeTest() {
+  public void charSerdeTest() {
     Character str = '中';
     serializer.writeObject(buf, str);
     assertEquals(str, serializer.read(buf));
   }
 
   @Test
-  void strSerdeTest() throws NoSuchFieldException {
+  public void strSerdeTest() throws NoSuchFieldException {
     String str = "Hello World!";
     serializer.writeObject(buf, str);
     assertEquals(str, serializer.read(buf));

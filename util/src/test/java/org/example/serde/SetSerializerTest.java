@@ -27,7 +27,7 @@ public class SetSerializerTest {
   private ByteBuf buf;
 
   @BeforeEach
-  void beforeEach() {
+  public void beforeEach() {
     serializer = new CommonSerializer();
     buf = Unpooled.buffer();
 
@@ -37,7 +37,7 @@ public class SetSerializerTest {
   }
 
   @Test
-  void intCollectionTest() {
+  public void intCollectionTest() {
     Random random = ThreadLocalRandom.current();
     Set<Integer> col = new HashSet<>();
     int size = random.nextInt(Short.MAX_VALUE);
@@ -51,7 +51,7 @@ public class SetSerializerTest {
   }
 
   @Test
-  void doubleCollectionTest() {
+  public void doubleCollectionTest() {
     Random random = ThreadLocalRandom.current();
     Set<Double> col = new TreeSet<>();
     int size = random.nextInt(Short.MAX_VALUE);
@@ -65,7 +65,7 @@ public class SetSerializerTest {
   }
 
   @Test
-  void strCollectionTest() {
+  public void strCollectionTest() {
     Random random = ThreadLocalRandom.current();
     Set<String> col = new HashSet<>();
     int size = random.nextInt(Short.MAX_VALUE);
@@ -79,7 +79,7 @@ public class SetSerializerTest {
   }
 
   @Test
-  void colCollectionTest() {
+  public void colCollectionTest() {
     Random random = ThreadLocalRandom.current();
     Set<Set<String>> col = new HashSet<>();
     int size = Byte.MAX_VALUE;

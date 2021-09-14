@@ -13,7 +13,7 @@
 
   <Loggers>
     <Root level="INFO" includeLocation="false">
-      <AppenderRef ref="game_system_console"/>
+      <AppenderRef ref="console"/>
       <AppenderRef ref="game_console"/>
       <AppenderRef ref="game_error"/>
     </Root>
@@ -30,7 +30,7 @@
          </PatternLayout>
      </Console>-->
 
-    <Routing name="game_system_console">
+    <Routing name="console">
       <!-- This route is chosen if ThreadContext has no value for key game_id. -->
       <Routes pattern="$${ctx:game_id}">
         <Route key="$${ctx:game_id}">
