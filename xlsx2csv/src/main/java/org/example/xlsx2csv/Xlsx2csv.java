@@ -8,9 +8,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.CellValue;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -60,8 +61,9 @@ public class Xlsx2csv {
       maxCell = Math.max(maxCell, r.getLastCellNum());
     }
 
+    FormulaEvaluator evaluator = sheet.getWorkbook().getCreationHelper().createFormulaEvaluator();
+
     int rowNum = 0, cellNum = 0;
-    DataFormatter dataFormat = new DataFormatter(true);
     String csvFileName = f.getParent() + File.separator + getCsvFileName(fileName, sheet) + ".csv";
     try (CSVPrinter printer = new CSVPrinter(
         new OutputStreamWriter(new FileOutputStream(csvFileName), StandardCharsets.UTF_8),
@@ -73,35 +75,30 @@ public class Xlsx2csv {
         for (int c = 0; c < maxCell; c++) {
           cellNum = c;
           Cell cell = r.getCell(c);
-          if (cell != null) {
-            switch (cell.getCellType()) {
-              case NUMERIC: {
-                double doubleValue = cell.getNumericCellValue();
-                int intValue = (int) doubleValue;
-                final boolean hasDecimal = doubleValue - intValue != 0;
-                if (hasDecimal) {
-                  printer.print(doubleValue);
-                } else {
-                  printer.print(intValue);
-                }
-              }
-              break;
-              case STRING: {
-                String s = cell.getStringCellValue();
-                printer.print(StringUtils.isNoneBlank(s) ? s : null);
-              }
-              break;
-              case FORMULA:{
-                cell.getCachedFormulaResultType();
-              }
-              default: {
-                printer.print(cell);
-              }
-              break;
-            }
-
-          } else {
+          if (cell == null) {
             printer.print(null);
+            continue;
+          }
+
+          try {
+            CellValue value = evaluator.evaluate(cell);
+            if (value == null) {
+              printer.print(null);
+            } else if (value.getCellType() == CellType.NUMERIC) {
+              int intValue = (int) value.getNumberValue();
+              double doubleValue = value.getNumberValue();
+              boolean hasDecmial = doubleValue - intValue != 0;
+              if (hasDecmial) {
+                printer.print(doubleValue);
+              } else {
+                printer.print(intValue);
+              }
+            } else {
+              printer.print(value);
+            }
+          } catch (Exception ignore) {
+            //验证公式错误，忽略
+            printer.print(cell);
           }
         }
 
