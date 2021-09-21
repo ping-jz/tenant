@@ -24,6 +24,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.WindowConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.util.ZipSecureFile;
 
@@ -44,7 +46,7 @@ public class App implements ActionListener {
   JFileChooser jfc = new JFileChooser();// 文件选择器
   JButton action = new JButton("确定");//
 
-  JTextArea textArea = new JTextArea();
+  final JTextArea textArea = new JTextArea();
   JScrollPane scrollPane = new JScrollPane(textArea);
   ExecutorService executorService = Executors.newWorkStealingPool();
 
@@ -81,7 +83,7 @@ public class App implements ActionListener {
     action.addActionListener(this); // 添加事件处理
 
     textArea.setLineWrap(true);
-    scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+    scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     scrollPane.setBounds(10, 130, 600, 300);
 
     con.add(scrollPane);
@@ -96,7 +98,7 @@ public class App implements ActionListener {
     con.add(targetButton3);
     con.add(action);
     frame.setVisible(true);// 窗口可见
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);// 使能关闭窗口，结束程序
+    frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);// 使能关闭窗口，结束程序
     tabPane.add("1面板", con);// 添加布局1
   }
 

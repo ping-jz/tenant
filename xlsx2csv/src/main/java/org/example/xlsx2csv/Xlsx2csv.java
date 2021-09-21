@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellValue;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
@@ -18,6 +19,12 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 
+/**
+ * 针对特定需求开发，可参考
+ *
+ * @author ZJP
+ * @since 2021年09月21日 23:15:25
+ **/
 public class Xlsx2csv {
 
   private boolean mus;
@@ -103,7 +110,9 @@ public class Xlsx2csv {
             } else {
               switch (value.getCellType()) {
                 case STRING:
-                  printAll(printers, value.getStringValue());
+                  printAll(printers,
+                      StringUtils.isNoneBlank(value.getStringValue()) ? value.getStringValue()
+                          : null);
                   break;
                 case BOOLEAN:
                   printAll(printers, value.getBooleanValue());
@@ -156,7 +165,7 @@ public class Xlsx2csv {
 
   private String getCsvFileName(String fileName, Sheet sheet) {
     if (ismus()) {
-      int idx = fileName.indexOf("-");
+      int idx = fileName.indexOf('-');
       return 0 < idx ? fileName.substring(0, idx).toLowerCase() : fileName;
     } else {
       return (fileName + sheet.getSheetName()).toLowerCase();
@@ -166,7 +175,7 @@ public class Xlsx2csv {
 
   private String getFileName(File f) {
     String fileName = f.getName();
-    fileName = fileName.substring(0, fileName.lastIndexOf("."));
+    fileName = fileName.substring(0, fileName.lastIndexOf('.'));
     return fileName;
   }
 
