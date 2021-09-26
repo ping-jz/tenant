@@ -8,9 +8,16 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -65,6 +72,7 @@ public class App implements ActionListener {
       public void windowClosing(WindowEvent e) {
         super.windowClosing(e);
         executorService.shutdown();
+        saveSetting();
       }
     });
     sourceLabel.setBounds(10, 10, 70, 20);
@@ -86,6 +94,8 @@ public class App implements ActionListener {
     scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     scrollPane.setBounds(10, 130, 600, 300);
 
+    fillSetting();
+
     con.add(scrollPane);
     con.add(sourceLabel);
     con.add(sourcePathText);
@@ -101,6 +111,57 @@ public class App implements ActionListener {
     frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);// 使能关闭窗口，结束程序
     tabPane.add("1面板", con);// 添加布局1
   }
+
+  private void fillSetting() {
+    String workDirectory = FileSystems.getDefault().getPath("").toAbsolutePath().toString();
+    Properties properties = new Properties();
+    try {
+      InputStreamReader settingFile = new InputStreamReader(
+          new FileInputStream(workDirectory + File.separator + "setting.properties"),
+          StandardCharsets.UTF_8);
+      properties.load(settingFile);
+
+      String sourceText = properties.getProperty("sourcePathText");
+      if (StringUtils.isNoneBlank(sourceText)) {
+        sourcePathText.setText(sourceText);
+      }
+
+      String targetPath1 = properties.getProperty("targetPathText1");
+      if (StringUtils.isNoneBlank(targetPath1)) {
+        targetPathText1.setText(targetPath1);
+      }
+
+      String targetPath2 = properties.getProperty("targetPathText2");
+      if (StringUtils.isNoneBlank(targetPath2)) {
+        targetPathText2.setText(targetPath2);
+      }
+
+    } catch (Exception ignore) {
+    }
+  }
+
+  private void saveSetting() {
+    String sourceText = sourcePathText.getText();
+    String targetText1 = targetPathText1.getText();
+    String targetText2 = targetPathText2.getText();
+
+    Properties properties = new Properties();
+    properties.put("sourcePathText", sourceText);
+    properties.put("targetPathText1", targetText1);
+    properties.put("targetPathText2", targetText2);
+
+    String workDirectory = FileSystems.getDefault().getPath("").toAbsolutePath().toString();
+    try {
+      OutputStreamWriter settingFile = new OutputStreamWriter(
+          new FileOutputStream(workDirectory + File.separator + "setting.properties"),
+          StandardCharsets.UTF_8);
+      properties.store(settingFile, "");
+      settingFile.flush();
+      settingFile.close();
+    } catch (Exception ignore) {
+    }
+  }
+
 
   /**
    * 时间监听的方法
