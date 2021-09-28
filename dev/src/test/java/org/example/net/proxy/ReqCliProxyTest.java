@@ -199,6 +199,23 @@ public class ReqCliProxyTest {
     Assertions.assertEquals(invokeTimes, serFacade.integer.get());
   }
 
+  @Test
+  public void callBackArrayMessageTest() throws InterruptedException {
+    CallBackReq req = proxy.getProxy(address, CallBackReq.class);
+    CountDownLatch latch = new CountDownLatch(invokeTimes);
+    long[] longs = {1, 2, 3, 4, 5, 6};
+    for (int i = 0; i < invokeTimes; i++) {
+      req.callBackArray(longs).onMsg(msg -> {
+        Assertions.assertTrue(msg.isSuc());
+        Assertions.assertArrayEquals(longs, (long[]) msg.packet());
+        latch.countDown();
+      });
+    }
+
+    Assertions.assertTrue(latch.await(1000, TimeUnit.MILLISECONDS));
+    Assertions.assertEquals(invokeTimes, serFacade.integer.get());
+  }
+
   /** 回调 */
   private static final int CALL_BACK = 200;
 
@@ -208,6 +225,8 @@ public class ReqCliProxyTest {
     InvokeFuture<String> callBack(String str);
 
     InvokeFuture<Long> callBackArgs(String str, Integer i, Long a);
+
+    InvokeFuture<long[]> callBackArray(long[] longs);
   }
 
   /**
@@ -242,6 +261,12 @@ public class ReqCliProxyTest {
     public InvokeFuture<Long> callBackArgs(String str, Integer i, Long a) {
       integer.incrementAndGet();
       return InvokeFuture.withResult(a);
+    }
+
+    @Override
+    public InvokeFuture<long[]> callBackArray(long[] longs) {
+      integer.incrementAndGet();
+      return InvokeFuture.withResult(longs);
     }
   }
 
