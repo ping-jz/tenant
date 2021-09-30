@@ -10,8 +10,8 @@ import java.util.Iterator;
 import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.CellValue;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
@@ -110,9 +110,7 @@ public class Xlsx2csv {
             } else {
               switch (value.getCellType()) {
                 case STRING:
-                  printAll(printers,
-                      StringUtils.isNoneBlank(value.getStringValue()) ? value.getStringValue()
-                          : null);
+                  printAll(printers, value.getStringValue());
                   break;
                 case BOOLEAN:
                   printAll(printers, value.getBooleanValue());
@@ -130,9 +128,8 @@ public class Xlsx2csv {
                 break;
               }
             }
-          } catch (Exception ignore) {
-            //验证公式错误，忽略
-            printAll(printers, cell);
+          } catch (Exception e) {
+            useCacheFormulaValue(nf, printers, cell);
           }
         }
 
@@ -153,6 +150,37 @@ public class Xlsx2csv {
       for (CSVPrinter printer : printers) {
         printer.close();
       }
+    }
+  }
+
+  private void useCacheFormulaValue(NumberFormat nf, List<CSVPrinter> printers, Cell cell)
+      throws IOException {
+    if (cell.getCellType() == CellType.FORMULA) {
+      switch (cell.getCachedFormulaResultType()) {
+        case STRING:
+          printAll(printers,
+              cell.getRichStringCellValue().getString());
+          break;
+        case BOOLEAN:
+          printAll(printers, cell.getBooleanCellValue());
+          break;
+        case BLANK:
+          printAll(printers, null);
+          break;
+        case ERROR:
+          printAll(printers, cell.getErrorCellValue());
+          break;
+        case NUMERIC: {
+          double doubleValue = cell.getNumericCellValue();
+          printAll(printers, nf.format(doubleValue));
+        }
+        break;
+        default:
+          printAll(printers, "公式解析错误");
+          break;
+      }
+    } else {
+      printAll(printers, "解析错误");
     }
   }
 
