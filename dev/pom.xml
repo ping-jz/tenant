@@ -97,13 +97,6 @@
           <!--指定项目名称-->
           <projectName>测试</projectName>
         </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>html</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
 
     </plugins>
