@@ -12,6 +12,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 /**
  * 当Actors数量少的时候，两种模式没有明显的区别
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.TestMethodOrder;
  * @author ZJP
  * @since 2021年10月07日 16:53:57
  **/
+@EnabledIfSystemProperty(named = "actorTest", matches = "true")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ActorTest {
 

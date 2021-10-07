@@ -11,7 +11,9 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
+@EnabledIfSystemProperty(named = "actorTest", matches = "true")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ExecutorTest {
 
