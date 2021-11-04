@@ -2,24 +2,21 @@ package org.example.util;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RejectedExecutionException;
 
 public final class WorkQueue<T> {
 
-  volatile int source;       // source queue id, or sentinel
   int id;                    // pool index, mode, tag
   int base;                  // index of next slot for poll
   int top;                   // index of next slot for push
   volatile int phase;        // versioned, negative: queued, 1: locked
-  int stackPred;             // pool stack (ctl) predecessor link
-  int nsteals;               // number of steals
   Object[] array;   // the queued tasks; power of 2 size
 
   WorkQueue() {
     // Place indices in the center of array (that is not yet allocated)
     id |= FIFO;
     base = top = INITIAL_QUEUE_CAPACITY >>> 1;
+    array = new Object[INITIAL_QUEUE_CAPACITY];
   }
 
   /**
@@ -39,18 +36,15 @@ public final class WorkQueue<T> {
   }
 
   /**
-   * Returns an exportable index (used by ForkJoinWorkerThread).
-   */
-  final int getPoolIndex() {
-    return (id & 0xffff) >>> 1; // ignore odd/even tag bit
-  }
-
-  /**
    * Returns the approximate number of tasks in the queue.
    */
   final int queueSize() {
     int n = (int) BASE.getAcquire(this) - top;
-    return (n >= 0) ? 0 : -n; // ignore transient negative
+    return n >= 0 ? 0 : -n; // ignore transient negative
+  }
+
+  final int capacity() {
+    return array.length;
   }
 
   /**
@@ -73,16 +67,11 @@ public final class WorkQueue<T> {
    * @param task the task. Caller must ensure non-null.
    * @throws RejectedExecutionException if array cannot be resized
    */
-  final void push(T task) {
-    Object[] a;
-    int s = top, d, cap, m;
-    if ((a = array) != null && (cap = a.length) > 0) {
-      QA.setRelease(a, (m = cap - 1) & s, task);
-      top = s + 1;
-      if (((d = s - (int) BASE.getAcquire(this)) & ~1) == 0) {                 // size 0 or 1
-        VarHandle.fullFence();
-      } else if (d == m) {
-        growArray(false);
+  public final void push(T task) {
+    for (; ; ) {
+      if (tryLockPhase()) {
+        lockedPush(task);
+        break;
       }
     }
   }
@@ -95,7 +84,7 @@ public final class WorkQueue<T> {
   final boolean lockedPush(T task) {
     Object[] a;
     boolean signal = false;
-    int s = top, b = base, cap, d;
+    int s = top, b = base, cap;
     if ((a = array) != null && (cap = a.length) > 0) {
       a[cap - 1 & s] = task;
       top = s + 1;
@@ -131,8 +120,7 @@ public final class WorkQueue<T> {
         if (newA != null) { // poll from old array, push to new
           int oldMask = oldSize - 1, newMask = newSize - 1;
           for (int s = top - 1, k = oldMask; k >= 0; --k) {
-            Object x = (ForkJoinTask<?>)
-                QA.getAndSet(oldA, s & oldMask, null);
+            Object x = QA.getAndSet(oldA, s & oldMask, null);
             if (x != null) {
               newA[s-- & newMask] = x;
             } else {
@@ -153,19 +141,21 @@ public final class WorkQueue<T> {
     }
   }
 
-  final void shrink(boolean locked) {
+  final void shrink() {
     Object[] newA = null;
-    if (!tryLockPhase()) {
-      return;
-    }
+
+    boolean locked = false;
     try {
-      int oldSize, newSize;
+      int oldSize, newSize, size;
       Object[] oldA = array;
       if (array != null &&
           (oldSize = oldA.length) > 0 &&
           INITIAL_QUEUE_CAPACITY <= (newSize = oldSize >>> 1) &&
-          queueSize() <= oldSize / 4
+          0 < (size = queueSize()) &&
+          size <= oldSize / 4 &&
+          (locked = tryLockPhase())
       ) {
+
         try {
           newA = new Object[newSize];
         } catch (OutOfMemoryError ex) {
@@ -174,7 +164,7 @@ public final class WorkQueue<T> {
         if (newA != null) {
           int oldMask = oldSize - 1, newMask = newSize - 1;
           for (int s = top - 1, k = oldMask; k >= 0; --k) {
-            ForkJoinTask<?> x = (ForkJoinTask<?>) QA.getAndSet(oldA, s & oldMask, null);
+            Object x = QA.getAndSet(oldA, s & oldMask, null);
             if (x != null) {
               newA[s-- & newMask] = x;
             } else {
@@ -186,7 +176,9 @@ public final class WorkQueue<T> {
         }
       }
     } finally {
-      phase = 0;
+      if (locked) {
+        releasePhaseLock();
+      }
     }
   }
 
@@ -203,45 +195,13 @@ public final class WorkQueue<T> {
         if (t == null) {
           Thread.yield(); // await index advance
         } else if (QA.compareAndSet(a, k, t, null)) {
+          shrink();
           BASE.setOpaque(this, b);
           return (T) t;
         }
       }
     }
     return null;
-  }
-
-  /**
-   * Takes next task, if one exists, in order specified by mode.
-   */
-  final T nextLocalTask() {
-    Object t = null;
-    int md = id, b, s, d, cap;
-    Object[] a;
-    if ((a = array) != null && (cap = a.length) > 0 &&
-        (d = (s = top) - (b = base)) > 0) {
-      if ((md & FIFO) == 0 || d == 1) {
-        if ((t = (ForkJoinTask<?>)
-            QA.getAndSet(a, (cap - 1) & --s, null)) != null) {
-          TOP.setOpaque(this, s);
-        }
-      } else if ((t = (ForkJoinTask<?>)
-          QA.getAndSet(a, (cap - 1) & b++, null)) != null) {
-        BASE.setOpaque(this, b);
-      } else // on contention in FIFO mode, use regular poll
-      {
-        t = poll();
-      }
-    }
-    return (T) t;
-  }
-
-  /**
-   * Removes and cancels all known tasks, ignoring any exceptions.
-   */
-  final void cancelAll() {
-    for (Object t; (t = poll()) != null; ) {
-    }
   }
 
   /**
