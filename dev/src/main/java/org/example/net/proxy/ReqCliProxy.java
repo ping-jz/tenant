@@ -3,7 +3,6 @@ package org.example.net.proxy;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -111,7 +110,7 @@ public class ReqCliProxy {
 
     Connection connection = manager.connection(address);
     if (connection != null) {
-      invoker.connections.set(Collections.singleton(connection));
+      invoker.connections.set(Collections.singletonList(connection));
     } else {
       logger.error("{} 未链接", address);
     }
@@ -133,7 +132,7 @@ public class ReqCliProxy {
   private static class SendProxyInvoker implements InvocationHandler {
 
     private ReqCliProxy rpcClientProxy;
-    private ThreadLocal<Collection<Connection>> connections;
+    private ThreadLocal<List<Connection>> connections;
 
     public SendProxyInvoker(ReqCliProxy rpcClientProxy) {
       this.rpcClientProxy = rpcClientProxy;
@@ -152,7 +151,7 @@ public class ReqCliProxy {
               String.format("类型:%s 方法:%s，不是RPC方法", method.getDeclaringClass(),
                   method.getName()));
         }
-        Collection<Connection> conns = connections.get();
+        List<Connection> conns = connections.get();
 
         if (conns.isEmpty()) {
           rpcClientProxy.logger.error("[{}][{}],无链接", info.id(), method.getName());
@@ -168,7 +167,7 @@ public class ReqCliProxy {
           }
 
           Message message = Message.of(info.id()).msgId(MessageIdGenerator.nextId()).packets(args);
-          Connection connection = conns.iterator().next();
+          Connection connection = conns.get(0);
           return rpcClientProxy.remoting
               .invokeWithFuture(connection, message, getInvokeTimeOut(method, info));
         } else {
