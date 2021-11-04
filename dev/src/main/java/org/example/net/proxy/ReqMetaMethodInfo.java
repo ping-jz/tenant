@@ -2,6 +2,7 @@ package org.example.net.proxy;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
+import org.example.util.Id;
 
 /**
  * 远程方法基本信息
@@ -9,18 +10,18 @@ import java.util.Objects;
  * @author ZJP
  * @since 2021年07月25日 15:36:19
  **/
-public class ReqMetaMethodInfo {
+public class ReqMetaMethodInfo implements Id<Integer> {
 
   /** 唯一调用ID */
-  private int id;
+  private Integer id;
   /** 方法名 */
   private Method method;
 
-  public int id() {
+  public Integer id() {
     return id;
   }
 
-  public ReqMetaMethodInfo id(int id) {
+  public ReqMetaMethodInfo id(Integer id) {
     this.id = id;
     return this;
   }

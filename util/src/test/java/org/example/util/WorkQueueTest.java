@@ -62,7 +62,7 @@ public class WorkQueueTest {
     }
 
     service.shutdown();
-    Assertions.assertTrue(service.awaitTermination(1, TimeUnit.SECONDS));
+    Assertions.assertTrue(service.awaitTermination(3, TimeUnit.SECONDS));
 
     Assertions.assertEquals(expect, result.get());
     Assertions.assertEquals(WorkQueue.INITIAL_QUEUE_CAPACITY, queue.capacity());
