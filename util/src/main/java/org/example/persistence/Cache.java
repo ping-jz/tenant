@@ -3,6 +3,9 @@ package org.example.persistence;
 import java.util.function.Function;
 
 /**
+ * //TODO 游戏所需ORM层比较简单，尽量保持代码简单以适配各种修改 //只抽象最简单的功能，并同时暴露你封装的第三方库
+ *
+ *
  * 缓存服务
  *
  * @author ZJP
@@ -75,8 +78,17 @@ public interface Cache<PK, T> {
    */
   void flush(PK pk);
 
+
   /**
-   * 清空化缓存内容,如果实现支持则持久化内容
+   * 删除缓存，如果支持同时从数据删除
+   *
+   * @param pk 主键
+   * @since 2021年11月05日 14:49:57
+   */
+  T delete(PK pk);
+
+  /**
+   * 清空化缓存内容,不会主动持久化内容(如果需要请主动持久化)
    *
    * @since 2021年09月29日 17:47:49
    */
@@ -88,12 +100,5 @@ public interface Cache<PK, T> {
    * @since 2021年09月29日 17:47:49
    */
   void writeBack(T obj);
-
-  /**
-   * 持久化具体内容(s)
-   *
-   * @since 2021年09月29日 17:47:49
-   */
-  void writeBack(Iterable<T> objs);
 
 }
