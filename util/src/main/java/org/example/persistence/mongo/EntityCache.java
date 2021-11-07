@@ -1,20 +1,16 @@
 package org.example.persistence.mongo;
 
-import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.RemovalCause;
-import com.github.benmanes.caffeine.cache.RemovalListener;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import org.example.persistence.Cache;
 import org.example.persistence.ValueWrapper;
 import org.example.persistence.accessor.Accessor;
 import org.example.util.Id;
-import org.springframework.data.mongodb.core.MongoTemplate;
 
 /**
  * MongoDb缓存实现
@@ -25,13 +21,15 @@ import org.springframework.data.mongodb.core.MongoTemplate;
  * <p>2.数据经过长时间未使用，则会自动写会并清除</p>
  * <p>3.暂时不需要把数据访问抽象出来</p>
  *
+ * <p>游戏所需ORM层比较简单，尽量保持代码简单以适配各种修改, 只抽象最简单的功能，并同时暴露你封装的第三方库</p>
+ * <p>
+ * 要想做通用的，只要保证能 1.正常入库 2.热数据要适量缓存
+ * </p>
+ *
  * @author ZJP
  * @since 2021年09月29日 16:34:55
  **/
-public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Id<PK>> implements
-    Cache<PK, T> {
-
-  private static final String ID = "_id";
+public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Id<PK>> {
 
   /** spring mongo template */
   private Accessor<PK, T> accessor;
@@ -40,7 +38,7 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Id<
   /** entity类型信息 */
   private Class<T> entityClass;
 
-  public EntityCache(long expireMill, int cacheSize, Accessor<PK, T> accessor,
+  public EntityCache(long expireMill, int cacheSize, Class<T> entityClass, Accessor<PK, T> accessor,
       Executor executor) {
     Caffeine<PK, ValueWrapper<T>> caffeine = Caffeine.newBuilder()
         .maximumSize(cacheSize)
@@ -54,28 +52,11 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Id<
       caffeine.executor(executor);
     }
 
+    this.entityClass = entityClass;
     this.accessor = accessor;
     this.cache = caffeine.build(key -> ValueWrapper.of(accessor.load(entityClass, key)));
   }
 
-  public EntityCache(long expireMill, int cacheSize, MongoTemplate accessor,
-      RemovalListener<PK, T> removalListener, CacheLoader<PK, T> loader, Executor executor) {
-    Caffeine<PK, ValueWrapper<T>> caffeine = Caffeine.newBuilder()
-        .maximumSize(cacheSize)
-        .expireAfterAccess(expireMill, TimeUnit.MILLISECONDS)
-        .removalListener((key, value, cause) -> {
-          if (value != null) {
-            removalListener.onRemoval(key, value.getValue(), cause);
-          }
-        });
-    if (executor != null) {
-      caffeine.executor(executor);
-    }
-
-    this.cache = caffeine.build(key -> ValueWrapper.of(loader.load(key)));
-  }
-
-  @Override
   public T get(PK key) {
     ValueWrapper<T> v = cache.get(key);
     T res = null;
@@ -86,20 +67,20 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Id<
     return res;
   }
 
-  @Override
+
   public T getIfPresent(PK key) {
     ValueWrapper<T> v = cache.getIfPresent(key);
     return v != null ? v.getValue() : null;
   }
 
-  @Override
+
   public T getOrCreate(PK key, Function<PK, T> provider) {
     return cache.asMap().computeIfAbsent(key, pk ->
         ValueWrapper.of(provider.apply(pk))
     ).getValue();
   }
 
-  @Override
+
   public T put(T newObj) {
     Objects.requireNonNull(newObj);
     ValueWrapper<T> newWrapper = ValueWrapper.of(newObj);
@@ -107,18 +88,18 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Id<
     return newWrapper.getValue();
   }
 
-  @Override
+
   public T putIfAbsent(T newObj) {
     Objects.requireNonNull(newObj);
     return cache.asMap().computeIfAbsent(newObj.id(), pk -> ValueWrapper.of(newObj)).getValue();
   }
 
-  @Override
+
   public long size() {
     return cache.estimatedSize();
   }
 
-  @Override
+
   public void flushAll() {
     for (ValueWrapper<T> obj : cache.asMap().values()) {
       obj.incWrites();
@@ -126,7 +107,7 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Id<
     }
   }
 
-  @Override
+
   public void flush(PK pk) {
     ValueWrapper<T> obj = cache.getIfPresent(pk);
     if (obj != null) {
@@ -135,21 +116,23 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Id<
     }
   }
 
-  @Override
+
   public T delete(PK pk) {
     ValueWrapper<T> remove = cache.getIfPresent(pk);
+    T res = null;
     if (remove != null) {
+      res = remove.getValue();
       accessor.delete(entityClass, pk);
     }
-    return remove != null ? remove.getValue() : null;
+    return res;
   }
 
-  @Override
+
   public void clean() {
     cache.invalidateAll();
   }
 
-  @Override
+
   public void writeBack(T obj) {
     doWriteBack(obj.id(), obj);
   }

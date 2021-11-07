@@ -17,6 +17,7 @@ public class ReqMetaMethodInfo implements Id<Integer> {
   /** 方法名 */
   private Method method;
 
+  @Override
   public Integer id() {
     return id;
   }
@@ -44,7 +45,7 @@ public class ReqMetaMethodInfo implements Id<Integer> {
       return false;
     }
     ReqMetaMethodInfo info = (ReqMetaMethodInfo) o;
-    return id == info.id && Objects.equals(method, info.method);
+    return Objects.equals(id, info.id) && Objects.equals(method, info.method);
   }
 
   @Override

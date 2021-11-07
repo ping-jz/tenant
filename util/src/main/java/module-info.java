@@ -5,4 +5,5 @@ module org.example.util {
   requires io.netty.all;
   requires com.github.benmanes.caffeine;
   requires spring.data.mongodb;
+  requires slf4j.api;
 }
