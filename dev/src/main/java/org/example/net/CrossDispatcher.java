@@ -95,28 +95,44 @@ public class CrossDispatcher implements Dispatcher {
    */
   private void invokeHandler(Channel channel, Message msg, Handler handler) {
     try {
-      if (msg.isSuc()) {
-        Object result = null;
-        if (msg.packet() == null) {
-          result = handler.invoke();
-        } else if (msg.packet().getClass().isArray()) {
-          result = handler.invoke((Object[]) msg.packet());
-        } else {
-          result = handler.invoke(msg.packet());
-        }
-        //
-        if (result != null && 0 < msg.proto()) {
-          Message response = Message
-              .of(Math.negateExact(msg.proto()))
-              .msgId(msg.msgId())
-              .status(MessageStatus.SUCCESS)
-              .packet(extractResult(result));
-          channel.write(response);
-        }
-      } else {
+      if (msg.isErr()) {
         logger.error("from:{}, proto:{}, 错误代码:{}", channel.remoteAddress(), msg.proto(),
             msg.status());
       }
+
+      //TODO 这里需要增加, handler可以接受Connection和Message作为参数
+      Object result = null;
+      if (msg.packet() == null) {
+        result = handler.invoke();
+      } else if (msg.packet().getClass().isArray()) {
+        result = handler.invoke((Object[]) msg.packet());
+      } else {
+        result = handler.invoke(msg.packet());
+      }
+
+      if (0 < msg.proto()) {
+        Message response;
+        result = extractResult(result);
+        if (result instanceof Message) {
+          Message resMsg = (Message) result;
+          response = resMsg.msgId(msg.msgId());
+          if (response.proto() == 0) {
+            response.proto(Math.negateExact(msg.proto()));
+          }
+
+          if (response.status() == MessageStatus.NONE.status()) {
+            response.status(MessageStatus.SUCCESS);
+          }
+        } else {
+          response = Message
+              .of(Math.negateExact(msg.proto()))
+              .msgId(msg.msgId())
+              .status(MessageStatus.SUCCESS)
+              .packet(result);
+        }
+        channel.write(response);
+      }
+
     } catch (Exception e) {
       if (0 < msg.proto()) {
         channel.write(

@@ -4,7 +4,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.example.net.InvokeCallback.DefaultCallBack;
+import org.example.net.InvokeCallback.DefaultSucCallBack;
 
 /**
  * 回调任务
@@ -20,8 +20,10 @@ public class InvokeFuture<T> {
   private volatile Message message;
   /** 结果 */
   private Object result;
-  /** 回调 */
+  /** 处理成功回调 */
   private volatile InvokeCallback<Message> callback;
+  /** 处理错误回调 */
+  private volatile ErrCallback<Message> errCallBack;
   /** 异常 */
   private Throwable cause;
   /** 超时任务 */
@@ -51,6 +53,7 @@ public class InvokeFuture<T> {
     latch = new CountDownLatch(1);
     executeCallbackOnlyOnce = new AtomicBoolean(false);
     this.callback = callback;
+    this.errCallBack = ErrCallback.DefaultCallBack.instance();
   }
 
   public Message waitResponse(long timeoutMillis) throws InterruptedException {
@@ -71,13 +74,13 @@ public class InvokeFuture<T> {
 
 
   /**
-   * 只处理成功的结果，成功的判断请看{@link Message#isSuc()},如果需要完整的流程，使用{@link InvokeFuture#onMsg(InvokeCallback)}
+   * 只处理成功的结果，成功的判断请看{@link Message#isSuc()},如果需要完整的流程，使用{@link InvokeFuture#onSucMsg(InvokeCallback)}
    *
    * @param callback 回调方法
    * @since 2021年09月01日 18:05:17
    */
-  public void onSuc(DefaultCallBack<T> callback) {
-    onMsg(callback);
+  public void onSuc(DefaultSucCallBack<T> callback) {
+    onSucMsg(callback);
   }
 
   /**
@@ -86,13 +89,19 @@ public class InvokeFuture<T> {
    * @param callback 回调方法
    * @since 2021年09月01日 18:05:17
    */
-  public void onMsg(InvokeCallback<Message> callback) {
+  public void onSucMsg(InvokeCallback<Message> callback) {
     this.callback = callback;
-    if (message != null) {
-      executeCallBack();
-    }
   }
 
+  /**
+   * 回调失败接口
+   *
+   * @param errCallBack 回调方法
+   * @since 2021年09月01日 18:05:17
+   */
+  public void onErr(ErrCallback<Message> errCallBack) {
+    this.errCallBack = errCallBack;
+  }
 
   public void putCause(Throwable cause) {
     this.cause = cause;
@@ -100,18 +109,22 @@ public class InvokeFuture<T> {
   }
 
   public void executeThrowAble() {
-    if (callback != null && executeCallbackOnlyOnce.compareAndExchange(false, true)) {
-      callback.onException(cause);
+    if (errCallBack != null && executeCallbackOnlyOnce.compareAndExchange(false, true)) {
+      errCallBack.onException(cause);
     }
   }
 
   public void executeCallBack() {
-    if (callback != null) {
-      if (executeCallbackOnlyOnce.compareAndSet(false, true)) {
-        try {
+    if (executeCallbackOnlyOnce.compareAndSet(false, true)) {
+      try {
+        if (callback != null && message != null && message.isSuc()) {
           callback.onMessage(message);
-        } catch (Exception e) {
-          callback.onException(e);
+        } else if (errCallBack != null) {
+          errCallBack.onMessage(message);
+        }
+      } catch (Exception e) {
+        if (errCallBack != null) {
+          errCallBack.onException(e);
         }
       }
     }

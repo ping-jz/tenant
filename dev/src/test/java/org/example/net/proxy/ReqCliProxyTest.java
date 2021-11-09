@@ -12,6 +12,7 @@ import org.example.net.Facade;
 import org.example.net.HelloWorld;
 import org.example.net.InvokeFuture;
 import org.example.net.Message;
+import org.example.net.MessageStatus;
 import org.example.net.ReqMethod;
 import org.example.net.ReqModule;
 import org.example.net.client.ReqClient;
@@ -188,7 +189,7 @@ public class ReqCliProxyTest {
     CountDownLatch latch = new CountDownLatch(invokeTimes);
     long answer = 2012;
     for (int i = 0; i < invokeTimes; i++) {
-      req.callBackArgs("Hi", i, answer).onMsg(msg -> {
+      req.callBackArgs("Hi", i, answer).onSucMsg(msg -> {
         Assertions.assertTrue(msg.isSuc());
         Assertions.assertEquals(answer, msg.packet());
         latch.countDown();
@@ -205,9 +206,25 @@ public class ReqCliProxyTest {
     CountDownLatch latch = new CountDownLatch(invokeTimes);
     long[] longs = {1, 2, 3, 4, 5, 6};
     for (int i = 0; i < invokeTimes; i++) {
-      req.callBackArray(longs).onMsg(msg -> {
+      req.callBackArray(longs).onSucMsg(msg -> {
         Assertions.assertTrue(msg.isSuc());
         Assertions.assertArrayEquals(longs, (long[]) msg.packet());
+        latch.countDown();
+      });
+    }
+
+    Assertions.assertTrue(latch.await(1000, TimeUnit.MILLISECONDS));
+    Assertions.assertEquals(invokeTimes, serFacade.integer.get());
+  }
+
+  @Test
+  public void calErrMessageTest() throws InterruptedException {
+    CallBackReq req = proxy.getProxy(address, CallBackReq.class);
+    CountDownLatch latch = new CountDownLatch(invokeTimes);
+    for (int i = 0; i < invokeTimes; i++) {
+      req.errMsg().onErr(msg -> {
+        Assertions.assertTrue(msg.isErr());
+        Assertions.assertEquals(MessageStatus.SERVER_EXCEPTION.status(), msg.status());
         latch.countDown();
       });
     }
@@ -227,6 +244,8 @@ public class ReqCliProxyTest {
     InvokeFuture<Long> callBackArgs(String str, Integer i, Long a);
 
     InvokeFuture<long[]> callBackArray(long[] longs);
+
+    InvokeFuture<Message> errMsg();
   }
 
   /**
@@ -267,6 +286,13 @@ public class ReqCliProxyTest {
     public InvokeFuture<long[]> callBackArray(long[] longs) {
       integer.incrementAndGet();
       return InvokeFuture.withResult(longs);
+    }
+
+    @Override
+    public InvokeFuture<Message> errMsg() {
+      integer.incrementAndGet();
+      Message message = Message.of().status(MessageStatus.SERVER_EXCEPTION);
+      return InvokeFuture.withResult(message);
     }
   }
 

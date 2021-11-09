@@ -2,6 +2,8 @@ package org.example.net;
 
 public enum MessageStatus {
 
+  /** 默认设置 */
+  NONE((short) 0),
   SUCCESS((short) 200),
   ERROR((short) 500),
   UNKNOWN((short) 501),

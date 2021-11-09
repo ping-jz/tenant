@@ -12,18 +12,9 @@ public interface InvokeCallback<T> {
   /**
    * Response received.
    *
-   * @param result the result
+   * @param result the result,
    */
   void onMessage(T result);
-
-  /**
-   * Exception caught, default rethrow again.
-   *
-   * @param e the exception
-   */
-  default void onException(Throwable e) {
-    throw new RuntimeException(e);
-  }
 
   /**
    * 成功回调(如果需要处理失败的结果，直接使用{@link InvokeCallback})
@@ -32,7 +23,7 @@ public interface InvokeCallback<T> {
    * @since 2021年09月01日 17:53:08
    **/
   @FunctionalInterface
-  interface DefaultCallBack<T> extends InvokeCallback<Message> {
+  interface DefaultSucCallBack<T> extends InvokeCallback<Message> {
 
     /**
      * 只处理
@@ -40,7 +31,7 @@ public interface InvokeCallback<T> {
      * @param result the result
      */
     default void onMessage(Message result) {
-        onSuc((T) result.packet());
+      onSuc((T) result.packet());
     }
 
 
