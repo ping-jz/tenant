@@ -3,14 +3,15 @@ package org.example.persistence.mongo;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.RemovalCause;
+import org.example.persistence.ValueWrapper;
+import org.example.persistence.accessor.Accessor;
+import org.example.util.Id;
+
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import org.example.persistence.ValueWrapper;
-import org.example.persistence.accessor.Accessor;
-import org.example.util.Id;
 
 /**
  * MongoDb缓存实现
@@ -23,7 +24,7 @@ import org.example.util.Id;
  *
  * <p>游戏所需ORM层比较简单，尽量保持代码简单以适配各种修改, 只抽象最简单的功能，并同时暴露你封装的第三方库</p>
  * <p>
- * 要想做通用的，只要保证能 1.正常入库 2.热数据要适量缓存
+ * 不要想做通用的，只要保证能 1.正常入库 2.热数据要适量缓存
  * </p>
  *
  * @author ZJP
@@ -54,7 +55,7 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Id<
 
     this.entityClass = entityClass;
     this.accessor = accessor;
-    this.cache = caffeine.build(key -> ValueWrapper.of(accessor.load(entityClass, key)));
+    cache = caffeine.build(key -> ValueWrapper.of(accessor.load(entityClass, key)));
   }
 
   public T get(PK key) {

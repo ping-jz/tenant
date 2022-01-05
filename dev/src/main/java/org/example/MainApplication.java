@@ -1,10 +1,5 @@
 package org.example;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import org.example.config.CommonConfig;
 import org.example.config.GameConfig;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -13,11 +8,17 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.EncodedResource;
 import org.springframework.core.io.support.ResourcePropertySource;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 public class MainApplication {
 
   public static void main(String[] args) throws Exception {
     AnnotationConfigApplicationContext root = new AnnotationConfigApplicationContext(
-        CommonConfig.class);
+            CommonConfig.class);
     root.start();
 
     List<GenericApplicationContext> childContexts = new ArrayList<>();

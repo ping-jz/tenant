@@ -1,32 +1,18 @@
 package org.example.net.proxy;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.example.common.ThreadCommonResource;
-import org.example.net.CrossDispatcher;
-import org.example.net.DispatcherHandler;
-import org.example.net.Facade;
-import org.example.net.HelloWorld;
-import org.example.net.InvokeFuture;
-import org.example.net.Message;
-import org.example.net.MessageStatus;
-import org.example.net.ReqMethod;
-import org.example.net.ReqModule;
+import org.example.net.*;
 import org.example.net.client.ReqClient;
 import org.example.net.handler.HandlerRegistry;
 import org.example.net.server.ReqServer;
 import org.example.serde.CommonSerializer;
 import org.example.serde.MarkSerializer;
 import org.example.serde.Serializer;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ReqCliProxyTest {
 
@@ -128,43 +114,6 @@ public class ReqCliProxyTest {
     TimeUnit.MILLISECONDS.sleep(100);
     Assertions.assertEquals(invokeTimes, serFacade.integer.get());
     Assertions.assertEquals(invokeTimes, cliFacade.integer.get());
-  }
-
-  @Test
-  public void futureTest() throws InterruptedException {
-    String hi = "Hi";
-    CallBackReq req = proxy.getProxy(address, CallBackReq.class);
-    List<InvokeFuture<String>> futures = new ArrayList<>(invokeTimes);
-
-    for (int i = 0; i < invokeTimes; i++) {
-      futures.add(req.callBack(hi));
-    }
-
-    for (InvokeFuture<String> callBack : futures) {
-      Message message = callBack.waitResponse();
-      Assertions.assertTrue(message.isSuc());
-      Assertions.assertEquals(hi, message.packet());
-    }
-
-    Assertions.assertEquals(invokeTimes, serFacade.integer.get());
-  }
-
-  @Test
-  public void futureArgsTest() throws InterruptedException {
-    CallBackReq req = proxy.getProxy(address, CallBackReq.class);
-    List<InvokeFuture<Long>> futures = new ArrayList<>(invokeTimes);
-
-    for (int i = 0; i < invokeTimes; i++) {
-      futures.add(req.callBackArgs("Hi", i, 2012L));
-    }
-
-    for (InvokeFuture<Long> callBack : futures) {
-      Message message = callBack.waitResponse();
-      Assertions.assertTrue(message.isSuc());
-      Assertions.assertEquals(2012L, message.packet());
-    }
-
-    Assertions.assertEquals(invokeTimes, serFacade.integer.get());
   }
 
   @Test

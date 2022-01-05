@@ -1,5 +1,11 @@
 package org.example.persistence;
 
+import org.example.persistence.accessor.Accessor;
+import org.example.persistence.mongo.EntityCache;
+import org.example.util.Id;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -8,11 +14,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import org.example.persistence.accessor.Accessor;
-import org.example.persistence.mongo.EntityCache;
-import org.example.util.Id;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 数据和缓存服务入口
@@ -31,7 +32,7 @@ import org.slf4j.LoggerFactory;
  **/
 public class EntityService {
 
-  private Logger logger = LoggerFactory.getLogger(this.getClass());
+  private Logger logger = LoggerFactory.getLogger(getClass());
 
   /** 数据访问抽象 */
   private Accessor<?, ?> accessor;

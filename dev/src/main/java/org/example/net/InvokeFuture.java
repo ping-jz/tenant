@@ -1,10 +1,9 @@
 package org.example.net;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.example.net.InvokeCallback.DefaultSucCallBack;
+
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 回调任务
@@ -30,8 +29,6 @@ public class InvokeFuture<T> {
   private Future<?> timeout;
   /** 执行标记 */
   private AtomicBoolean executeCallbackOnlyOnce;
-  /** 同步组件 */
-  private CountDownLatch latch;
 
   public static <T> InvokeFuture<T> withResult(T t) {
     InvokeFuture<T> result = new InvokeFuture<>();
@@ -41,7 +38,6 @@ public class InvokeFuture<T> {
 
   private InvokeFuture() {
     executeCallbackOnlyOnce = new AtomicBoolean(true);
-    latch = new CountDownLatch(0);
   }
 
   public InvokeFuture(int invokeId) {
@@ -50,26 +46,14 @@ public class InvokeFuture<T> {
 
   public InvokeFuture(int invokeId, InvokeCallback<Message> callback) {
     id = invokeId;
-    latch = new CountDownLatch(1);
     executeCallbackOnlyOnce = new AtomicBoolean(false);
     this.callback = callback;
     this.errCallBack = ErrCallback.DefaultCallBack.instance();
   }
 
-  public Message waitResponse(long timeoutMillis) throws InterruptedException {
-    latch.await(timeoutMillis, TimeUnit.MILLISECONDS);
-    return message;
-  }
-
-  public Message waitResponse() throws InterruptedException {
-    latch.await();
-    return message;
-  }
-
   public void putMessage(Message response) {
     message = response;
     result = response.packet();
-    latch.countDown();
   }
 
 
@@ -105,7 +89,6 @@ public class InvokeFuture<T> {
 
   public void putCause(Throwable cause) {
     this.cause = cause;
-    latch.countDown();
   }
 
   public void executeThrowAble() {
@@ -139,10 +122,6 @@ public class InvokeFuture<T> {
       timeout.cancel(false);
       timeout = null;
     }
-  }
-
-  public boolean isDone() {
-    return latch.getCount() <= 0;
   }
 
   public T result() {

@@ -1,25 +1,19 @@
 package org.example.net;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.example.common.ThreadCommonResource;
+import org.example.net.client.ReqClient;
+import org.example.net.handler.HandlerRegistry;
+import org.example.net.server.ReqServer;
+import org.example.serde.CommonSerializer;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.example.common.ThreadCommonResource;
-import org.example.net.client.ReqClient;
-import org.example.net.handler.HandlerRegistry;
-import org.example.net.server.ReqServer;
-import org.example.serde.CommonSerializer;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CrossDispatcherTest {
 
@@ -88,42 +82,6 @@ public class CrossDispatcherTest {
     }
     TimeUnit.MILLISECONDS.sleep(100);
 
-    assertTrue(rpcClient.getConnection(address).isActive());
-    assertEquals(invokeTimes, crossFacade.invokeTimes());
-  }
-
-  @Test
-  public void testFuture() throws Exception {
-    String helloWorld = "Hello World";
-    long timeOut = 1000;
-    for (int i = 0; i < invokeTimes; i++) {
-      InvokeFuture<?> messageFuture = rpcClient.invokeWithFuture(address,
-          new Message().proto(CrossDispatcherTest.ECHO).packet(helloWorld), timeOut);
-      Message message = messageFuture.waitResponse(timeOut);
-      assertNotNull(message);
-      assertTrue(message.isSuc());
-      assertEquals(helloWorld, message.packet());
-      assertEquals(-1, message.proto());
-    }
-
-    assertTrue(rpcClient.getConnection(address).isActive());
-    assertEquals(invokeTimes, crossFacade.invokeTimes());
-  }
-
-  @Test
-  public void testFutureTimeOut() throws Exception {
-    String helloWorld = "Hello World";
-    long timeOut = 1000;
-    for (int i = 0; i < invokeTimes; i++) {
-      InvokeFuture<?> messageFuture = rpcClient.invokeWithFuture(address,
-          new Message().proto(CrossDispatcherTest.ECHO).packet(helloWorld), 0);
-      Message message = messageFuture.waitResponse(timeOut);
-      assertNotNull(message);
-      assertFalse(message.isSuc());
-      assertEquals(message.status(), MessageStatus.TIMEOUT.status());
-    }
-
-    TimeUnit.MILLISECONDS.sleep(100);
     assertTrue(rpcClient.getConnection(address).isActive());
     assertEquals(invokeTimes, crossFacade.invokeTimes());
   }
