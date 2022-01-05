@@ -1,19 +1,23 @@
 package org.example.net;
 
-import org.example.common.ThreadCommonResource;
-import org.example.net.client.ReqClient;
-import org.example.net.handler.HandlerRegistry;
-import org.example.net.server.ReqServer;
-import org.example.serde.CommonSerializer;
-import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.example.common.ThreadCommonResource;
+import org.example.net.client.ReqClient;
+import org.example.net.handler.HandlerRegistry;
+import org.example.net.server.ReqServer;
+import org.example.serde.CommonSerializer;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class CrossDispatcherTest {
 
@@ -93,12 +97,10 @@ public class CrossDispatcherTest {
     List<CountDownLatch> latches = new ArrayList<>(invokeTimes);
     for (int i = 0; i < invokeTimes; i++) {
       CountDownLatch latch = new CountDownLatch(1);
-      Message request = Message.of().proto(CrossDispatcherTest.ECHO).packet(helloWorld);
+      Message request = Message.of().proto(ECHO).packet(helloWorld);
       rpcClient.invokeWithCallBack(address, request
-          , (Message msg) -> {
-            assertNotNull(msg);
-            assertTrue(msg.isSuc());
-            assertEquals(helloWorld, msg.packet());
+          , (String msg) -> {
+            assertEquals(helloWorld, msg);
             latch.countDown();
           }, timeOut);
 

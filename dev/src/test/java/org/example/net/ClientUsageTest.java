@@ -1,18 +1,22 @@
 package org.example.net;
 
-import org.example.common.ThreadCommonResource;
-import org.example.net.client.ReqClient;
-import org.example.net.server.ReqServer;
-import org.example.serde.CommonSerializer;
-import org.example.serde.Serializer;
-import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.example.common.ThreadCommonResource;
+import org.example.net.client.ReqClient;
+import org.example.net.server.ReqServer;
+import org.example.serde.CommonSerializer;
+import org.example.serde.Serializer;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ClientUsageTest {
 
@@ -86,10 +90,8 @@ public class ClientUsageTest {
       CountDownLatch latch = new CountDownLatch(1);
       Message request = Message.of().proto(1).packet(helloWorld);
       rpcClient.invokeWithCallBack(address, request
-          , (Message msg) -> {
-            assertNotNull(msg);
-            assertTrue(msg.isSuc());
-            assertEquals(helloWorld, msg.packet());
+          , (String msg) -> {
+            assertEquals(helloWorld, msg);
             latch.countDown();
           }, timeOut);
 

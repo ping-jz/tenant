@@ -98,7 +98,7 @@ public class ReqServer implements AutoCloseable {
     Connection connection = getConnection(addr);
     if (connection != null) {
       message.msgId(MessageIdGenerator.nextId());
-      return remoting.invokeWithFuture(connection, message, timeout);
+      return remoting.invoke(connection, message, timeout);
     } else {
       logger.error("address:{} is not connected", addr);
     }

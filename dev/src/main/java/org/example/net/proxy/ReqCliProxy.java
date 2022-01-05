@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.example.net.BaseRemoting;
 import org.example.net.Connection;
 import org.example.net.ConnectionManager;
+import org.example.net.DefaultInvokeFuture;
 import org.example.net.InvokeFuture;
 import org.example.net.Message;
 import org.example.net.MessageIdGenerator;
@@ -168,8 +169,12 @@ public class ReqCliProxy {
 
           Message message = Message.of(info.id()).msgId(MessageIdGenerator.nextId()).packets(args);
           Connection connection = conns.get(0);
-          return rpcClientProxy.remoting
-              .invokeWithFuture(connection, message, getInvokeTimeOut(method, info));
+
+          DefaultInvokeFuture<?> res = new DefaultInvokeFuture<>(message.msgId());
+          res.connection(connection);
+          res.remoting(rpcClientProxy.remoting);
+          res.reqMessage(message);
+          return res;
         } else {
           Message message = Message.of(info.id()).packets(args);
           for (Connection connection : conns) {

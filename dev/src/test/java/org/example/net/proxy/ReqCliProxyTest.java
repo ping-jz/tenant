@@ -1,18 +1,31 @@
 package org.example.net.proxy;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.example.common.ThreadCommonResource;
-import org.example.net.*;
+import org.example.net.CrossDispatcher;
+import org.example.net.DispatcherHandler;
+import org.example.net.Facade;
+import org.example.net.HelloWorld;
+import org.example.net.InvokeFuture;
+import org.example.net.Message;
+import org.example.net.MessageStatus;
+import org.example.net.ReqMethod;
+import org.example.net.ReqModule;
+import org.example.net.ResultInvokeFuture;
 import org.example.net.client.ReqClient;
 import org.example.net.handler.HandlerRegistry;
 import org.example.net.server.ReqServer;
 import org.example.serde.CommonSerializer;
 import org.example.serde.MarkSerializer;
 import org.example.serde.Serializer;
-import org.junit.jupiter.api.*;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ReqCliProxyTest {
 
@@ -79,6 +92,7 @@ public class ReqCliProxyTest {
   private CommonSerializer createSerializer() {
     CommonSerializer serializer = new CommonSerializer();
     serializer.registerSerializer(10, Object.class, new MarkSerializer());
+    serializer.registerSerializer(11, Message.class);
     return serializer;
   }
 
@@ -125,7 +139,7 @@ public class ReqCliProxyTest {
       req.callBackArgs("Hi", i, answer).onSuc(l -> {
         Assertions.assertEquals(answer, l);
         latch.countDown();
-      });
+      }).invoke();
     }
 
     Assertions.assertTrue(latch.await(1000, TimeUnit.MILLISECONDS));
@@ -138,11 +152,10 @@ public class ReqCliProxyTest {
     CountDownLatch latch = new CountDownLatch(invokeTimes);
     long answer = 2012;
     for (int i = 0; i < invokeTimes; i++) {
-      req.callBackArgs("Hi", i, answer).onSucMsg(msg -> {
-        Assertions.assertTrue(msg.isSuc());
-        Assertions.assertEquals(answer, msg.packet());
+      req.callBackArgs("Hi", i, answer).onSuc(msg -> {
+        Assertions.assertEquals(answer, msg);
         latch.countDown();
-      });
+      }).invoke();
     }
 
     Assertions.assertTrue(latch.await(1000, TimeUnit.MILLISECONDS));
@@ -155,11 +168,10 @@ public class ReqCliProxyTest {
     CountDownLatch latch = new CountDownLatch(invokeTimes);
     long[] longs = {1, 2, 3, 4, 5, 6};
     for (int i = 0; i < invokeTimes; i++) {
-      req.callBackArray(longs).onSucMsg(msg -> {
-        Assertions.assertTrue(msg.isSuc());
-        Assertions.assertArrayEquals(longs, (long[]) msg.packet());
+      req.callBackArray(longs).onSuc(msg -> {
+        Assertions.assertArrayEquals(longs, msg);
         latch.countDown();
-      });
+      }).invoke();
     }
 
     Assertions.assertTrue(latch.await(1000, TimeUnit.MILLISECONDS));
@@ -175,7 +187,7 @@ public class ReqCliProxyTest {
         Assertions.assertTrue(msg.isErr());
         Assertions.assertEquals(MessageStatus.SERVER_EXCEPTION.status(), msg.status());
         latch.countDown();
-      });
+      }).invoke();
     }
 
     Assertions.assertTrue(latch.await(1000, TimeUnit.MILLISECONDS));
@@ -222,26 +234,26 @@ public class ReqCliProxyTest {
     @Override
     public InvokeFuture<String> callBack(String str) {
       integer.incrementAndGet();
-      return InvokeFuture.withResult(str);
+      return ResultInvokeFuture.withResult(str);
     }
 
     @Override
     public InvokeFuture<Long> callBackArgs(String str, Integer i, Long a) {
       integer.incrementAndGet();
-      return InvokeFuture.withResult(a);
+      return ResultInvokeFuture.withResult(a);
     }
 
     @Override
     public InvokeFuture<long[]> callBackArray(long[] longs) {
       integer.incrementAndGet();
-      return InvokeFuture.withResult(longs);
+      return ResultInvokeFuture.withResult(longs);
     }
 
     @Override
     public InvokeFuture<Message> errMsg() {
       integer.incrementAndGet();
       Message message = Message.of().status(MessageStatus.SERVER_EXCEPTION);
-      return InvokeFuture.withResult(message);
+      return ResultInvokeFuture.withResult(message);
     }
   }
 

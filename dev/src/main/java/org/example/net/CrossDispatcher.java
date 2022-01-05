@@ -14,9 +14,13 @@ import org.slf4j.LoggerFactory;
  **/
 public class CrossDispatcher implements Dispatcher {
 
-  /** 消息处理器集合 */
+  /**
+   * 消息处理器集合
+   */
   private HandlerRegistry handlerRegistry;
-  /** 日志 */
+  /**
+   * 日志
+   */
   private Logger logger;
 
   public CrossDispatcher(HandlerRegistry handlerRegistry) {
@@ -38,7 +42,7 @@ public class CrossDispatcher implements Dispatcher {
    * 根据{@link Message#proto()}进行消息分发
    *
    * @param channel 通信channel
-   * @param req 请求消息
+   * @param req     请求消息
    * @since 2021年07月24日 15:58:39
    */
   public void doDispatcher(Channel channel, Message req) {
@@ -68,28 +72,24 @@ public class CrossDispatcher implements Dispatcher {
       return;
     }
 
-    InvokeFuture<?> future = connection.removeInvokeFuture(msg.msgId());
+    DefaultInvokeFuture<?> future = connection.removeInvokeFuture(msg.msgId());
     if (future != null) {
-      future.putMessage(msg);
       future.cancelTimeout();
       try {
-        future.executeCallBack();
+        future.executeCallBack(msg);
       } catch (Exception e) {
-        logger.error("Exception caught when executing invoke callback, id={}",
-            msg.msgId(), e);
+        logger.error("Exception caught when executing invoke callback, id={}", msg.msgId(), e);
       }
     } else {
-      logger
-          .warn("Cannot find InvokeFuture, maybe already timeout, id={}, from={} ",
-              msg.msgId(),
-              channel.remoteAddress());
+      logger.warn("Cannot find InvokeFuture, maybe already timeout, id={}, from={} ", msg.msgId(),
+          channel.remoteAddress());
     }
   }
 
   /**
    * 执行处理器
    *
-   * @param msg 请求消息
+   * @param msg     请求消息
    * @param handler 注册的处理器
    * @since 2021年08月15日 20:22:04
    */
@@ -113,34 +113,30 @@ public class CrossDispatcher implements Dispatcher {
       if (0 < msg.proto()) {
         Message response;
         result = extractResult(result);
+
+        response = Message
+            .of(Math.negateExact(msg.proto()))
+            .msgId(msg.msgId())
+            .status(MessageStatus.SUCCESS)
+            .packet(result);
+
         if (result instanceof Message) {
           Message resMsg = (Message) result;
-          response = resMsg.msgId(msg.msgId());
-          if (response.proto() == 0) {
+          if (resMsg.proto() != 0) {
             response.proto(Math.negateExact(msg.proto()));
           }
 
-          if (response.status() == MessageStatus.NONE.status()) {
-            response.status(MessageStatus.SUCCESS);
+          if (resMsg.status() != MessageStatus.NONE.status()) {
+            response.status(resMsg.status());
           }
-        } else {
-          response = Message
-              .of(Math.negateExact(msg.proto()))
-              .msgId(msg.msgId())
-              .status(MessageStatus.SUCCESS)
-              .packet(result);
         }
         channel.write(response);
       }
 
     } catch (Exception e) {
       if (0 < msg.proto()) {
-        channel.write(
-            Message
-                .of(Math.negateExact(msg.proto()))
-                .msgId(msg.msgId())
-                .status(MessageStatus.SERVER_EXCEPTION)
-        );
+        channel.write(Message.of(Math.negateExact(msg.proto())).msgId(msg.msgId())
+            .status(MessageStatus.SERVER_EXCEPTION));
       }
       logger.error("from:{}, proto:{}, handler error", channel.remoteAddress(), msg.proto(), e);
     }
@@ -154,8 +150,8 @@ public class CrossDispatcher implements Dispatcher {
    */
   private Object extractResult(Object obj) {
     Object res = obj;
-    if (obj instanceof InvokeFuture) {
-      res = ((InvokeFuture<?>) obj).result();
+    if (obj instanceof ResultInvokeFuture) {
+      res = ((ResultInvokeFuture<?>) obj).result();
     }
     return res;
   }

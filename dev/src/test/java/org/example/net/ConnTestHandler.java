@@ -42,12 +42,11 @@ public class ConnTestHandler extends SimpleChannelInboundHandler<Message> {
 
     invokeTimes.incrementAndGet();
     if (msg.proto() < 0 && 0 != msg.msgId()) {
-      InvokeFuture<?> future = connection.removeInvokeFuture(msg.msgId());
+      DefaultInvokeFuture<?> future = connection.removeInvokeFuture(msg.msgId());
       if (future != null) {
-        future.putMessage(msg);
         future.cancelTimeout();
         try {
-          future.executeCallBack();
+          future.executeCallBack(msg);
         } catch (Exception e) {
           logger.error("Exception caught when executing invoke callback, id={}",
               msg.msgId(), e);

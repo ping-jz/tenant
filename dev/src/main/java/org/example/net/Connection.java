@@ -17,28 +17,36 @@ public class Connection {
   private Logger logger = LoggerFactory
       .getLogger(getClass());
 
-  /** Attribute key for connection */
+  /**
+   * Attribute key for connection
+   */
   public static final AttributeKey<Connection> CONNECTION = AttributeKey
       .valueOf("connection");
 
-  /** ip address */
+  /**
+   * ip address
+   */
   private String address;
-  /** a netty channel */
+  /**
+   * a netty channel
+   */
   private Channel channel;
-  /** callBack future */
-  private final ConcurrentHashMap<Integer, InvokeFuture<?>> invokeFutures = new ConcurrentHashMap<>();
+  /**
+   * callBack future
+   */
+  private final ConcurrentHashMap<Integer, DefaultInvokeFuture<?>> invokeFutures = new ConcurrentHashMap<>();
 
-  public <T> InvokeFuture<T> addInvokeFuture(InvokeFuture<T> future) {
+  public <T> DefaultInvokeFuture<T> addInvokeFuture(DefaultInvokeFuture<T> future) {
     if (isActive()) {
-      return (InvokeFuture<T>) invokeFutures.putIfAbsent(future.id(), future);
+      return (DefaultInvokeFuture<T>) invokeFutures.putIfAbsent(future.id(), future);
     } else {
       closeFuture(future);
       return null;
     }
   }
 
-  public <T> InvokeFuture<T> removeInvokeFuture(int msgId) {
-    return (InvokeFuture<T>) invokeFutures.remove(msgId);
+  public <T> DefaultInvokeFuture<T> removeInvokeFuture(int msgId) {
+    return (DefaultInvokeFuture<T>) invokeFutures.remove(msgId);
   }
 
   public Connection(Channel channel, String address) {
@@ -64,17 +72,16 @@ public class Connection {
       channel.close();
     }
 
-    for (InvokeFuture<?> future : invokeFutures.values()) {
+    for (DefaultInvokeFuture<?> future : invokeFutures.values()) {
       closeFuture(future);
     }
     invokeFutures.clear();
   }
 
-  private void closeFuture(InvokeFuture<?> future) {
+  private void closeFuture(DefaultInvokeFuture<?> future) {
     try {
-      future.putMessage(Message.of().status(MessageStatus.CLOSE));
       future.cancelTimeout();
-      future.executeCallBack();
+      future.executeCallBack(Message.of().status(MessageStatus.CLOSE));
     } catch (Exception e) {
       logger
           .error(
