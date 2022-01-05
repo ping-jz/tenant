@@ -38,39 +38,22 @@ public class BaseRemoting {
   public <T> InvokeFuture<T> invoke(final Connection conn, final Message message,
       final long timeout) {
     final DefaultInvokeFuture<T> future = new DefaultInvokeFuture<>(message.msgId());
-    final int msgId = message.msgId();
-    conn.addInvokeFuture(future);
-    try {
-      Future<?> timeoutFuture = conn.channel().eventLoop().schedule(() -> {
-        DefaultInvokeFuture<T> f = conn.removeInvokeFuture(msgId);
-        if (f != null) {
-          f.executeCallBack(Message.of().status(MessageStatus.TIMEOUT));
-        }
-      }, timeout, TimeUnit.MILLISECONDS);
-      future.addTimeout(timeoutFuture);
+    return invokeWithFuture(conn, message, future, timeout);
+  }
 
-      conn.channel().writeAndFlush(message).addListener(cf -> {
-        if (!cf.isSuccess()) {
-          DefaultInvokeFuture<T> f = conn.removeInvokeFuture(msgId);
-          if (f != null) {
-            f.cancelTimeout();
-            f.executeCallBack(Message.of().status(MessageStatus.SEND_ERROR));
-          }
-          logger.error("Invoke send failed. The address is {}",
-              conn.channel().remoteAddress(), cf.cause());
-        }
-      });
-    } catch (Exception e) {
-      DefaultInvokeFuture<T> f = conn.removeInvokeFuture(msgId);
-      if (f != null) {
-        f.cancelTimeout();
-        f.executeThrowAble(e);
-      }
-      logger.error("Exception caught when sending invocation. The address is {}",
-          conn.channel().remoteAddress(), e);
-    }
 
-    return future;
+  /**
+   * callBack Rpc invocation .<br>
+   *
+   * @param conn    目标链接
+   * @param message 请求消息
+   * @param timeout 超时时间
+   * @since 2021年08月15日 15:45:03
+   */
+  public <T> void invokeWithCallBack(final Connection conn, final Message message,
+      InvokeCallback<T> callback, final long timeout) {
+    final DefaultInvokeFuture<T> future = new DefaultInvokeFuture<>(message.msgId(), callback);
+    invokeWithFuture(conn, message, future, timeout);
   }
 
   /**
@@ -101,8 +84,8 @@ public class BaseRemoting {
             f.cancelTimeout();
             f.executeCallBack(Message.of().status(MessageStatus.SEND_ERROR));
           }
-          logger.error("Invoke send failed. The address is {}",
-              conn.channel().remoteAddress(), cf.cause());
+          logger.error("Invoke send failed. The address is {}", conn.channel().remoteAddress(),
+              cf.cause());
         }
       });
     } catch (Exception e) {
@@ -116,50 +99,5 @@ public class BaseRemoting {
     }
 
     return future;
-  }
-
-  /**
-   * Rpc invocation with future returned.<br>
-   *
-   * @param conn    目标链接
-   * @param message 请求消息
-   * @param timeout 超时时间
-   * @since 2021年08月15日 15:45:03
-   */
-  public void invokeWithCallBack(final Connection conn, final Message message,
-      InvokeCallback<?> callback,
-      final long timeout) {
-    final DefaultInvokeFuture<?> future = new DefaultInvokeFuture(message.msgId(), callback);
-    final int msgId = message.msgId();
-    conn.addInvokeFuture(future);
-    try {
-      Future<?> timeoutFuture = conn.channel().eventLoop().schedule(() -> {
-        DefaultInvokeFuture<?> f = conn.removeInvokeFuture(msgId);
-        if (f != null) {
-          f.executeCallBack(Message.of().status(MessageStatus.TIMEOUT));
-        }
-      }, timeout, TimeUnit.MILLISECONDS);
-      future.addTimeout(timeoutFuture);
-
-      conn.channel().writeAndFlush(message).addListener(cf -> {
-        if (!cf.isSuccess()) {
-          DefaultInvokeFuture<?> f = conn.removeInvokeFuture(msgId);
-          if (f != null) {
-            f.cancelTimeout();
-            f.executeCallBack(Message.of().status(MessageStatus.SEND_ERROR));
-          }
-          logger.error("Invoke send failed. The address is {}",
-              conn.channel().remoteAddress(), cf.cause());
-        }
-      });
-    } catch (Exception e) {
-      DefaultInvokeFuture<?> f = conn.removeInvokeFuture(msgId);
-      if (f != null) {
-        f.cancelTimeout();
-        f.executeThrowAble(e);
-      }
-      logger.error("Exception caught when sending invocation. The address is {}",
-          conn.channel().remoteAddress(), e);
-    }
   }
 }
