@@ -22,7 +22,7 @@ public class DefaultInvokeFuture<T> implements InvokeFuture<T> {
   /**
    * 处理错误回调
    */
-  private volatile InvokeCallback<T> errCallBack;
+  private volatile InvokeCallback<Message> errCallBack;
   /**
    * 超时任务
    */
@@ -69,9 +69,9 @@ public class DefaultInvokeFuture<T> implements InvokeFuture<T> {
     if (executeCallbackOnlyOnce.compareAndSet(false, true)) {
       try {
         if (message != null && message.isSuc()) {
-          doInvokeCallBack(sucCallBack, message);
+          sucCallBack.onMessage((T) message.packet());
         } else if (errCallBack != null) {
-          doInvokeCallBack(errCallBack, message);
+          errCallBack.onMessage(message);
         }
       } catch (Exception e) {
         if (errCallBack instanceof ErrCallback) {
@@ -79,14 +79,6 @@ public class DefaultInvokeFuture<T> implements InvokeFuture<T> {
         }
       }
     }
-  }
-
-  private void doInvokeCallBack(InvokeCallback<T> callback, Message message) {
-    if (callback == null) {
-      return;
-    }
-
-    callback.onMessage((T) message.packet());
   }
 
   public void addTimeout(Future<?> future) {
@@ -111,7 +103,7 @@ public class DefaultInvokeFuture<T> implements InvokeFuture<T> {
   }
 
   @Override
-  public InvokeFuture<T> onErr(InvokeCallback<T> t) {
+  public InvokeFuture<T> onErr(InvokeCallback<Message> t) {
     errCallBack = t;
     return this;
   }

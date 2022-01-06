@@ -29,7 +29,7 @@ public class ResultInvokeFuture<T> implements InvokeFuture<T> {
   }
 
   @Override
-  public InvokeFuture<T> onErr(InvokeCallback<T> t) {
+  public InvokeFuture<T> onErr(InvokeCallback<Message> t) {
     throw new UnsupportedOperationException("此实现不支持回调");
   }
 

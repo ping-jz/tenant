@@ -15,27 +15,4 @@ public interface InvokeCallback<T> {
    * @param result the result,
    */
   void onMessage(T result);
-
-  /**
-   * 成功回调(如果需要处理失败的结果，直接使用{@link InvokeCallback})
-   *
-   * @author ZJP
-   * @since 2021年09月01日 17:53:08
-   **/
-  @FunctionalInterface
-  interface DefaultSucCallBack<T> extends InvokeCallback<Message> {
-
-    /**
-     * 只处理
-     *
-     * @param result the result
-     */
-    default void onMessage(Message result) {
-      onSuc((T) result.packet());
-    }
-
-
-    void onSuc(T t);
-  }
-
 }

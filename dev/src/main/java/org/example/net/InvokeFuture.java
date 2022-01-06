@@ -13,7 +13,7 @@ public interface InvokeFuture<T> {
     /**
      * 执行失败
      */
-    InvokeFuture<T> onErr(InvokeCallback<T> t);
+    InvokeFuture<T> onErr(InvokeCallback<Message> t);
 
     void invoke();
 }
