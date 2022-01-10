@@ -42,7 +42,7 @@ public class CrossDispatcher implements Dispatcher {
    * 根据{@link Message#proto()}进行消息分发
    *
    * @param channel 通信channel
-   * @param req     请求消息
+   * @param req 请求消息
    * @since 2021年07月24日 15:58:39
    */
   public void doDispatcher(Channel channel, Message req) {
@@ -53,7 +53,7 @@ public class CrossDispatcher implements Dispatcher {
       return;
     }
 
-    if (handler == null) {
+    if (0 < req.msgId() && req.proto() < 0) {
       invokeFuture(channel, req);
     } else {
       invokeHandler(channel, req, handler);
@@ -89,7 +89,7 @@ public class CrossDispatcher implements Dispatcher {
   /**
    * 执行处理器
    *
-   * @param msg     请求消息
+   * @param msg 请求消息
    * @param handler 注册的处理器
    * @since 2021年08月15日 20:22:04
    */
@@ -98,6 +98,7 @@ public class CrossDispatcher implements Dispatcher {
       if (msg.isErr()) {
         logger.error("from:{}, proto:{}, 错误代码:{}", channel.remoteAddress(), msg.proto(),
             msg.status());
+        return;
       }
 
       //TODO 这里需要增加, handler可以接受Connection和Message作为参数
@@ -114,11 +115,8 @@ public class CrossDispatcher implements Dispatcher {
         Message response;
         result = extractResult(result);
 
-        response = Message
-            .of(Math.negateExact(msg.proto()))
-            .msgId(msg.msgId())
-            .status(MessageStatus.SUCCESS)
-            .packet(result);
+        response = Message.of(Math.negateExact(msg.proto())).msgId(msg.msgId())
+            .status(MessageStatus.SUCCESS).packet(result);
 
         if (result instanceof Message) {
           Message resMsg = (Message) result;
