@@ -1,21 +1,19 @@
-package org.example.persistence.mongo;
+package org.example.persistence;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.RemovalCause;
-import org.example.persistence.ValueWrapper;
-import org.example.persistence.accessor.Accessor;
-import org.example.util.Id;
-
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import org.example.persistence.accessor.Accessor;
+import org.example.util.Identity;
 
 /**
  * MongoDb缓存实现
- *
+ * <p>
  * 主要负责加载和回写实现
  *
  * <p>1.主动清除的缓存需要先手动写回数据</p>
@@ -30,19 +28,28 @@ import java.util.function.Function;
  * @author ZJP
  * @since 2021年09月29日 16:34:55
  **/
-public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Id<PK>> {
+public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Identity<PK>> {
 
-  /** spring mongo template */
-  private Accessor<PK, T> accessor;
-  /** caffeine cache */
+  /**
+   * spring mongo template
+   */
+  private Accessor accessor;
+  /**
+   * caffeine cache
+   */
   private LoadingCache<PK, ValueWrapper<T>> cache;
-  /** entity类型信息 */
+  /**
+   * entity类型信息
+   */
   private Class<T> entityClass;
 
-  public EntityCache(long expireMill, int cacheSize, Class<T> entityClass, Accessor<PK, T> accessor,
+  public EntityCache(long expireMill, Class<T> entityClass, Accessor accessor, Executor executor) {
+    this(expireMill, Integer.MAX_VALUE, entityClass, accessor, executor);
+  }
+
+  public EntityCache(long expireMill, int cacheSize, Class<T> entityClass, Accessor accessor,
       Executor executor) {
-    Caffeine<PK, ValueWrapper<T>> caffeine = Caffeine.newBuilder()
-        .maximumSize(cacheSize)
+    Caffeine<PK, ValueWrapper<T>> caffeine = Caffeine.newBuilder().maximumSize(cacheSize)
         .expireAfterAccess(expireMill, TimeUnit.MILLISECONDS)
         .removalListener((key, value, cause) -> {
           if (value != null && cause != RemovalCause.EXPLICIT) {
@@ -55,7 +62,14 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Id<
 
     this.entityClass = entityClass;
     this.accessor = accessor;
-    cache = caffeine.build(key -> ValueWrapper.of(accessor.load(entityClass, key)));
+    cache = caffeine.build(key -> {
+      ValueWrapper<T> res = null;
+      T t = accessor.load(entityClass, key);
+      if (t != null) {
+        res = ValueWrapper.of(t);
+      }
+      return res;
+    });
   }
 
   public T get(PK key) {
@@ -76,9 +90,15 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Id<
 
 
   public T getOrCreate(PK key, Function<PK, T> provider) {
-    return cache.asMap().computeIfAbsent(key, pk ->
-        ValueWrapper.of(provider.apply(pk))
-    ).getValue();
+    return cache.asMap().computeIfAbsent(key, pk -> {
+      T t = provider.apply(pk);
+      ValueWrapper<T> tWrapper = null;
+      if (t != null) {
+        tWrapper = ValueWrapper.of(provider.apply(pk));
+        writeBack(tWrapper.getValue());
+      }
+      return tWrapper;
+    }).getValue();
   }
 
 
@@ -149,9 +169,5 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Id<
       //持久化失败，放入缓存等待下次
       cache.asMap().computeIfAbsent(obj.id(), k -> ValueWrapper.of(obj));
     }
-  }
-
-  public Accessor<PK, T> template() {
-    return accessor;
   }
 }

@@ -6,14 +6,14 @@ package org.example.persistence.accessor;
  * @author ZJP
  * @since 2021年11月05日 15:25:59
  **/
-public interface Accessor<PK, T> {
+public interface Accessor {
 
   /**
    * 根据主键加载数据
    *
    * @since 2021年11月05日 15:34:08
    **/
-  T load(Class<T> entityClass, PK key);
+  <PK, T> T load(Class<T> entityClass, PK key);
 
 
   /**
@@ -21,7 +21,7 @@ public interface Accessor<PK, T> {
    *
    * @since 2021年11月05日 15:34:08
    **/
-  T delete(Class<T> entityClass, PK key);
+  <PK, T> T delete(Class<T> entityClass, PK key);
 
 
   /**
@@ -30,6 +30,6 @@ public interface Accessor<PK, T> {
    * @param entity 实体类
    * @since 2021年11月05日 16:41:01
    */
-  T save(T entity);
+  <T> T save(T entity);
 
 }

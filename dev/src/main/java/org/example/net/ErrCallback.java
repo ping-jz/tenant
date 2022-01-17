@@ -26,34 +26,4 @@ public interface ErrCallback<T> extends InvokeCallback<T> {
     throw new RuntimeException(e);
   }
 
-  /**
-   * 成功回调(如果需要处理失败的结果，直接使用{@link ErrCallback})
-   *
-   * @author ZJP
-   * @since 2021年09月01日 17:53:08
-   **/
-  final class DefaultCallBack<T> implements
-      ErrCallback<T> {
-
-    private static final DefaultCallBack<?> DEFAULT = new DefaultCallBack<>();
-
-    public static <T> DefaultCallBack<T> instance() {
-      return (DefaultCallBack<T>) DEFAULT;
-    }
-
-    @Override
-    public void onMessage(Object result) {
-      //Do nothing
-    }
-
-
-    @Override
-    public void onException(Throwable result) {
-      //Just throw
-      throw new RuntimeException(result);
-    }
-
-
-  }
-
 }
