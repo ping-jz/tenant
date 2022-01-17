@@ -1,5 +1,6 @@
-package org.example.persistence.accessor;
+package org.example.persistence.mongo;
 
+import org.example.persistence.accessor.Accessor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -10,11 +11,13 @@ import org.springframework.data.mongodb.core.query.Query;
  * @author ZJP
  * @since 2021年11月05日 15:23:56
  **/
-public class MongoDbAccessor<PK, T> implements Accessor<PK, T> {
+public class MongoDbAccessor implements Accessor {
 
   private static final String ID = "_id";
 
-  /** spring的封装的mongodb操作 */
+  /**
+   * spring的封装的mongodb操作
+   */
   private MongoTemplate template;
 
   public MongoDbAccessor(MongoTemplate template) {
@@ -22,17 +25,17 @@ public class MongoDbAccessor<PK, T> implements Accessor<PK, T> {
   }
 
   @Override
-  public T load(Class<T> entityClass, PK key) {
+  public <PK, T> T load(Class<T> entityClass, PK key) {
     return template.findById(key, entityClass);
   }
 
   @Override
-  public T delete(Class<T> entityClass, PK key) {
-    return template.findAndRemove(Query.query(Criteria.where(ID).is(key)), entityClass);
+  public <PK, T> void delete(Class<T> entityClass, PK key) {
+    template.remove(Query.query(Criteria.where(ID).is(key)), entityClass);
   }
 
   @Override
-  public T save(T entity) {
+  public <T> T save(T entity) {
     return template.save(entity);
   }
 }

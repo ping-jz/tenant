@@ -16,11 +16,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 
 /**
- * logger环境配置，每个容器独有
+ * logger环境配置，每个容器独有 还是通过配置文件来吧，全部依赖log4j2的代码。少自己创建新概念新流程
  *
  * @author ZJP
  * @since 2021年06月30日 18:09:39
  **/
+@Deprecated
 public class LoggerConfig {
 
 

@@ -1,11 +1,5 @@
 package org.example.persistence;
 
-import org.example.persistence.accessor.Accessor;
-import org.example.persistence.mongo.EntityCache;
-import org.example.util.Id;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -14,6 +8,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.example.persistence.accessor.Accessor;
+import org.example.util.Identity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 数据和缓存服务入口
@@ -34,8 +32,10 @@ public class EntityService {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
-  /** 数据访问抽象 */
-  private Accessor<?, ?> accessor;
+  /**
+   * 数据访问抽象
+   */
+  private Accessor accessor;
 
   /** 缓存服务 (类型 -> 缓存) */
   private Map<Class<?>, EntityCache<?, ?>> caches;
@@ -49,17 +49,17 @@ public class EntityService {
   }
 
 
-  public <PK extends Serializable & Comparable<PK>, T extends Id<PK>> void registeEntityClass(
+  public <PK extends Serializable & Comparable<PK>, T extends Identity<PK>> void registeEntityClass(
       Class<T> clazz) {
     @SuppressWarnings("all")
-    Accessor<PK, T> ac = (Accessor<PK, T>) accessor;
+    Accessor ac = accessor;
     EntityCache<PK, T> cache = new EntityCache<PK, T>(TimeUnit.SECONDS.toMillis(60), 1024, clazz,
         ac, executors);
     caches.put(clazz, cache);
   }
 
 
-  public <PK extends Serializable & Comparable<PK>, T extends Id<PK>> EntityCache<PK, T> getEntityCache(
+  public <PK extends Serializable & Comparable<PK>, T extends Identity<PK>> EntityCache<PK, T> getEntityCache(
       Class<T> clazz) {
     Objects.requireNonNull(clazz);
     return (EntityCache<PK, T>) caches.get(clazz);

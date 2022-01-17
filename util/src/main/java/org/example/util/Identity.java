@@ -8,7 +8,7 @@ import java.io.Serializable;
  * @author ZJP
  * @since 2021年09月29日 16:31:02
  **/
-public interface Id<PK extends Serializable & Comparable<PK>> {
+public interface Identity<PK extends Serializable & Comparable<PK>> {
 
   PK id();
 }
