@@ -21,7 +21,7 @@ public interface Accessor {
    *
    * @since 2021年11月05日 15:34:08
    **/
-  <PK, T> T delete(Class<T> entityClass, PK key);
+  <PK, T> void delete(Class<T> entityClass, PK key);
 
 
   /**

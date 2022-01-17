@@ -22,10 +22,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
  * 手动配置环境，用Ideal测试吧
  */
 @EnabledIfSystemProperty(named = "mongoDbTest", matches = "true")
-public class EntityCacheTest {
+public class EntityCacheReadWriteDeleteTest {
 
   /* The mongo client */
-  private static long expireTime = 1;
+  private static long expireTime = 100;
   private static MongoClient client;
   private static EntityCache<Long, Avatar> avatarCache;
 
@@ -48,25 +48,6 @@ public class EntityCacheTest {
   }
 
   @Test
-  void readWriteTest() throws Exception {
-    Long avatarId = 2L;
-    String name = "Test";
-    avatarCache.getOrCreate(avatarId, id -> {
-      Avatar a = new Avatar();
-      a.id(id);
-      a.name(name);
-      return a;
-    });
-
-    TimeUnit.MILLISECONDS.sleep(expireTime * 10);
-    Assertions.assertNull(avatarCache.getIfPresent(avatarId));
-
-    Avatar expected = new Avatar();
-    expected.id(avatarId).name(name);
-    Assertions.assertEquals(expected, avatarCache.get(avatarId));
-  }
-
-  @Test
   void multiReadWriteTest() throws Exception {
     String namePrefix = "Test";
     for (long i = 10; i < 20; i++) {
@@ -79,23 +60,40 @@ public class EntityCacheTest {
     }
 
     TimeUnit.MILLISECONDS.sleep(expireTime * 10);
-    for (long i = 10; i < 20; i++) {
-      Assertions.assertNull(avatarCache.getIfPresent(i));
-    }
-
+    //重新读进内存
     for (long i = 10; i < 20; i++) {
       Avatar expected = new Avatar();
       expected.id(i).name(namePrefix + i);
       Assertions.assertEquals(expected, avatarCache.get(i));
     }
+
+    // 删除15-20
+    for (long i = 15; i < 20; i++) {
+      Avatar expected = new Avatar();
+      expected.id(i).name(namePrefix + i);
+      Assertions.assertEquals(expected, avatarCache.delete(i));
+    }
+
+    TimeUnit.MILLISECONDS.sleep(expireTime * 10);
+    //看下10-14是否还在
+    for (long i = 10; i < 15; i++) {
+      Avatar expected = new Avatar();
+      expected.id(i).name(namePrefix + i);
+      Assertions.assertEquals(expected, avatarCache.get(i));
+    }
+
+    //看下15-20是否删除了
+    for (long i = 15; i < 20; i++) {
+      Assertions.assertNull(avatarCache.get(i));
+    }
+
   }
 
-  @Document(collation = "avatar")
+  @Document(collection = "avatar")
   public static class Avatar implements Identity<Long> {
 
     @Id
-    /* 唯一ID */
-    private Long id;
+    /* 唯一ID */ private Long id;
     /* 名字 */
     private String name;
 

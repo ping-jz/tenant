@@ -139,7 +139,7 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Ide
 
 
   public T delete(PK pk) {
-    ValueWrapper<T> remove = cache.getIfPresent(pk);
+    ValueWrapper<T> remove = cache.asMap().remove(pk);
     T res = null;
     if (remove != null) {
       res = remove.getValue();

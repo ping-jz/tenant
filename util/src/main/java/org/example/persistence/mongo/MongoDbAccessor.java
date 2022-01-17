@@ -30,8 +30,8 @@ public class MongoDbAccessor implements Accessor {
   }
 
   @Override
-  public <PK, T> T delete(Class<T> entityClass, PK key) {
-    return template.findAndRemove(Query.query(Criteria.where(ID).is(key)), entityClass);
+  public <PK, T> void delete(Class<T> entityClass, PK key) {
+    template.remove(Query.query(Criteria.where(ID).is(key)), entityClass);
   }
 
   @Override
