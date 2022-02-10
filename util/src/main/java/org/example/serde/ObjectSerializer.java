@@ -5,9 +5,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * 通用对象序列化实现
@@ -15,21 +14,29 @@ import java.util.List;
  * <p>1.根据字段名字进行排序，不能随机更改字段名</p>
  * <p>2.字段类型也需要注册进{@link CommonSerializer}, 顺序无关</p>
  * <p>3.因为接口和抽象类的存在，无法确定具体类型，所以不提供自动注册</p>
- *
+ * <p>
  * 与{@link CommonSerializer} 组合使用,本体功能并不完整
  *
  * @since 2021年07月17日 16:16:14
  **/
 public class ObjectSerializer implements Serializer<Object> {
 
-  /** 目标类型 */
+  /**
+   * 目标类型
+   */
   private Class<?> clazz;
-  /** 序列实现集合 */
+  /**
+   * 序列实现集合
+   */
   private CommonSerializer serializer;
-  /** 默认无参构造 */
+  /**
+   * 默认无参构造
+   */
   private Constructor<?> constructor;
-  /** 字段信息 */
-  private List<Field> fields;
+  /**
+   * 字段信息
+   */
+  private Field[] fields;
 
   public ObjectSerializer(Class<?> clazz, CommonSerializer serializer) {
     this.clazz = clazz;
@@ -39,19 +46,15 @@ public class ObjectSerializer implements Serializer<Object> {
 
   /**
    * 接口，抽象类，标记，无法进行注册
-   *
+   * <p>
    * 必须提供无参构造方法
    *
    * @param clazz 注册类型
    * @since 2021年07月18日 11:02:39
    */
   public static void checkClass(Class<?> clazz) {
-    if (clazz.isInterface()
-        || clazz.isAnnotation()
-        || clazz.isPrimitive()
-        || Modifier.isAbstract(clazz.getModifiers())
-        || clazz == Object.class
-    ) {
+    if (clazz.isInterface() || clazz.isAnnotation() || clazz.isPrimitive() || Modifier.isAbstract(
+        clazz.getModifiers()) || clazz == Object.class) {
       throw new RuntimeException("类型:" + clazz + ",无法序列化");
     }
 
@@ -76,44 +79,24 @@ public class ObjectSerializer implements Serializer<Object> {
     }
 
     //所有字段
-    List<Field> fields = null;
-    //当前类的字段，不包含父类
-    List<Field> currentField = null;
+    List<Field> fields = new ArrayList<>();
     for (Class<?> cls = clazz; cls != Object.class; cls = cls.getSuperclass()) {
-      if (currentField != null) {
-        currentField.clear();
-      }
       for (Field f : cls.getDeclaredFields()) {
         int modifier = f.getModifiers();
-        if (Modifier.isStatic(modifier) || Modifier.isFinal(modifier) || Modifier
-            .isTransient(modifier)) {
+        if (Modifier.isStatic(modifier) || Modifier.isFinal(modifier) || Modifier.isTransient(
+            modifier)) {
           continue;
         }
 
-        if (currentField == null) {
-          currentField = new ArrayList<>();
-        }
-
-        currentField.add(f);
-      }
-
-      //汇总，子类字段顺序不干扰父类的
-      if (currentField != null && !currentField.isEmpty()) {
-        currentField.sort(Comparator.comparing(Field::getName));
         if (fields == null) {
           fields = new ArrayList<>();
         }
-        fields.addAll(0, currentField);
+        f.setAccessible(true);
+        fields.add(f);
       }
     }
 
-    if (fields == null) {
-      fields = Collections.emptyList();
-    } else {
-      fields.forEach(f -> f.setAccessible(true));
-    }
-
-    this.fields = fields;
+    this.fields = fields.toArray(ArrayUtils.EMPTY_FIELD_ARRAY);
   }
 
   @Override
