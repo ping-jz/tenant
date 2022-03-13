@@ -125,6 +125,12 @@
       <!-- https://mvnrepository.com/artifact/io.netty/netty-all -->
       <dependency>
         <groupId>io.netty</groupId>
+        <artifactId>netty-buffer</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.netty</groupId>
         <artifactId>netty-all</artifactId>
         <version>${netty.version}</version>
       </dependency>

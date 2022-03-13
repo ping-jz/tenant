@@ -28,7 +28,9 @@ import java.util.concurrent.ConcurrentHashMap;
  **/
 public class CommonSerializer implements Serializer<Object> {
 
-  /** 通用类型ID */
+  /**
+   * 通用类型ID
+   */
   public static final int NULL_ID = 0;
   public static final int BYTE_ID = 1;
   public static final int SHORT_ID = 2;
@@ -40,11 +42,17 @@ public class CommonSerializer implements Serializer<Object> {
   public static final int STRING_ID = 8;
   public static final int ARRAY_ID = 9;
 
-  /** [类型ID, 具体类型] */
+  /**
+   * [类型ID, 具体类型]
+   */
   private Map<Integer, Class<?>> id2Clazz;
-  /** 序列化注册 [目标类型 -> 序列化实现] */
+  /**
+   * 序列化注册 [目标类型 -> 序列化实现]
+   */
   private Map<Class<?>, Serializer<?>> serializers;
-  /** [具体类型, 类型ID] */
+  /**
+   * [具体类型, 类型ID]
+   */
   private Map<Class<?>, Integer> clazz2Id;
 
   public CommonSerializer() {
@@ -88,7 +96,7 @@ public class CommonSerializer implements Serializer<Object> {
 
   /**
    * 注册包装类型
-   *
+   * <p>
    * 如:把包装类导向基础类(包装类指向基础类类型的ID和序列化实现)
    * <p>Integer -> int</p>
    * <p>Double -> double</p>
@@ -127,7 +135,7 @@ public class CommonSerializer implements Serializer<Object> {
   /**
    * 注册序列化
    *
-   * @param id 类型ID
+   * @param id    类型ID
    * @param clazz 类型
    * @since 2021年07月18日 11:37:14
    */
@@ -144,8 +152,8 @@ public class CommonSerializer implements Serializer<Object> {
   /**
    * 注册序列化
    *
-   * @param id 类型ID
-   * @param clazz 类型
+   * @param id         类型ID
+   * @param clazz      类型
    * @param serializer 序列化实现
    * @since 2021年07月18日 11:37:14
    */
@@ -164,13 +172,13 @@ public class CommonSerializer implements Serializer<Object> {
 
   /**
    * 类型绑定
-   *
+   * <p>
    * 如:把包装类导向基础类(包装类指向基础类的ID和序列化实现)
    * <p>Integer -> int</p>
    * <p>Double -> double</p>
    * <p>ArrayList -> Collection</p>
    * <p>List -> Collection</p>
-   *
+   * <p>
    * 注意:序列化之后，原有信息会被抛弃。如何LinkHashMap会变成HashMap。如果想保留，请使用{@link CommonSerializer#registerSerializer}
    *
    * @since 2021年07月18日 10:31:21
@@ -227,7 +235,6 @@ public class CommonSerializer implements Serializer<Object> {
 
     int writeIdx = buf.writerIndex();
     try {
-      @SuppressWarnings("unchecked")
       Serializer<Object> serializer = findSerilaizer(clazz);
       if (serializer == null) {
         throw new RuntimeException("类型:" + clazz + "，未注册");
@@ -249,9 +256,10 @@ public class CommonSerializer implements Serializer<Object> {
   @SuppressWarnings("unchecked")
   private <T> Serializer<T> findSerilaizer(Class<?> clzz) {
     Serializer<T> serializer = (Serializer<T>) serializers.get(clzz);
+    //没有找到，尝试寻找父类(父类必须是接口，接口更加通用)
     if (serializer == null) {
-      for(Class<?> key : serializers.keySet()) {
-        if(key.isAssignableFrom(clzz) && key.isInterface()) {
+      for (Class<?> key : serializers.keySet()) {
+        if (key.isAssignableFrom(clzz) && key.isInterface()) {
           linkTo(clzz, key);
           break;
         }
