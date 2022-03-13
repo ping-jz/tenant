@@ -1,7 +1,7 @@
 package org.example.net;
 
 /**
- * 回调任务
+ * 单纯的包装类，不执行热更逻辑
  *
  * @author ZJP
  * @since 2021年08月14日 19:39:25

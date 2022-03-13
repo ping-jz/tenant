@@ -1,4 +1,4 @@
-package org.example.actor;
+package org.example.executor;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -9,29 +9,16 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
-@EnabledIfSystemProperty(named = "actorTest", matches = "true")
 public class ThreadPoolsTest {
 
 
   protected static ExecutorService[] services;
   protected static int powerOf2;
-  protected static int tasks;
-
-  protected static int nextPowerOfTwo(int value) {
-    int highestOneBit = Integer.highestOneBit(value);
-    if (value == highestOneBit) {
-      return value;
-    }
-    return highestOneBit << 1;
-  }
 
   @BeforeAll
   public static void beforeAll() {
-    powerOf2 = nextPowerOfTwo(Runtime.getRuntime().availableProcessors());
-    //看机器情况调整，过多会瞬间创建大量对象导致内存不足
-    tasks = ExecutorTest.TASKS;
+    powerOf2 = ExecutorTest.nextPowerOfTwo(Runtime.getRuntime().availableProcessors());
     services = new ExecutorService[powerOf2];
     for (int i = 0; i < powerOf2; i++) {
       services[i] = Executors.newSingleThreadExecutor();
@@ -53,10 +40,10 @@ public class ThreadPoolsTest {
    */
   @RepeatedTest(ExecutorTest.REPEAT)
   public void test() throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(tasks);
-    Runnable task = () -> latch.countDown();
+    CountDownLatch latch = new CountDownLatch(ExecutorTest.TASKS);
+    Runnable task = latch::countDown;
     final int MARK = powerOf2 - 1;
-    IntStream.range(0, tasks).parallel().forEach(i -> {
+    IntStream.range(0, ExecutorTest.TASKS).parallel().forEach(i -> {
       services[i & MARK].execute(task);
     });
 

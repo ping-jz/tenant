@@ -1,10 +1,7 @@
 package org.example.net;
 
 /**
- * Invoke callback.
- *
- * @author jiangping
- * @version $Id: InvokeCallback.java, v 0.1 2015-9-30 AM10:24:26 tao Exp $
+ * 回调方法
  */
 @FunctionalInterface
 public interface InvokeCallback<T> {

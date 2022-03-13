@@ -10,12 +10,8 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import java.net.InetSocketAddress;
 import java.util.Objects;
-import org.example.net.BaseRemoting;
 import org.example.net.Connection;
 import org.example.net.ConnectionManager;
-import org.example.net.InvokeCallback;
-import org.example.net.Message;
-import org.example.net.MessageIdGenerator;
 import org.example.net.codec.MessageCodec;
 import org.example.serde.Serializer;
 import org.example.util.NettyEventLoopUtil;
@@ -23,37 +19,39 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Server for rpc
+ * 默认客户端，专注于链接的管理。尽量保持代码的专一
  *
  * @author ZJP
  * @since 2021年08月13日 14:56:18
  **/
-public class ReqClient implements AutoCloseable {
+public class DefaultClient implements AutoCloseable {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
-  /** 链接管理 */
+  /**
+   * 链接管理
+   */
   private ConnectionManager manager;
 
-  /** client bootstrap */
+  /**
+   * client bootstrap
+   */
   private Bootstrap bootstrap;
-  /** connection handler */
+  /**
+   * connection handler
+   */
   private ChannelHandler handler;
   /** codec */
   private Serializer<?> codec;
 
-  /** 请求实现 */
-  private BaseRemoting remoting;
-
-  public ReqClient() {
+  public DefaultClient() {
     manager = new ConnectionManager();
-    remoting = new BaseRemoting();
   }
 
   public void init(EventLoopGroup eventExecutors) {
     Objects.requireNonNull(handler, "connection handler can't be null");
 
-    ReqClient client = this;
+    DefaultClient client = this;
     bootstrap = new Bootstrap();
     bootstrap.group(eventExecutors)
         .channel(NettyEventLoopUtil.getClientSocketChannelClass())
@@ -74,31 +72,6 @@ public class ReqClient implements AutoCloseable {
 
   public ConnectionManager manager() {
     return manager;
-  }
-
-  /**
-   * send a oneway message(no response, just push the message to the remote)
-   *
-   * @author ZJP
-   * @since 2021年08月14日 20:53:14
-   **/
-  public void invoke(String addr, Message push) {
-    remoting.invoke(getConnection(addr), push);
-  }
-
-  /**
-   * Rpc invocation with future returned.<br>
-   *
-   * @param addr 目标地址
-   * @param message 请求消息
-   * @param timeout 超时时间
-   * @param callback 回调
-   * @since 2021年08月15日 15:45:03
-   */
-  public void invokeWithCallBack(String addr, Message message, InvokeCallback<?> callback,
-      long timeout) {
-    message.msgId(MessageIdGenerator.nextId());
-    remoting.invokeWithCallBack(getConnection(addr), message, callback, timeout);
   }
 
   /**
@@ -142,7 +115,7 @@ public class ReqClient implements AutoCloseable {
     return handler;
   }
 
-  public ReqClient handler(ChannelHandler handler) {
+  public DefaultClient handler(ChannelHandler handler) {
     this.handler = handler;
     return this;
   }
@@ -151,7 +124,7 @@ public class ReqClient implements AutoCloseable {
     return codec;
   }
 
-  public ReqClient codec(Serializer codec) {
+  public DefaultClient codec(Serializer codec) {
     this.codec = codec;
     return this;
   }

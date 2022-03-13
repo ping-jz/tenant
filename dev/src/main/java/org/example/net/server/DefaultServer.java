@@ -14,13 +14,8 @@ import java.net.InetSocketAddress;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.example.common.ThreadCommonResource;
-import org.example.net.BaseRemoting;
 import org.example.net.Connection;
 import org.example.net.ConnectionManager;
-import org.example.net.InvokeCallback;
-import org.example.net.InvokeFuture;
-import org.example.net.Message;
-import org.example.net.MessageIdGenerator;
 import org.example.net.codec.MessageCodec;
 import org.example.serde.Serializer;
 import org.example.util.NettyEventLoopUtil;
@@ -28,38 +23,40 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Server for rpc
+ * 默认服务器，专注于链接的管理。尽量保持代码的专一
  *
  * @author ZJP
  * @since 2021年08月13日 14:56:18
  **/
-public class ReqServer implements AutoCloseable {
+public class DefaultServer implements AutoCloseable {
 
   private Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private String ip;
   private int port;
 
-  /** channelFuture of netty */
+  /**
+   * channelFuture of netty
+   */
   private ChannelFuture channelFuture;
-  /** connection handler */
+  /**
+   * connection handler
+   */
   private ChannelHandler handler;
   /** codec */
   private Serializer<?> serializer;
   /** 链接管理 */
   private ConnectionManager connectionManager;
-  /** 调用逻辑 */
-  private BaseRemoting remoting;
 
-  public ReqServer() {
+  public DefaultServer() {
     this(0);
   }
 
-  public ReqServer(int port) {
+  public DefaultServer(int port) {
     this(new InetSocketAddress(port).getAddress().getHostAddress(), port);
   }
 
-  public ReqServer(String ip, int port) {
+  public DefaultServer(String ip, int port) {
     if (port < 0 || port > 65535) {
       throw new IllegalArgumentException(String.format(
           "Illegal port value: %d, which should between 0 and 65535.", port));
@@ -67,63 +64,6 @@ public class ReqServer implements AutoCloseable {
     this.ip = ip;
     this.port = port;
     connectionManager = new ConnectionManager(true);
-    remoting = new BaseRemoting();
-  }
-
-
-  /**
-   * send a oneway message(no response, just push the message to the remote)
-   *
-   * @author ZJP
-   * @since 2021年08月14日 20:53:14
-   **/
-  public void invoke(String addr, Message push) {
-    Connection connection = getConnection(addr);
-    if (connection != null) {
-      remoting.invoke(connection, push);
-    } else {
-      logger.error("address:{} is not connected", addr);
-    }
-  }
-
-  /**
-   * Rpc invocation with future returned.<br>
-   *
-   * @param addr 目标地址
-   * @param message 请求消息
-   * @param timeout 超时时间
-   * @since 2021年08月15日 15:45:03
-   */
-  public InvokeFuture invokeWithFuture(String addr, Message message, long timeout) {
-    Connection connection = getConnection(addr);
-    if (connection != null) {
-      message.msgId(MessageIdGenerator.nextId());
-      return remoting.invoke(connection, message, timeout);
-    } else {
-      logger.error("address:{} is not connected", addr);
-    }
-
-    return null;
-  }
-
-  /**
-   * Rpc invocation with future returned.<br>
-   *
-   * @param addr 目标地址
-   * @param message 请求消息
-   * @param timeout 超时时间
-   * @param callback 回调
-   * @since 2021年08月15日 15:45:03
-   */
-  public void invokeWithCallBack(String addr, Message message, InvokeCallback<?> callback,
-      long timeout) {
-    Connection connection = getConnection(addr);
-    if (connection != null) {
-      message.msgId(MessageIdGenerator.nextId());
-      remoting.invokeWithCallBack(connection, message, callback, timeout);
-    } else {
-      logger.error("address:{} is not connected", addr);
-    }
   }
 
   /**
@@ -146,7 +86,7 @@ public class ReqServer implements AutoCloseable {
       throws InterruptedException {
     Objects.requireNonNull(handler, "connection can't be null");
 
-    final ReqServer server = this;
+    final DefaultServer server = this;
     ServerBootstrap b = new ServerBootstrap();
     b.option(ChannelOption.SO_BACKLOG, 1024);
     b.group(threadCommonResource.getBoss(), threadCommonResource.getWorker())
@@ -193,7 +133,7 @@ public class ReqServer implements AutoCloseable {
     return handler;
   }
 
-  public ReqServer handler(ChannelHandler handler) {
+  public DefaultServer handler(ChannelHandler handler) {
     this.handler = handler;
     return this;
   }
@@ -202,7 +142,7 @@ public class ReqServer implements AutoCloseable {
     return serializer;
   }
 
-  public ReqServer codec(Serializer codec) {
+  public DefaultServer codec(Serializer codec) {
     this.serializer = codec;
     return this;
   }
