@@ -5,7 +5,7 @@ import io.netty.buffer.ByteBuf;
 /**
  * Float序列化实现
  *
- * 与{@link CommonSerializer} 组合使用
+ * 与{@link CommonSerializer} 组合使用,null会被0代理
  *
  * @since 2021年07月17日 16:16:14
  **/
@@ -18,6 +18,6 @@ public class FloatSerializer implements Serializer<Float> {
 
   @Override
   public void writeObject(ByteBuf buf, Float object) {
-    buf.writeFloat(object);
+    buf.writeFloat(object == null ? 0.0F : object);
   }
 }

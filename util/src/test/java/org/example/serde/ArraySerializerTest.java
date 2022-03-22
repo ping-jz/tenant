@@ -57,8 +57,10 @@ public class ArraySerializerTest {
 
   @Test
   public void simpleArrayTest() {
-    int[] test = {1999999, 1999922, 199999955, 19999444, 1999999, 1999999, 1999999, 1999999,
-        1999999, 3999999};
+    int[] test = new int[1000];
+    for(int i = 0; i < test.length; i++) {
+      test[i] = ThreadLocalRandom.current().nextInt();
+    }
     serializer.writeObject(buf, test);
 
     int[] res = serializer.read(buf);
@@ -149,7 +151,7 @@ public class ArraySerializerTest {
 
   @Test
   public void objectArraySerializerTest() {
-    Object[] objects = {1, 2L, "asdfasdf", new ArrayWrapper()};
+    Object[] objects = {1, 2L, "asdfasdf", new ArrayWrapper(), null, 'a'};
 
     serializer.writeObject(buf, objects);
     Object[] res = serializer.read(buf);

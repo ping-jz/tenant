@@ -5,7 +5,7 @@ import io.netty.buffer.ByteBuf;
 /**
  * Byte序列化实现
  *
- * 与{@link CommonSerializer} 组合使用
+ * 与{@link CommonSerializer} 组合使用, null会被0代理
  *
  * @since 2021年07月17日 16:16:14
  **/
@@ -18,6 +18,6 @@ public class ByteSerializer implements Serializer<Byte> {
 
   @Override
   public void writeObject(ByteBuf buf, Byte object) {
-    buf.writeByte(object);
+    buf.writeByte(object == null ? 0 : object);
   }
 }

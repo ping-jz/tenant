@@ -44,7 +44,7 @@ public class CommonSerializer implements Serializer<Object> {
   private Map<Integer, Class<?>> id2Clazz;
   /** 序列化注册 [目标类型 -> 序列化实现] */
   private Map<Class<?>, Serializer<?>> serializers;
-  /** [具体类型, 类型ID] */
+  /** [具体类型, 类型ID] (主要处理继承关系,把子类导向父类)*/
   private Map<Class<?>, Integer> clazz2Id;
 
   public CommonSerializer() {
