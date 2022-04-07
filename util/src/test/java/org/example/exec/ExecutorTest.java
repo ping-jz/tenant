@@ -42,7 +42,7 @@ public abstract class ExecutorTest {
     threads = Runtime.getRuntime().availableProcessors();
     //看机器情况调整，过多会瞬间创建大量对象导致内存不足
     tasks = org.example.executor.ExecutorTest.TASKS;
-    actorSize = nextPowerOfTwo(tasks / 10000);
+    actorSize = nextPowerOfTwo(Math.max(2, tasks / 10000));
     actorMark = actorSize - 1;
   }
 

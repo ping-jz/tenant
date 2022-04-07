@@ -56,8 +56,13 @@ public class Message {
     return this;
   }
 
-  public Message packets(Object... packet) {
+  public Message packet(Object... packet) {
     this.packet = packet;
+    return this;
+  }
+
+  public Message wrapArray(Object[] o) {
+    packet = new Object[]{o};
     return this;
   }
 

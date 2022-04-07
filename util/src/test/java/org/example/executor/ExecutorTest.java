@@ -7,7 +7,7 @@ package org.example.executor;
  */
 public final class ExecutorTest {
 
-  public static final int TASKS = 1000000;
+  public static final int TASKS = 2048;
   public static final int REPEAT = 20;
 
   private ExecutorTest() {

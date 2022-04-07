@@ -4,7 +4,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.example.common.ThreadCommonResource;
-import org.example.net.CrossDispatcher;
+import org.example.net.DefaultDispatcher;
 import org.example.net.DispatcherHandler;
 import org.example.net.Facade;
 import org.example.net.HelloWorld;
@@ -76,7 +76,7 @@ public class ReqCliProxyTest {
       serFacade = new SerHelloWorldFacade();
       HandlerRegistry serverRegistry = new HandlerRegistry();
       serverRegistry.registeHandlers(serverRegistry.findHandler(serFacade));
-      rpcServer.handler(new DispatcherHandler(new CrossDispatcher(serverRegistry)));
+      rpcServer.handler(new DispatcherHandler(new DefaultDispatcher(serverRegistry)));
       rpcServer.codec(serializer);
       rpcServer.start(resource);
       address = rpcServer.ip() + ':' + rpcServer.port();
@@ -87,7 +87,7 @@ public class ReqCliProxyTest {
       cliFacade = new CliHelloWorldFacade();
       HandlerRegistry clientRegistry = new HandlerRegistry();
       clientRegistry.registeHandlers(clientRegistry.findHandler(cliFacade));
-      rpcClient.handler(new DispatcherHandler(new CrossDispatcher(clientRegistry)));
+      rpcClient.handler(new DispatcherHandler(new DefaultDispatcher(clientRegistry)));
       rpcClient.codec(serializer);
       rpcClient.init(resource.getBoss());
       rpcClient.getConnection(address);

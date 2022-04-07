@@ -167,7 +167,7 @@ public class ReqCliProxy {
                     method.getName()));
           }
 
-          Message message = Message.of(info.id()).msgId(MessageIdGenerator.nextId()).packets(args);
+          Message message = Message.of(info.id()).msgId(MessageIdGenerator.nextId()).packet(args);
           Connection connection = conns.get(0);
 
           DefaultInvokeFuture<?> res = new DefaultInvokeFuture<>(message.msgId());
@@ -176,7 +176,7 @@ public class ReqCliProxy {
           res.reqMessage(message);
           return res;
         } else {
-          Message message = Message.of(info.id()).packets(args);
+          Message message = Message.of(info.id()).packet(args);
           for (Connection connection : conns) {
             rpcClientProxy.remoting.invoke(connection, message);
           }

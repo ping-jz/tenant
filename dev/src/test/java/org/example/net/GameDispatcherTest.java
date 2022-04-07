@@ -15,16 +15,20 @@ import org.slf4j.LoggerFactory;
 
 public class GameDispatcherTest {
 
-  /** 分发器 */
+  /**
+   * 分发器
+   */
   private static Dispatcher dispatcher;
-  /** 序列化实现 */
+  /**
+   * 序列化实现
+   */
   private static CommonSerializer serializer;
 
   @BeforeAll
   public static void init() {
     HandlerRegistry registry = new HandlerRegistry();
     registry.registeHandlers(registry.findHandler(new HelloWorldFacade()));
-    dispatcher = new GameDispatcher(LoggerFactory.getLogger(Dispatcher.class), registry);
+    dispatcher = new DefaultDispatcher(LoggerFactory.getLogger(Dispatcher.class), registry);
     serializer = new CommonSerializer();
   }
 
@@ -59,7 +63,7 @@ public class GameDispatcherTest {
       Message echoRequest = new Message();
       echoRequest.proto(HelloWorldFacade.ECHO);
       echoRequest.msgId(0);
-      echoRequest.packet(new String[]{"Hello", "World", Integer.toString(i)});
+      echoRequest.wrapArray(new String[]{"Hello", "World", Integer.toString(i)});
 
       dispatcher.dispatcher(channel, echoRequest);
       channel.flush();
@@ -70,7 +74,7 @@ public class GameDispatcherTest {
       assertEquals(Math.negateExact(echoRequest.proto()), buf.readInt());
       assertEquals(echoRequest.msgId(), buf.readInt());
       assertEquals(echoRequest.status(), buf.readShort());
-      assertArrayEquals((Object[]) echoRequest.packet(), serializer.read(buf));
+      assertArrayEquals((Object[]) echoRequest.packet(), new Object[]{serializer.read(buf)});
     }
 
     channel.finishAndReleaseAll();
