@@ -71,7 +71,7 @@ public class CommonSerializer implements Serializer<Object> {
    * @since 2021年07月18日 16:18:08
    */
   public Integer getTypeId(Class<?> cls) {
-    return clazz2Id.get(cls);
+    return clazz2Id.getOrDefault(cls, 0);
   }
 
   /**
@@ -254,7 +254,7 @@ public class CommonSerializer implements Serializer<Object> {
   }
 
   @SuppressWarnings("unchecked")
-  private <T> Serializer<T> findSerilaizer(Class<?> clzz) {
+  public <T> Serializer<T> findSerilaizer(Class<?> clzz) {
     Serializer<T> serializer = (Serializer<T>) serializers.get(clzz);
     //没有找到，尝试寻找父类(父类必须是接口，接口更加通用)
     if (serializer == null) {

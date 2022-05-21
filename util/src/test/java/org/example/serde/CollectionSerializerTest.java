@@ -91,7 +91,7 @@ public class CollectionSerializerTest {
       int subSize = random.nextInt(size);
       List<String> strs = new ArrayList<>(subSize);
       for (int j = 0; j < subSize; j++) {
-        strs.add(Integer.toString(random.nextInt()));
+        strs.add("1q23412341234");
       }
       col.add(strs);
     }
