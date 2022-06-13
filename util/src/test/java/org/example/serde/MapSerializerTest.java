@@ -25,7 +25,7 @@ public class MapSerializerTest {
     serializer = new CommonSerializer();
     buf = Unpooled.buffer();
 
-    MapSerializer map = new MapSerializer(serializer, HashMap::new);
+    MapSerializer<?, ?> map = new MapSerializer<>(serializer, HashMap::new);
 
     serializer.registerSerializer(10, Map.class, map);
   }
