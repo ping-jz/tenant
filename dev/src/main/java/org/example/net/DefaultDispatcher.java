@@ -1,6 +1,8 @@
 package org.example.net;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
 import org.example.net.handler.Handler;
 import org.example.net.handler.HandlerRegistry;
 import org.slf4j.Logger;
@@ -12,7 +14,7 @@ import org.slf4j.LoggerFactory;
  * @author ZJP
  * @since 2021年07月24日 14:41:27
  **/
-public class DefaultDispatcher implements Dispatcher {
+public class DefaultDispatcher extends SimpleChannelInboundHandler<Message> implements Dispatcher {
 
   /**
    * 消息处理器集合
@@ -153,6 +155,18 @@ public class DefaultDispatcher implements Dispatcher {
     }
     return res;
   }
+
+  @Override
+  protected void channelRead0(ChannelHandlerContext ctx, Message msg) {
+    dispatcher(ctx.channel(), msg);
+  }
+
+  @Override
+  public void channelReadComplete(ChannelHandlerContext ctx) {
+    ctx.flush();
+    ctx.fireChannelReadComplete();
+  }
+
 
 
   @Override

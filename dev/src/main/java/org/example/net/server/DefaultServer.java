@@ -63,17 +63,17 @@ public class DefaultServer implements AutoCloseable {
     }
     this.ip = ip;
     this.port = port;
-    connectionManager = new ConnectionManager(true);
+    connectionManager = new ConnectionManager();
   }
 
   /**
    * 获取链接
    *
-   * @param addr A address like this 127.0.0.1:8080 or /127.0.0.1:8080
+   * @param id 连接ID
    * @since 2021年08月17日 17:42:20
    */
-  public Connection getConnection(String addr) {
-    return connectionManager.connections().get(addr);
+  public Connection getConnection(Integer id) {
+    return connectionManager.connections().get(id);
   }
 
   /**
@@ -103,7 +103,7 @@ public class DefaultServer implements AutoCloseable {
                       TimeUnit.MILLISECONDS));
               pipeline.addLast("manager", server.connectionManager());
             }
-            pipeline.addLast("codec", new MessageCodec(server.codec()));
+            pipeline.addLast("codec", new MessageCodec(server.serializer()));
             pipeline.addLast("handler", server.handler());
           }
         });
@@ -138,11 +138,11 @@ public class DefaultServer implements AutoCloseable {
     return this;
   }
 
-  public Serializer codec() {
+  public Serializer<?> serializer() {
     return serializer;
   }
 
-  public DefaultServer codec(Serializer codec) {
+  public DefaultServer serializer(Serializer<?> codec) {
     this.serializer = codec;
     return this;
   }

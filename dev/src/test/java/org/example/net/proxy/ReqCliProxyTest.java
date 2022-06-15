@@ -5,20 +5,19 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.example.common.ThreadCommonResource;
 import org.example.net.DefaultDispatcher;
-import org.example.net.DispatcherHandler;
-import org.example.net.Facade;
 import org.example.net.HelloWorld;
 import org.example.net.InvokeFuture;
 import org.example.net.Message;
 import org.example.net.MessageStatus;
 import org.example.net.ReqMethod;
-import org.example.net.ReqModule;
+import org.example.net.RespMethod;
 import org.example.net.ResultInvokeFuture;
+import org.example.net.RpcModule;
 import org.example.net.client.DefaultClient;
 import org.example.net.handler.HandlerRegistry;
 import org.example.net.server.DefaultServer;
 import org.example.serde.CommonSerializer;
-import org.example.serde.MarkSerializer;
+import org.example.serde.ObjectSerializer;
 import org.example.serde.Serializer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -50,7 +49,7 @@ public class ReqCliProxyTest {
    */
   private ReqCliProxy proxy;
   /** 服务端地址 */
-  private String address;
+  private Integer id;
 
   private final int invokeTimes = 5;
 
@@ -68,30 +67,25 @@ public class ReqCliProxyTest {
   }
 
   @BeforeEach
-  public void start() throws Exception {
+  public void beforeEach() throws Exception {
     Serializer<Object> serializer = createSerializer();
 
-    {
-      rpcServer = new DefaultServer();
-      serFacade = new SerHelloWorldFacade();
-      HandlerRegistry serverRegistry = new HandlerRegistry();
-      serverRegistry.registeHandlers(serverRegistry.findHandler(serFacade));
-      rpcServer.handler(new DispatcherHandler(new DefaultDispatcher(serverRegistry)));
-      rpcServer.codec(serializer);
-      rpcServer.start(resource);
-      address = rpcServer.ip() + ':' + rpcServer.port();
-    }
+    rpcServer = new DefaultServer();
+    serFacade = new SerHelloWorldFacade();
+    HandlerRegistry serverRegistry = new HandlerRegistry();
+    serverRegistry.registerHandlers(serFacade);
+    rpcServer.handler(new DefaultDispatcher(serverRegistry));
+    rpcServer.serializer(serializer);
+    rpcServer.start(resource);
 
-    {
-      rpcClient = new DefaultClient();
-      cliFacade = new CliHelloWorldFacade();
-      HandlerRegistry clientRegistry = new HandlerRegistry();
-      clientRegistry.registeHandlers(clientRegistry.findHandler(cliFacade));
-      rpcClient.handler(new DispatcherHandler(new DefaultDispatcher(clientRegistry)));
-      rpcClient.codec(serializer);
-      rpcClient.init(resource.getBoss());
-      rpcClient.getConnection(address);
-    }
+    rpcClient = new DefaultClient();
+    cliFacade = new CliHelloWorldFacade();
+    HandlerRegistry clientRegistry = new HandlerRegistry();
+    clientRegistry.registerHandlers(cliFacade);
+    rpcClient.handler(new DefaultDispatcher(clientRegistry));
+    rpcClient.serializer(serializer);
+    rpcClient.init(resource.getBoss());
+    id = rpcClient.connection(rpcServer.ip(), rpcServer.port()).id();
 
     //链接的创建和管理交给client，proxy不要管，直接用就行了
     proxy = new ReqCliProxy(rpcClient.manager());
@@ -99,7 +93,7 @@ public class ReqCliProxyTest {
 
   private CommonSerializer createSerializer() {
     CommonSerializer serializer = new CommonSerializer();
-    serializer.registerSerializer(10, Object.class, new MarkSerializer());
+    serializer.registerSerializer(10, Object.class, new ObjectSerializer(Object.class, serializer));
     serializer.registerSerializer(11, Message.class);
     return serializer;
   }
@@ -117,7 +111,7 @@ public class ReqCliProxyTest {
 
   @Test
   public void doNothingTest() throws Exception {
-    HelloWorld world = proxy.getProxy(address, HelloWorld.class);
+    HelloWorld world = proxy.getProxy(id, HelloWorld.class);
     for (int i = 0; i < invokeTimes; i++) {
       world.doNothing();
     }
@@ -128,7 +122,7 @@ public class ReqCliProxyTest {
 
   @Test
   public void echoTest() throws Exception {
-    HelloWorld world = proxy.getProxy(address, HelloWorld.class);
+    HelloWorld world = proxy.getProxy(id, HelloWorld.class);
     for (int i = 0; i < invokeTimes; i++) {
       world.echo("hi");
     }
@@ -140,7 +134,7 @@ public class ReqCliProxyTest {
 
   @Test
   public void callBackArgsTest() throws InterruptedException {
-    CallBackReq req = proxy.getProxy(address, CallBackReq.class);
+    CallBackReq req = proxy.getProxy(id, CallBackReq.class);
     CountDownLatch latch = new CountDownLatch(invokeTimes);
     long answer = 2012;
     for (int i = 0; i < invokeTimes; i++) {
@@ -156,7 +150,7 @@ public class ReqCliProxyTest {
 
   @Test
   public void callBackArgsMessageTest() throws InterruptedException {
-    CallBackReq req = proxy.getProxy(address, CallBackReq.class);
+    CallBackReq req = proxy.getProxy(id, CallBackReq.class);
     CountDownLatch latch = new CountDownLatch(invokeTimes);
     long answer = 2012;
     for (int i = 0; i < invokeTimes; i++) {
@@ -172,7 +166,7 @@ public class ReqCliProxyTest {
 
   @Test
   public void callBackArrayMessageTest() throws InterruptedException {
-    CallBackReq req = proxy.getProxy(address, CallBackReq.class);
+    CallBackReq req = proxy.getProxy(id, CallBackReq.class);
     CountDownLatch latch = new CountDownLatch(invokeTimes);
     long[] longs = {1, 2, 3, 4, 5, 6};
     for (int i = 0; i < invokeTimes; i++) {
@@ -188,7 +182,7 @@ public class ReqCliProxyTest {
 
   @Test
   public void calErrMessageTest() throws InterruptedException {
-    CallBackReq req = proxy.getProxy(address, CallBackReq.class);
+    CallBackReq req = proxy.getProxy(id, CallBackReq.class);
     CountDownLatch latch = new CountDownLatch(invokeTimes);
     for (int i = 0; i < invokeTimes; i++) {
       req.errMsg().onErr(msg -> {
@@ -202,18 +196,16 @@ public class ReqCliProxyTest {
     Assertions.assertEquals(invokeTimes, serFacade.integer.get());
   }
 
-  /** 回调 */
-  private static final int CALL_BACK = 200;
-
-  @ReqModule(CALL_BACK)
+  @RpcModule
   interface CallBackReq {
 
-    InvokeFuture<String> callBack(String str);
-
+    @ReqMethod
     InvokeFuture<Long> callBackArgs(String str, Integer i, Long a);
 
+    @ReqMethod
     InvokeFuture<long[]> callBackArray(long[] longs);
 
+    @ReqMethod
     InvokeFuture<Message> errMsg();
   }
 
@@ -223,7 +215,7 @@ public class ReqCliProxyTest {
    * @author ZJP
    * @since 2021年07月22日 21:58:02
    **/
-  @Facade
+  @RpcModule
   private static class SerHelloWorldFacade implements HelloWorld, CallBackReq {
 
     public AtomicInteger integer = new AtomicInteger();
@@ -237,12 +229,6 @@ public class ReqCliProxyTest {
     @Override
     public void doNothing() {
       integer.incrementAndGet();
-    }
-
-    @Override
-    public InvokeFuture<String> callBack(String str) {
-      integer.incrementAndGet();
-      return ResultInvokeFuture.withResult(str);
     }
 
     @Override
@@ -265,12 +251,12 @@ public class ReqCliProxyTest {
     }
   }
 
-  @Facade
+  @RpcModule
   private static class CliHelloWorldFacade {
 
     public AtomicInteger integer = new AtomicInteger();
 
-    @ReqMethod(-HelloWorld.ECHO)
+    @RespMethod(HelloWorld.ECHO)
     public void echoRes(Object o) {
       integer.incrementAndGet();
     }

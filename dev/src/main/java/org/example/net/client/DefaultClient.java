@@ -42,7 +42,7 @@ public class DefaultClient implements AutoCloseable {
    */
   private ChannelHandler handler;
   /** codec */
-  private Serializer<?> codec;
+  private Serializer<?> serializer;
 
   public DefaultClient() {
     manager = new ConnectionManager();
@@ -53,62 +53,46 @@ public class DefaultClient implements AutoCloseable {
 
     DefaultClient client = this;
     bootstrap = new Bootstrap();
-    bootstrap.group(eventExecutors)
-        .channel(NettyEventLoopUtil.getClientSocketChannelClass())
-        .option(ChannelOption.TCP_NODELAY, true)
-        .option(ChannelOption.SO_REUSEADDR, true)
-        .option(ChannelOption.SO_KEEPALIVE, true)
-        .handler(new ChannelInitializer<SocketChannel>() {
+    bootstrap.group(eventExecutors).channel(NettyEventLoopUtil.getClientSocketChannelClass())
+        .option(ChannelOption.TCP_NODELAY, true).option(ChannelOption.SO_REUSEADDR, true)
+        .option(ChannelOption.SO_KEEPALIVE, true).handler(new ChannelInitializer<SocketChannel>() {
           @Override
           protected void initChannel(SocketChannel ch) {
-            Objects.requireNonNull(codec, "codec Handler can't not be null");
+            Objects.requireNonNull(serializer, "codec Handler can't not be null");
 
             ChannelPipeline pipeline = ch.pipeline();
-            pipeline.addLast("codec", new MessageCodec(client.codec()));
+            pipeline.addLast("codec", new MessageCodec(client.serializer()));
             pipeline.addLast("handler", client.handler());
           }
         });
   }
 
-  public ConnectionManager manager() {
-    return manager;
-  }
 
   /**
-   * A InetSocketAddress like this 127.0.0.1:8080 or /127.0.0.1:8080
-   *
-   * @param addr ip address
    * @since 2021年08月13日 18:47:18
    */
-  public Connection getConnection(String addr) {
-    return manager.connections().computeIfAbsent(addr, this::createConnection);
+  public Connection connection(String add, int port) {
+    Connection connection = createConnection(add, port);
+    manager.connections().put(connection.id(), connection);
+    return connection;
   }
 
 
-  private Connection createConnection(String original) {
+  private Connection createConnection(String ip, int port) {
     try {
-      String addr = original;
-      if (addr.startsWith("/")) {
-        addr = addr.substring(1);
-      }
-
-      int lastColon = addr.lastIndexOf(':');
-      String ip = addr.substring(0, lastColon);
-      int port = Integer.parseInt(addr.substring(lastColon + 1));
 
       ChannelFuture future = bootstrap.connect(new InetSocketAddress(ip, port));
       boolean suc = future.awaitUninterruptibly().isSuccess();
       if (suc) {
         future.channel().pipeline().addLast("manager", manager);
-        return new Connection(future.channel(), original);
+        return new Connection(future.channel(), Connection.IdGenerator.incrementAndGet());
       } else {
-        logger.error("connect to {} failed", original);
+        throw new RuntimeException(String.format("connect to %s:%s failed", ip, port));
       }
     } catch (Exception e) {
-      logger.error("create connection for addr:{}, error", original);
+      throw new RuntimeException(String.format("create connection for %s:%s, error", ip, port));
     }
 
-    return null;
   }
 
   public ChannelHandler handler() {
@@ -120,13 +104,17 @@ public class DefaultClient implements AutoCloseable {
     return this;
   }
 
-  public Serializer codec() {
-    return codec;
+  public Serializer<?> serializer() {
+    return serializer;
   }
 
-  public DefaultClient codec(Serializer codec) {
-    this.codec = codec;
+  public DefaultClient serializer(Serializer<?> codec) {
+    this.serializer = codec;
     return this;
+  }
+
+  public ConnectionManager manager() {
+    return manager;
   }
 
   @Override

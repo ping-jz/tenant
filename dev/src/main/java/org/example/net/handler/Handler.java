@@ -1,6 +1,7 @@
 package org.example.net.handler;
 
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 /**
  * 请求处理数据
@@ -49,5 +50,27 @@ public class Handler {
 
   public Object invoke(Object... params) throws Exception {
     return method.invoke(obj, params);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Handler handler = (Handler) o;
+    return reqId == handler.reqId && Objects.equals(method, handler.method);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(method, reqId);
+  }
+
+  @Override
+  public String toString() {
+    return method.getDeclaringClass() + "." + method.getName();
   }
 }

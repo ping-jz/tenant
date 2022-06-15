@@ -13,18 +13,5 @@ import java.lang.annotation.Target;
  **/
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ReqModule {
-
-  /**
-   * RPC模块ID:每个模块ID相隔100，默认零开始计数(0,100,200)
-   * <p>
-   * 然后
-   * <p>A模块:0</p>
-   * <p>B模块:100</p>
-   * <p>C模块:200</p>
-   * </p>
-   *
-   * @since 2021年07月25日 14:29:21
-   */
-  int value();
+public @interface RpcModule {
 }

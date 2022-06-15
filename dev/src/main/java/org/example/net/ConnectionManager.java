@@ -5,7 +5,6 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleStateEvent;
-import java.net.InetSocketAddress;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
@@ -24,23 +23,19 @@ public class ConnectionManager extends ChannelInboundHandlerAdapter implements A
 
   private static final Logger logger = LoggerFactory.getLogger(ConnectionManager.class);
 
+
   /** ip地址 -> 链接 */
-  private ConcurrentHashMap<String, Connection> connections;
-  /** 是否处理空闲链接 */
-  private boolean idleHandle;
+  private ConcurrentHashMap<Integer, Connection> connections;
+
+
 
   public ConnectionManager() {
-    this(false);
-  }
-
-  public ConnectionManager(boolean idleHandle) {
-    this.idleHandle = idleHandle;
     connections = new ConcurrentHashMap<>();
   }
 
   @Override
   public void userEventTriggered(final ChannelHandlerContext ctx, Object evt) throws Exception {
-    if (idleHandle && evt instanceof IdleStateEvent) {
+    if (evt instanceof IdleStateEvent) {
       try {
         logger.warn("Connection idle, close it from server side: {}",
             ctx.channel().remoteAddress());
@@ -59,7 +54,7 @@ public class ConnectionManager extends ChannelInboundHandlerAdapter implements A
     if (channel.attr(Connection.CONNECTION).get() == null) {
       Connection connection = createConnection(channel);
       channel.attr(Connection.CONNECTION).set(connection);
-      connections.put(connection.address(), connection);
+      connections.put(connection.id(), connection);
     }
 
     ctx.fireChannelActive();
@@ -70,36 +65,31 @@ public class ConnectionManager extends ChannelInboundHandlerAdapter implements A
     Channel channel = ctx.channel();
     Connection connection = channel.attr(Connection.CONNECTION).getAndSet(null);
     if (connection != null) {
-      connections.remove(connection.address());
+      connections.remove(connection.id());
       connection.close();
     }
 
     ctx.fireChannelInactive();
   }
 
-  public Connection createConnection(Channel channel) {
-    InetSocketAddress socketAddress = (InetSocketAddress) channel.remoteAddress();
-    return createConnection(socketAddress.toString(), channel);
-  }
 
-  public Connection createConnection(String addres, Channel channel) {
-    Objects.requireNonNull(addres, "address can't not be null");
+  public Connection createConnection(Channel channel) {
     Objects.requireNonNull(channel, "channel can't not be null");
     Connection oldConn = channel.attr(Connection.CONNECTION).get();
     if (oldConn != null) {
       throw new IllegalStateException("duplicated create connection");
     }
 
-    Connection connection = new Connection(channel, addres);
+    Connection connection = new Connection(channel, Connection.IdGenerator.incrementAndGet());
     channel.attr(Connection.CONNECTION).set(connection);
     return connection;
   }
 
-  public ConcurrentHashMap<String, Connection> connections() {
+  public ConcurrentHashMap<Integer, Connection> connections() {
     return connections;
   }
 
-  public Connection connection(String address) {
+  public Connection connection(Integer address) {
     return connections.get(address);
   }
 

@@ -1,9 +1,7 @@
 package org.example.net;
 
-@ReqModule(HelloWorld.HELLO_WORLD_MODULE)
+@RpcModule
 public interface HelloWorld {
-
-  int HELLO_WORLD_MODULE = 100;
 
   /** 回声协议 */
   int ECHO = 110;

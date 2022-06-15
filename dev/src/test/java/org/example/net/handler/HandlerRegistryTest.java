@@ -5,10 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.List;
-import org.example.net.Facade;
 import org.example.net.HelloWorld;
 import org.example.net.ReqMethod;
+import org.example.net.RpcModule;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -18,21 +17,16 @@ import org.junit.jupiter.api.Test;
  * @author ZJP
  * @since 2021年07月22日 22:47:26
  **/
-public class HandlerTest {
+public class HandlerRegistryTest {
 
   /** 分发器，测试对象 */
   private static HandlerRegistry registry;
-  /** 测试门面 */
-  private static HelloWorldFacade facade;
 
   @BeforeAll
   public static void init() {
     registry = new HandlerRegistry();
-    facade = new HelloWorldFacade();
-    List<Handler> handlers = registry.findHandler(facade);
-    assertEquals(3, handlers.size());
-
-    registry.registeHandlers(handlers);
+    HelloWorldFacade facade = new HelloWorldFacade();
+    registry.registerHandlers(facade);
   }
 
   @Test
@@ -62,7 +56,7 @@ public class HandlerTest {
     Handler old = registry.getHandler(HelloWorldFacade.TEST_REQ);
 
     assertThrows(RuntimeException.class,
-        () -> registry.registeHandlers(registry.findHandler(facade)));
+        () -> registry.registerHandlers(new DuplicatedHelloWorldFacade()));
 
     //确保重复注册不会破坏之前的关系
     assertEquals(old, registry.getHandler(HelloWorldFacade.TEST_REQ));
@@ -79,8 +73,43 @@ public class HandlerTest {
    * @author ZJP
    * @since 2021年07月22日 21:58:02
    **/
-  @Facade
+  @RpcModule
   private static class HelloWorldFacade implements HelloWorld {
+
+    /** 测试 */
+    public static final int TEST_REQ = 1;
+
+
+    /**
+     * 测试
+     *
+     * @param str 内容
+     * @since 2021年07月22日 21:58:45
+     */
+    @ReqMethod(TEST_REQ)
+    public String test(String str) {
+      return str;
+    }
+
+    @Override
+    public Object echo(Object o) {
+      return o;
+    }
+
+    @Override
+    public void doNothing() {
+
+    }
+  }
+
+  /**
+   * 世界你好，门面
+   *
+   * @author ZJP
+   * @since 2021年07月22日 21:58:02
+   **/
+  @RpcModule
+  private static class DuplicatedHelloWorldFacade implements HelloWorld {
 
     /** 测试 */
     public static final int TEST_REQ = 1;

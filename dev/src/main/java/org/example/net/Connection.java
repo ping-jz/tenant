@@ -3,6 +3,7 @@ package org.example.net;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,28 +15,24 @@ import org.slf4j.LoggerFactory;
  **/
 public class Connection {
 
-  private Logger logger = LoggerFactory
-      .getLogger(getClass());
+  private Logger logger = LoggerFactory.getLogger(getClass());
 
   /**
    * Attribute key for connection
    */
-  public static final AttributeKey<Connection> CONNECTION = AttributeKey
-      .valueOf("connection");
+  public static final AttributeKey<Connection> CONNECTION = AttributeKey.valueOf("connection");
 
-  /**
-   * ip address
-   */
-  private String address;
-  /**
-   * a netty channel
-   */
+  /** channelId 生产 */
+  public static final AtomicInteger IdGenerator = new AtomicInteger();
+
+  /** channelId */
+  private Integer id;
+  /** a netty channel */
   private Channel channel;
-  /**
-   * callBack future
-   */
+  /** callBack future */
   private final ConcurrentHashMap<Integer, DefaultInvokeFuture<?>> invokeFutures = new ConcurrentHashMap<>();
 
+  @SuppressWarnings("unchecked")
   public <T> DefaultInvokeFuture<T> addInvokeFuture(DefaultInvokeFuture<T> future) {
     if (isActive()) {
       return (DefaultInvokeFuture<T>) invokeFutures.putIfAbsent(future.id(), future);
@@ -45,13 +42,14 @@ public class Connection {
     }
   }
 
+  @SuppressWarnings("unchecked")
   public <T> DefaultInvokeFuture<T> removeInvokeFuture(int msgId) {
     return (DefaultInvokeFuture<T>) invokeFutures.remove(msgId);
   }
 
-  public Connection(Channel channel, String address) {
+  public Connection(Channel channel, Integer id) {
     this.channel = channel;
-    this.address = address;
+    this.id = id;
     this.channel.attr(CONNECTION).set(this);
   }
 
@@ -59,8 +57,8 @@ public class Connection {
     return channel;
   }
 
-  public String address() {
-    return address;
+  public Integer id() {
+    return id;
   }
 
   public boolean isActive() {
@@ -83,10 +81,7 @@ public class Connection {
       future.cancelTimeout();
       future.executeCallBack(Message.of().status(MessageStatus.CLOSE));
     } catch (Exception e) {
-      logger
-          .error(
-              "Exception occurred in user defined InvokeCallback#onResponse() logic.",
-              e);
+      logger.error("Exception occurred in user defined InvokeCallback#onResponse() logic.", e);
     }
   }
 }

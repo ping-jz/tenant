@@ -3,8 +3,8 @@ package org.example.game.facade.example;
 
 import org.example.game.facade.example.model.ReqMove;
 import org.example.game.facade.example.model.ResMove;
-import org.example.net.Facade;
 import org.example.net.ReqMethod;
+import org.example.net.RpcModule;
 
 /**
  * 世界门面(文档生产插件测试)
@@ -12,7 +12,7 @@ import org.example.net.ReqMethod;
  * @author ZJP
  * @since 2021年09月27日 15:04:09
  **/
-@Facade
+@RpcModule
 public class WorldFacade {
 
   /**

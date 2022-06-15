@@ -2,12 +2,14 @@ package org.example.net.handler;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.lang3.tuple.Pair;
 import org.example.net.ReqMethod;
+import org.example.net.RpcModule;
 import org.example.net.proxy.ReqUtil;
-import org.example.util.Pair;
 
 /**
  * 根据协议号int,提供获取和注册处理者的方法。
@@ -33,31 +35,29 @@ public class HandlerRegistry {
    * @since 2021年07月24日 10:04:05
    */
   public List<Handler> findHandler(Object object) {
+    RpcModule module = object.getClass().getAnnotation(RpcModule.class);
+    if (module == null) {
+      return Collections.emptyList();
+    }
+
     List<Handler> res = new ArrayList<>();
     Class<?> clazz = object.getClass();
 
-    {
-      List<Pair<Integer, Method>> methods = ReqUtil.calcFacadeMethods(clazz);
-      for (Pair<Integer, Method> pair : methods) {
-        Integer req = pair.first();
-        Method method = pair.second();
+    for (Pair<Integer, Method> pair : ReqUtil.getMethods(clazz)) {
+      Integer req = pair.getLeft();
+      Method method = pair.getRight();
+
+      Handler handler = Handler.of(object, method, req);
+      res.add(handler);
+    }
+
+    for (Class<?> inter : clazz.getInterfaces()) {
+      for (Pair<Integer, Method> pair : ReqUtil.getMethods(inter)) {
+        Integer req = pair.getLeft();
+        Method method = pair.getRight();
 
         Handler handler = Handler.of(object, method, req);
         res.add(handler);
-      }
-    }
-
-    {
-      Class<?>[] interfaces = clazz.getInterfaces();
-      for (Class<?> inter : interfaces) {
-        List<Pair<Integer, Method>> interMethods = ReqUtil.calcModuleMethods(inter);
-        for (Pair<Integer, Method> pair : interMethods) {
-          Integer req = pair.first();
-          Method method = pair.second();
-
-          Handler handler = Handler.of(object, method, req);
-          res.add(handler);
-        }
       }
     }
 
@@ -67,15 +67,13 @@ public class HandlerRegistry {
   /**
    * 根据{@link Handler#reqId()}获取协议ID然后进行注册，协议ID不允许重复
    *
-   * @param hs 需要注册处理者
    * @since 2021年07月24日 10:25:05
    */
-  public void registeHandlers(List<Handler> hs) {
-    for (Handler h : hs) {
+  public void registerHandlers(Object o) {
+    for (Handler h : findHandler(o)) {
       final Handler old = handles.get(h.reqId());
-      if (old != null) {
-        throw new RuntimeException(String
-            .format("协议ID:【%s】,%s和%s发生重读", h.reqId(), h.method().getName(), h.method().getName()));
+      if (old != null && !old.equals(h)) {
+        throw new RuntimeException(String.format("协议ID:【%s】,%s和%s发生重读", h.reqId(), h, h));
       }
 
       handles.put(h.reqId(), h);

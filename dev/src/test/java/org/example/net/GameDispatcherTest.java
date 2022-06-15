@@ -27,7 +27,7 @@ public class GameDispatcherTest {
   @BeforeAll
   public static void init() {
     HandlerRegistry registry = new HandlerRegistry();
-    registry.registeHandlers(registry.findHandler(new HelloWorldFacade()));
+    registry.registerHandlers(new HelloWorldFacade());
     dispatcher = new DefaultDispatcher(LoggerFactory.getLogger(Dispatcher.class), registry);
     serializer = new CommonSerializer();
   }
@@ -86,7 +86,7 @@ public class GameDispatcherTest {
    * @author ZJP
    * @since 2021年07月22日 21:58:02
    **/
-  @Facade
+  @RpcModule
   private static class HelloWorldFacade {
 
     private static final int ECHO = 1;
