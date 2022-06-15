@@ -82,7 +82,7 @@
     <junit.version>5.7.0</junit.version>
     <spring.version>5.3.7</spring.version>
     <javax.annotation-api>1.3.2</javax.annotation-api>
-    <netty.version>4.1.66.Final</netty.version>
+    <netty.version>4.1.77.Final</netty.version>
     <caffine.version>3.0.4</caffine.version>
     <spring.mongodb.version>3.3.1</spring.mongodb.version>
     <slf4j.version>1.7.25</slf4j.version>
