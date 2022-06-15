@@ -13,7 +13,7 @@ import org.springframework.data.mongodb.core.query.Query;
  **/
 public class MongoDbAccessor implements Accessor {
 
-  private static final String ID = "_id";
+  public static final String ID = "_id";
 
   /**
    * spring的封装的mongodb操作

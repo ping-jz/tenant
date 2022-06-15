@@ -4,7 +4,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.example.common.ThreadCommonResource;
-import org.example.net.CrossDispatcher;
+import org.example.net.DefaultDispatcher;
 import org.example.net.DispatcherHandler;
 import org.example.net.Facade;
 import org.example.net.HelloWorld;
@@ -14,9 +14,9 @@ import org.example.net.MessageStatus;
 import org.example.net.ReqMethod;
 import org.example.net.ReqModule;
 import org.example.net.ResultInvokeFuture;
-import org.example.net.client.ReqClient;
+import org.example.net.client.DefaultClient;
 import org.example.net.handler.HandlerRegistry;
-import org.example.net.server.ReqServer;
+import org.example.net.server.DefaultServer;
 import org.example.serde.CommonSerializer;
 import org.example.serde.MarkSerializer;
 import org.example.serde.Serializer;
@@ -33,13 +33,21 @@ public class ReqCliProxyTest {
 
   /** 服务端消息处理 */
   private SerHelloWorldFacade serFacade;
-  /** 客户端消息处理 */
+  /**
+   * 客户端消息处理
+   */
   private CliHelloWorldFacade cliFacade;
-  /** 服务端 */
-  private ReqServer rpcServer;
-  /** 客户端 */
-  private ReqClient rpcClient;
-  /** 请求代理 */
+  /**
+   * 服务端
+   */
+  private DefaultServer rpcServer;
+  /**
+   * 客户端
+   */
+  private DefaultClient rpcClient;
+  /**
+   * 请求代理
+   */
   private ReqCliProxy proxy;
   /** 服务端地址 */
   private String address;
@@ -64,22 +72,22 @@ public class ReqCliProxyTest {
     Serializer<Object> serializer = createSerializer();
 
     {
-      rpcServer = new ReqServer();
+      rpcServer = new DefaultServer();
       serFacade = new SerHelloWorldFacade();
       HandlerRegistry serverRegistry = new HandlerRegistry();
       serverRegistry.registeHandlers(serverRegistry.findHandler(serFacade));
-      rpcServer.handler(new DispatcherHandler(new CrossDispatcher(serverRegistry)));
+      rpcServer.handler(new DispatcherHandler(new DefaultDispatcher(serverRegistry)));
       rpcServer.codec(serializer);
       rpcServer.start(resource);
       address = rpcServer.ip() + ':' + rpcServer.port();
     }
 
     {
-      rpcClient = new ReqClient();
+      rpcClient = new DefaultClient();
       cliFacade = new CliHelloWorldFacade();
       HandlerRegistry clientRegistry = new HandlerRegistry();
       clientRegistry.registeHandlers(clientRegistry.findHandler(cliFacade));
-      rpcClient.handler(new DispatcherHandler(new CrossDispatcher(clientRegistry)));
+      rpcClient.handler(new DispatcherHandler(new DefaultDispatcher(clientRegistry)));
       rpcClient.codec(serializer);
       rpcClient.init(resource.getBoss());
       rpcClient.getConnection(address);

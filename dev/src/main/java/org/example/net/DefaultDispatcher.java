@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
  * @author ZJP
  * @since 2021年07月24日 14:41:27
  **/
-public class CrossDispatcher implements Dispatcher {
+public class DefaultDispatcher implements Dispatcher {
 
   /**
    * 消息处理器集合
@@ -23,7 +23,7 @@ public class CrossDispatcher implements Dispatcher {
    */
   private Logger logger;
 
-  public CrossDispatcher(HandlerRegistry handlerRegistry) {
+  public DefaultDispatcher(HandlerRegistry handlerRegistry) {
     this.handlerRegistry = handlerRegistry;
     logger = LoggerFactory.getLogger(getClass());
   }
@@ -33,7 +33,7 @@ public class CrossDispatcher implements Dispatcher {
    *
    * @since 2021年07月24日 15:53:52
    */
-  public CrossDispatcher(Logger logger, HandlerRegistry handlerRegistry) {
+  public DefaultDispatcher(Logger logger, HandlerRegistry handlerRegistry) {
     this.logger = logger;
     this.handlerRegistry = handlerRegistry;
   }

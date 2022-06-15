@@ -16,7 +16,7 @@ import java.util.Objects;
  *
  *  二维数组(都压缩成一维数组)
  *
- *    维度总数|维度1长|维度2长|类型ID(0:多类型，大于0:单一类型)|元素1_0|元素1_1|元素2_0|元素2_1|
+ *    维度总数|维度1长|维度2长|类型ID|元素1_0|元素1_1|元素2_0|元素2_1|
  *
  *    维度总数:1-5字节, 使用varint32和ZigZag编码
  *    维度1长:1-5字节, 使用varint32和ZigZag编码
@@ -24,16 +24,17 @@ import java.util.Objects;
  *    元素:实现决定
  * </pre>
  * <p>1.数组长宽必须一致</p>
- * <p>2.暂时不支持包装类数组，序列化时会全部转化为对应的基础类型</p>
- * <p>3.包装类的null全部默认替换为0</p>
- *
+ * <p>2.暂时不支持PrimitiveWrapper数组，序列化时会全部转化为对应的基础类型</p>
+ * <p>
  * 与{@link CommonSerializer} 组合使用
  *
  * @since 2021年07月18日 14:17:04
  **/
 public class ArraySerializer implements Serializer<Object> {
 
-  /** 序列化集合 */
+  /**
+   * 序列化集合
+   */
   private CommonSerializer serializer;
 
   public ArraySerializer(CommonSerializer serializer) {
@@ -68,8 +69,8 @@ public class ArraySerializer implements Serializer<Object> {
   /**
    * 获取和检查每个维度的长度
    *
-   * @param array 目标数据
-   * @param dimension 当前维度
+   * @param array      目标数据
+   * @param dimension  当前维度
    * @param dimensions 维度记录
    * @since 2021年07月18日 17:12:22
    */
@@ -101,25 +102,23 @@ public class ArraySerializer implements Serializer<Object> {
       for (int i = 0; i < dimensionCount; i++) {
         int dimension = NettyByteBufUtil.readInt32(buf);
         if (dimension < 0) {
-          throw new RuntimeException("wrong dimensions [" + i + "]" + dimension);
+          throw new RuntimeException("wrong dimensions [" + i + ']' + dimension);
         }
 
         dimensions[i] = dimension;
       }
 
       final int typeId = NettyByteBufUtil.readInt32(buf);
+      Serializer<Object> ser = serializer;
       Class<?> componentType = serializer.getClazz(typeId);
-      if (componentType == null) {
-        throw new RuntimeException("数组类型ID:" + typeId + ",没有注册");
-      }
-
-      Serializer<Object> serializer = this.serializer;
-      if (isFinalType(componentType)) {
-        serializer = this.serializer.getSerializer(componentType);
+      if (componentType == null || componentType == NullSerializer.class) {
+        componentType = Object.class;
+      } else if (Modifier.isFinal(componentType.getModifiers())) {
+        ser = serializer.getSerializer(componentType);
       }
 
       Object array = Array.newInstance(componentType, dimensions);
-      readArray(buf, array, 0, dimensions, serializer);
+      readArray(ser, buf, array, 0, dimensions);
       return array;
     }
   }
@@ -127,20 +126,20 @@ public class ArraySerializer implements Serializer<Object> {
   /**
    * 从{@param buf}数组反序列化至{@param array}
    *
-   * @param buf 目标buff
-   * @param array 目标数组
-   * @param dim 维度
+   * @param buf        目标buff
+   * @param array      目标数组
+   * @param dim        维度
    * @param dimensions 各维度长度
    * @since 2021年07月18日 20:17:35
    */
-  private void readArray(ByteBuf buf, Object array, int dim, int[] dimensions,
-      Serializer<Object> serializer) {
+  private void readArray(Serializer<Object> serializer, ByteBuf buf, Object array, int dim,
+      int[] dimensions) {
     boolean elementAreArrays = dim < dimensions.length - 1;
     int length = dimensions[dim];
     for (int i = 0; i < length; ++i) {
       if (elementAreArrays) {
         Object element = Array.get(array, i);
-        readArray(buf, element, dim + 1, dimensions, serializer);
+        readArray(serializer, buf, element, dim + 1, dimensions);
       } else {
         Array.set(array, i, serializer.readObject(buf));
       }
@@ -165,51 +164,38 @@ public class ArraySerializer implements Serializer<Object> {
     }
 
     Integer typeId = serializer.getTypeId(componentType);
-    if (typeId == null) {
-      throw new RuntimeException("数组类型:" + componentType + ",没有注册");
-    }
-
     Serializer<Object> serializer = this.serializer;
-    if (isFinalType(componentType)) {
-      //获取特定的解析器
-      serializer = this.serializer.getSerializer(componentType);
+    if (typeId == null) {
+      //默认Object
+      typeId = CommonSerializer.NULL_ID;
     }
+
+    if (Modifier.isFinal(componentType.getModifiers())) {
+      serializer = this.serializer.findSerilaizer(componentType);
+    }
+
     NettyByteBufUtil.writeInt32(buf, typeId);
-    writeArray(buf, object, 0, dimensions, serializer);
-  }
-
-  /**
-   * 是否为Final类型
-   *
-   * @param componentType 目标类型
-   * @since 2022年03月22日 11:26:25
-   */
-  private boolean isFinalType(Class<?> componentType) {
-    if (componentType == null) {
-      return false;
-    }
-
-    return Modifier.isFinal(componentType.getModifiers());
+    writeArray(serializer, buf, object, 0, dimensions);
   }
 
   /**
    * 把数组序列化至{@param buff}
    *
-   * @param buf 目标buff
-   * @param array 目标数据
-   * @param dim 维度
+   * @param buf        目标buff
+   * @param array      目标数据
+   * @param dim        维度
    * @param dimensions 各维度长度
    * @since 2021年07月18日 20:17:35
    */
-  private void writeArray(ByteBuf buf, Object array, int dim, int[] dimensions,
-      Serializer<Object> serializer) {
+  private void writeArray(Serializer<Object> serializer, ByteBuf buf, Object array, int dim,
+      int[] dimensions) {
     int length = dimensions[dim];
 
     final boolean elementsAreArrays = dim < dimensions.length - 1;
     for (int i = 0; i < length; ++i) {
       Object element = Array.get(array, i);
       if (elementsAreArrays) {
-        writeArray(buf, element, dim + 1, dimensions, serializer);
+        writeArray(serializer, buf, element, dim + 1, dimensions);
       } else {
         serializer.writeObject(buf, element);
       }

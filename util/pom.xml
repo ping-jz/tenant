@@ -18,7 +18,7 @@
   <dependencies>
     <dependency>
       <groupId>io.netty</groupId>
-      <artifactId>netty-all</artifactId>
+      <artifactId>netty-buffer</artifactId>
       <scope>provided</scope>
     </dependency>
 
@@ -42,5 +42,17 @@
       <artifactId>mongodb-driver-sync</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jctools</groupId>
+      <artifactId>jctools-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 </project>

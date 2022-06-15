@@ -87,6 +87,8 @@
     <spring.mongodb.version>3.3.1</spring.mongodb.version>
     <slf4j.version>1.7.25</slf4j.version>
     <mongo.dervier.version>4.4.1</mongo.dervier.version>
+    <appache.common>3.12.0</appache.common>
+    <jctool.version>3.3.0</jctool.version>
   </properties>
 
   <modules>
@@ -121,6 +123,12 @@
       </dependency>
 
       <!-- https://mvnrepository.com/artifact/io.netty/netty-all -->
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-buffer</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+
       <dependency>
         <groupId>io.netty</groupId>
         <artifactId>netty-all</artifactId>
@@ -171,6 +179,18 @@
         <version>${mongo.dervier.version}</version>
       </dependency>
 
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>${appache.common}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.jctools</groupId>
+        <artifactId>jctools-core</artifactId>
+        <version>${jctool.version}</version>
+      </dependency>
+
     </dependencies>
   </dependencyManagement>
 
@@ -182,6 +202,7 @@
       <artifactId>junit-jupiter-engine</artifactId>
       <scope>test</scope>
     </dependency>
+
   </dependencies>
 
 

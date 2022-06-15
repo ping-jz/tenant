@@ -1,14 +1,16 @@
-package org.example.actor;
+package org.example.exec;
 
+import io.netty.util.internal.shaded.org.jctools.queues.MpscUnboundedArrayQueue;
+import java.io.Closeable;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 默认Actor实现
- * <p>此Actor共有3个状态，运行时会1至3中轮流切换。一旦关闭则不可在开启，关闭时不在接受新的任务，现在有任务会按顺序执行：</p>
+ * <p>此Actor共有4个状态，运行时会1至3中轮流切换。一旦关闭则不可在开启，关闭时不在接受新的任务，现在有任务会按顺序执行：</p>
  * <p>1:空闲(等待任务中)</p>
  * <p>2:等待(在线程任务队列等待调度)</p>
  * <p>3:执行中(获得控制权，正在执行任务)</p>
@@ -16,25 +18,37 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author ZJP
  * @since 2021年09月29日 23:40:00
  **/
-public class DefaultActor implements Actor {
+public class DefaultExecutor implements Runnable, Executor, Closeable {
 
   public static final int IDLE = 1;
   public static final int WAITING = 2;
   public static final int RUNNING = 3;
 
-  /** Actor状态 */
+  /**
+   * Actor状态
+   */
   private final AtomicInteger state;
-  /** 任务队列 */
+  /**
+   * 任务队列
+   */
   private final Queue<Runnable> queue;
-  /** 线程池(推荐使用{@link java.util.concurrent.ForkJoinPool}) */
+  /**
+   * 线程池(推荐使用{@link java.util.concurrent.ForkJoinPool})
+   */
   private final ExecutorService service;
-  /** 是否停止 */
-  private boolean stopped;
+  /**
+   * 是否停止
+   */
+  private boolean stopping;
 
-  public DefaultActor(ExecutorService service) {
-    state = new AtomicInteger(IDLE);
-    queue = new ConcurrentLinkedQueue<>();
+  public DefaultExecutor(ExecutorService service) {
+    this(new MpscUnboundedArrayQueue<>(128), service);
+  }
+
+  public DefaultExecutor(Queue<Runnable> queue, ExecutorService service) {
+    this.queue = queue;
     this.service = service;
+    this.state = new AtomicInteger(IDLE);
   }
 
   @Override
@@ -54,7 +68,7 @@ public class DefaultActor implements Actor {
 
         runnable.run();
       } catch (Exception e) {
-        //TODO log me
+        e.printStackTrace();
       }
     }
     state.compareAndSet(RUNNING, IDLE);
@@ -63,10 +77,15 @@ public class DefaultActor implements Actor {
     }
   }
 
-  @Override
+  /**
+   * 提交任务
+   *
+   * @return 是否成功
+   * @throws RuntimeException 如果队列停止收到新任务，报异常
+   */
   public boolean offer(Runnable runnable) {
-    if (isStopped()) {
-      return false;
+    if (stopping) {
+      throw new RuntimeException("二级队列拒绝接收新任务");
     }
 
     boolean res = queue.add(runnable);
@@ -74,14 +93,14 @@ public class DefaultActor implements Actor {
     return res;
   }
 
-  public boolean isStopped() {
-    return stopped;
+  @Override
+  public void close() {
+    stopping = true;
   }
 
-  public void stopped() {
-    stopped = true;
-  }
-
+  /**
+   * 把二级队列放到线程池等待执行
+   */
   protected void exec() {
     try {
       if (state.compareAndSet(IDLE, WAITING)) {
@@ -89,7 +108,17 @@ public class DefaultActor implements Actor {
       }
     } catch (Exception e) {
       state.compareAndSet(WAITING, IDLE);
-      //TODO Log me
+      e.printStackTrace();
     }
+  }
+
+  @Override
+  public void execute(Runnable command) {
+    if (stopping) {
+      throw new RuntimeException("二级队列拒绝接收新任务");
+    }
+
+    queue.add(command);
+    exec();
   }
 }

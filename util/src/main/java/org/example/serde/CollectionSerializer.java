@@ -17,16 +17,20 @@ import java.util.function.Supplier;
  *    元素数量:1-5字节, 使用varint32和ZigZga编码
  *    元素:实现决定
  * </pre>
- *
+ * <p>
  * 与{@link CommonSerializer} 组合使用
  *
  * @since 2021年07月18日 14:17:04
  **/
 public class CollectionSerializer implements Serializer<Object> {
 
-  /** 序列化入口 */
+  /**
+   * 序列化入口
+   */
   private CommonSerializer serializer;
-  /** 集合提供者 */
+  /**
+   * 集合提供者
+   */
   private Supplier<Collection<Object>> factory;
 
   public CollectionSerializer(CommonSerializer serializer) {
@@ -41,25 +45,77 @@ public class CollectionSerializer implements Serializer<Object> {
   @Override
   public Object readObject(ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
+    if (length < 0) {
+      return null;
+    }
+    int typeId = NettyByteBufUtil.readInt32(buf);
     Collection<Object> collection = factory.get();
+    Serializer<Object> ser = serializer;
+    if (typeId != 0) {
+      Class<?> clazz = serializer.getClazz(typeId);
+      if (clazz == null) {
+        throw new NullPointerException("类型ID:" + typeId + "，未注册");
+      }
+
+      ser = serializer.getSerializer(clazz);
+      if (ser == null) {
+        throw new NullPointerException("类型ID:" + typeId + "，未注册");
+      }
+    }
 
     for (int i = 0; i < length; i++) {
-      collection.add(serializer.readObject(buf));
+      collection.add(ser.readObject(buf));
     }
     return collection;
   }
 
   @Override
   public void writeObject(ByteBuf buf, Object object) {
-    if (!(object instanceof Collection)) {
-      throw new RuntimeException("类型:" + object.getClass() + ",不是集合");
+    if (object == null) {
+      NettyByteBufUtil.writeInt32(buf, -1);
+    } else {
+      if (!(object instanceof Collection)) {
+        throw new RuntimeException("类型:" + object.getClass() + ",不是集合");
+      }
+      @SuppressWarnings("unchecked cast") Collection<Object> collection = (Collection<Object>) object;
+
+      NettyByteBufUtil.writeInt32(buf, collection.size());
+      Class<?> type = typeId(collection);
+      Serializer<Object> ser = serializer;
+      int typeId = 0;
+      if (type != null) {
+        ser = serializer.findSerilaizer(type);
+        if (ser == null) {
+          throw new RuntimeException("类型:" + type + "，未注册");
+        }
+        typeId = serializer.getTypeId(type);
+      }
+
+      NettyByteBufUtil.writeInt32(buf, typeId);
+      for (Object o : collection) {
+        ser.writeObject(buf, o);
+      }
     }
-    @SuppressWarnings("unchecked cast")
-    Collection<Object> collection = (Collection<Object>) object;
-    int length = collection.size();
-    NettyByteBufUtil.writeInt32(buf, length);
+  }
+
+  /**
+   * 如果集合里面都是统一类型，则返回唯一的类型ID。否则0
+   */
+  public Class<?> typeId(Collection<Object> collection) {
+    Class<?> type = null;
     for (Object o : collection) {
-      serializer.writeObject(buf, o);
+      if (o == null) {
+        continue;
+      }
+
+      Class<?> temp = o.getClass();
+      if (type == null) {
+        type = temp;
+      } else if (type != temp) {
+        return null;
+      }
     }
+
+    return type;
   }
 }

@@ -1,7 +1,7 @@
 package org.example.net;
 
 /**
- * RPC异步回调
+ * 远程异步任务
  */
 public interface InvokeFuture<T> {
 
