@@ -1,12 +1,13 @@
 package org.example.serde;
 
 import io.netty.buffer.ByteBuf;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * 通用对象序列化实现
@@ -21,6 +22,7 @@ import org.apache.commons.lang3.ArrayUtils;
  **/
 public class ObjectSerializer implements Serializer<Object> {
 
+  public static final FieldInfo[] EMPTY_FILE_INFO = new FieldInfo[0];
   /**
    * 目标类型
    */
@@ -36,7 +38,7 @@ public class ObjectSerializer implements Serializer<Object> {
   /**
    * 字段信息
    */
-  private Field[] fields;
+  private FieldInfo[] fields;
 
   public ObjectSerializer(Class<?> clazz, CommonSerializer serializer) {
     this.clazz = clazz;
@@ -78,8 +80,9 @@ public class ObjectSerializer implements Serializer<Object> {
       throw new RuntimeException("类型:" + clazz + ",缺少无参构造方法");
     }
 
-    //所有字段
-    List<Field> fields = new ArrayList<>();
+    //所有字段(Getter, Setter)
+    List<FieldInfo> fields = new ArrayList<>();
+    MethodHandles.Lookup lookup = MethodHandles.lookup();
     for (Class<?> cls = clazz; cls != Object.class; cls = cls.getSuperclass()) {
       for (Field f : cls.getDeclaredFields()) {
         int modifier = f.getModifiers();
@@ -92,27 +95,35 @@ public class ObjectSerializer implements Serializer<Object> {
           fields = new ArrayList<>();
         }
         f.setAccessible(true);
-        fields.add(f);
+        try {
+          FieldInfo fieldInfo = new FieldInfo(lookup.unreflectSetter(f), lookup.unreflectGetter(f),
+              f.getName());
+          fields.add(fieldInfo);
+        } catch (Exception e) {
+          throw new RuntimeException(
+              String.format("类型:%s.%s, 创建getter和setter失败", clazz.getName(), f.getName()));
+        }
       }
     }
 
-    this.fields = fields.toArray(ArrayUtils.EMPTY_FIELD_ARRAY);
+    this.fields = fields.toArray(EMPTY_FILE_INFO);
   }
 
   @Override
   public Object readObject(ByteBuf buf) {
-    Object o = null;
+    Object o;
     try {
       o = constructor.newInstance();
     } catch (Exception e) {
       throw new RuntimeException("类型:" + clazz + ",创建失败", e);
     }
 
-    for (Field field : fields) {
+    for (FieldInfo field : fields) {
       try {
         Object value = serializer.readObject(buf);
-        field.set(o, value);
-      } catch (Exception e) {
+        MethodHandle setter = field.getSetter();
+        setter.invoke(o, value);
+      } catch (Throwable e) {
         throw new RuntimeException(String.format("反序列化:%s, 字段:%s 错误", clazz, field.getName()), e);
       }
     }
@@ -121,13 +132,38 @@ public class ObjectSerializer implements Serializer<Object> {
 
   @Override
   public void writeObject(ByteBuf buf, Object object) {
-    for (Field field : fields) {
+    for (FieldInfo field : fields) {
       try {
-        Object value = field.get(object);
+        Object value = field.getGetter().invoke(object);
         serializer.writeObject(buf, value);
-      } catch (Exception e) {
+      } catch (Throwable e) {
         throw new RuntimeException(String.format("序列化:%s, 字段:%s 错误", clazz, field.getName()), e);
       }
+    }
+  }
+
+  private static class FieldInfo {
+
+    private MethodHandle setter;
+    private MethodHandle getter;
+    private String name;
+
+    FieldInfo(MethodHandle setter, MethodHandle getter, String name) {
+      this.setter = setter;
+      this.getter = getter;
+      this.name = name;
+    }
+
+    public MethodHandle getSetter() {
+      return setter;
+    }
+
+    public MethodHandle getGetter() {
+      return getter;
+    }
+
+    public String getName() {
+      return name;
     }
   }
 }

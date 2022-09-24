@@ -133,7 +133,7 @@ public class DefaultDispatcher extends SimpleChannelInboundHandler<Message> impl
         channel.write(response);
       }
 
-    } catch (Exception e) {
+    } catch (Throwable e) {
       if (0 < msg.proto()) {
         channel.write(Message.of(Math.negateExact(msg.proto())).msgId(msg.msgId())
             .status(MessageStatus.SERVER_EXCEPTION));

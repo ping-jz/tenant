@@ -30,7 +30,7 @@ public class HandlerRegistryTest {
   }
 
   @Test
-  public void facadeTest() throws Exception {
+  public void facadeTest() throws Throwable {
     Handler echoHandler = registry.getHandler(HelloWorldFacade.TEST_REQ);
     assertNotNull(echoHandler);
 
@@ -39,7 +39,7 @@ public class HandlerRegistryTest {
   }
 
   @Test
-  public void moduleTest() throws Exception {
+  public void moduleTest() throws Throwable {
     Handler echoHandler = registry.getHandler(HelloWorld.ECHO);
     Handler doNothing = registry.getHandler(HelloWorld.DO_NOTHING);
     assertNotNull(echoHandler);

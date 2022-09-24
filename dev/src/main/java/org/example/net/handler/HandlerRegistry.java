@@ -1,5 +1,7 @@
 package org.example.net.handler;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,7 +15,7 @@ import org.example.net.proxy.ReqUtil;
 
 /**
  * 根据协议号int,提供获取和注册处理者的方法。
- *
+ * <p>
  * 获取之后如何验证Handler是否合法，交由业务决定。此类只提供基础的基础和获取。调用方式则交给业务决定
  *
  * @author ZJP
@@ -21,7 +23,9 @@ import org.example.net.proxy.ReqUtil;
  **/
 public class HandlerRegistry {
 
-  /** 协议编号 -> 请求处理者 */
+  /**
+   * 协议编号 -> 请求处理者
+   */
   private final Map<Integer, Handler> handles;
 
   public HandlerRegistry() {
@@ -43,12 +47,20 @@ public class HandlerRegistry {
     List<Handler> res = new ArrayList<>();
     Class<?> clazz = object.getClass();
 
+    MethodHandles.Lookup lookup = MethodHandles.lookup();
     for (Pair<Integer, Method> pair : ReqUtil.getMethods(clazz)) {
       Integer req = pair.getLeft();
       Method method = pair.getRight();
 
-      Handler handler = Handler.of(object, method, req);
-      res.add(handler);
+      try {
+        String name = method.getDeclaringClass() + "." + method.getName();
+        MethodHandle handle = lookup.unreflect(method).bindTo(object);
+        Handler handler = Handler.of(name, handle, req);
+        res.add(handler);
+      } catch (Exception e) {
+        throw new RuntimeException(
+            String.format("%s.%s,反射错误", method.getDeclaringClass(), method.getName()), e);
+      }
     }
 
     for (Class<?> inter : clazz.getInterfaces()) {
@@ -56,8 +68,15 @@ public class HandlerRegistry {
         Integer req = pair.getLeft();
         Method method = pair.getRight();
 
-        Handler handler = Handler.of(object, method, req);
-        res.add(handler);
+        try {
+          String name = method.getDeclaringClass() + "." + method.getName();
+          MethodHandle handle = lookup.unreflect(method).bindTo(object);
+          Handler handler = Handler.of(name, handle, req);
+          res.add(handler);
+        } catch (Exception e) {
+          throw new RuntimeException(
+              String.format("%s.%s,反射错误", method.getDeclaringClass(), method.getName()), e);
+        }
       }
     }
 

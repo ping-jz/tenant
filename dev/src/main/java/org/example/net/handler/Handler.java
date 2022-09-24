@@ -1,6 +1,6 @@
 package org.example.net.handler;
 
-import java.lang.reflect.Method;
+import java.lang.invoke.MethodHandle;
 import java.util.Objects;
 
 /**
@@ -14,42 +14,41 @@ public class Handler {
   /** 无参数组 */
   private static final Object[] NO_PARAMS = new Object[0];
 
-  /** 请求处理者 */
-  private Object obj;
-  /** 请求处理方法 */
-  private Method method;
-  /** 请求协议编号 */
+  private String name;
+  /**
+   * 请求处理方法
+   */
+  private MethodHandle method;
+  /**
+   * 请求协议编号
+   */
   private int reqId;
 
   public Handler() {
   }
 
-  public static Handler of(Object obj, Method method, int req) {
+  public static Handler of(String name, MethodHandle method, int req) {
     Handler handler = new Handler();
-    handler.obj = obj;
     handler.method = method;
     handler.reqId = req;
+    handler.name = name;
     return handler;
   }
 
-  public Object obj() {
-    return obj;
-  }
-
-  public Method method() {
+  public MethodHandle method() {
     return method;
   }
 
-  public Object invoke() throws Exception {
-    return invoke(NO_PARAMS);
+  public Object invoke() throws Throwable {
+    return method.invoke();
   }
 
   public int reqId() {
     return reqId;
   }
 
-  public Object invoke(Object... params) throws Exception {
-    return method.invoke(obj, params);
+  public Object invoke(Object... params) throws Throwable {
+    return method.invokeWithArguments(params);
   }
 
   @Override
@@ -71,6 +70,6 @@ public class Handler {
 
   @Override
   public String toString() {
-    return method.getDeclaringClass() + "." + method.getName();
+    return name;
   }
 }
