@@ -34,7 +34,7 @@ public class ObjectSerializer implements Serializer<Object> {
   /**
    * 默认无参构造
    */
-  private Constructor<?> constructor;
+  private MethodHandle constructor;
   /**
    * 字段信息
    */
@@ -73,16 +73,18 @@ public class ObjectSerializer implements Serializer<Object> {
    * @since 2021年07月18日 11:09:50
    */
   public void register(Class<?> clazz) {
+    MethodHandles.Lookup lookup = MethodHandles.lookup();
     try {
-      constructor = clazz.getDeclaredConstructor();
-      constructor.setAccessible(true);
+      Constructor<?> temp = clazz.getDeclaredConstructor();
+      temp.setAccessible(true);
+      constructor = lookup.unreflectConstructor(temp);
     } catch (Exception e) {
       throw new RuntimeException("类型:" + clazz + ",缺少无参构造方法");
     }
 
     //所有字段(Getter, Setter)
     List<FieldInfo> fields = new ArrayList<>();
-    MethodHandles.Lookup lookup = MethodHandles.lookup();
+
     for (Class<?> cls = clazz; cls != Object.class; cls = cls.getSuperclass()) {
       for (Field f : cls.getDeclaredFields()) {
         int modifier = f.getModifiers();
@@ -113,18 +115,18 @@ public class ObjectSerializer implements Serializer<Object> {
   public Object readObject(ByteBuf buf) {
     Object o;
     try {
-      o = constructor.newInstance();
-    } catch (Exception e) {
+      o = constructor.invoke();
+    } catch (Throwable e) {
       throw new RuntimeException("类型:" + clazz + ",创建失败", e);
     }
 
     for (FieldInfo field : fields) {
       try {
         Object value = serializer.readObject(buf);
-        MethodHandle setter = field.getSetter();
+        MethodHandle setter = field.setter();
         setter.invoke(o, value);
       } catch (Throwable e) {
-        throw new RuntimeException(String.format("反序列化:%s, 字段:%s 错误", clazz, field.getName()), e);
+        throw new RuntimeException(String.format("反序列化:%s, 字段:%s 错误", clazz, field.name()), e);
       }
     }
     return o;
@@ -134,36 +136,17 @@ public class ObjectSerializer implements Serializer<Object> {
   public void writeObject(ByteBuf buf, Object object) {
     for (FieldInfo field : fields) {
       try {
-        Object value = field.getGetter().invoke(object);
+        Object value = field.getter().invoke(object);
         serializer.writeObject(buf, value);
       } catch (Throwable e) {
-        throw new RuntimeException(String.format("序列化:%s, 字段:%s 错误", clazz, field.getName()), e);
+        throw new RuntimeException(String.format("序列化:%s, 字段:%s 错误", clazz, field.name()), e);
       }
     }
   }
 
-  private static class FieldInfo {
+  record FieldInfo(MethodHandle setter, MethodHandle getter, String name) {
 
-    private MethodHandle setter;
-    private MethodHandle getter;
-    private String name;
-
-    FieldInfo(MethodHandle setter, MethodHandle getter, String name) {
-      this.setter = setter;
-      this.getter = getter;
-      this.name = name;
-    }
-
-    public MethodHandle getSetter() {
-      return setter;
-    }
-
-    public MethodHandle getGetter() {
-      return getter;
-    }
-
-    public String getName() {
-      return name;
-    }
   }
+
+  ;
 }
