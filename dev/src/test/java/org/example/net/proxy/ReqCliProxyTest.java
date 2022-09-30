@@ -94,7 +94,7 @@ public class ReqCliProxyTest {
   private CommonSerializer createSerializer() {
     CommonSerializer serializer = new CommonSerializer();
     serializer.registerSerializer(10, Object.class, new ObjectSerializer(Object.class, serializer));
-    serializer.registerSerializer(11, Message.class);
+    serializer.registerObject(11, Message.class);
     return serializer;
   }
 

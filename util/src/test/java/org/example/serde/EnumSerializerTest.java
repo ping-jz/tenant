@@ -41,7 +41,7 @@ public class EnumSerializerTest {
     CommonSerializer serializer = new CommonSerializer();
     serializer.registerSerializer(10, EnumOne.class, new EnumSerializer<>(EnumOne.class));
     serializer.registerSerializer(11, EnumTwo.class, new EnumSerializer<>(EnumTwo.class));
-    serializer.registerSerializer(12, TestCaseOne.class);
+    serializer.registerObject(12, TestCaseOne.class);
     serializer.registerSerializer(13, List.class, new CollectionSerializer(serializer));
     ByteBuf buf = Unpooled.buffer();
 

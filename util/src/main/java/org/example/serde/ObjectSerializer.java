@@ -43,7 +43,7 @@ public class ObjectSerializer implements Serializer<Object> {
   public ObjectSerializer(Class<?> clazz, CommonSerializer serializer) {
     this.clazz = clazz;
     this.serializer = serializer;
-    register(clazz);
+    register(serializer, clazz);
   }
 
   /**
@@ -72,7 +72,7 @@ public class ObjectSerializer implements Serializer<Object> {
    *
    * @since 2021年07月18日 11:09:50
    */
-  public void register(Class<?> clazz) {
+  public void register(CommonSerializer serializer, Class<?> clazz) {
     MethodHandles.Lookup lookup = MethodHandles.lookup();
     try {
       Constructor<?> temp = clazz.getDeclaredConstructor();
@@ -98,8 +98,8 @@ public class ObjectSerializer implements Serializer<Object> {
         }
         f.setAccessible(true);
         try {
-          FieldInfo fieldInfo = new FieldInfo(lookup.unreflectSetter(f), lookup.unreflectGetter(f),
-              f.getName());
+          FieldInfo fieldInfo = new FieldInfo(serializer.getSerializer(f.getType()),
+              lookup.unreflectSetter(f), lookup.unreflectGetter(f), f.getName());
           fields.add(fieldInfo);
         } catch (Exception e) {
           throw new RuntimeException(
@@ -122,6 +122,8 @@ public class ObjectSerializer implements Serializer<Object> {
 
     for (FieldInfo field : fields) {
       try {
+        Serializer<Object> serializer =
+            field.serializer != null ? field.serializer : this.serializer;
         Object value = serializer.readObject(buf);
         MethodHandle setter = field.setter();
         setter.invoke(o, value);
@@ -137,6 +139,8 @@ public class ObjectSerializer implements Serializer<Object> {
     for (FieldInfo field : fields) {
       try {
         Object value = field.getter().invoke(object);
+        Serializer<Object> serializer =
+            field.serializer != null ? field.serializer : this.serializer;
         serializer.writeObject(buf, value);
       } catch (Throwable e) {
         throw new RuntimeException(String.format("序列化:%s, 字段:%s 错误", clazz, field.name()), e);
@@ -144,7 +148,8 @@ public class ObjectSerializer implements Serializer<Object> {
     }
   }
 
-  record FieldInfo(MethodHandle setter, MethodHandle getter, String name) {
+  record FieldInfo(Serializer<Object> serializer, MethodHandle setter, MethodHandle getter,
+                   String name) {
 
   }
 

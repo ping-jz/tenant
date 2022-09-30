@@ -18,6 +18,6 @@ public class LongSerializer implements Serializer<Long> {
 
   @Override
   public void writeObject(ByteBuf buf, Long object) {
-    NettyByteBufUtil.writeInt64(buf, object == null ? 0L : object);
+    NettyByteBufUtil.writeInt64(buf, object);
   }
 }

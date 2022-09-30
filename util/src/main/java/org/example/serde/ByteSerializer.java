@@ -18,6 +18,6 @@ public class ByteSerializer implements Serializer<Byte> {
 
   @Override
   public void writeObject(ByteBuf buf, Byte object) {
-    buf.writeByte(object == null ? 0 : object);
+    buf.writeByte(object);
   }
 }

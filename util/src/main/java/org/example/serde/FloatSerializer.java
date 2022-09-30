@@ -18,6 +18,6 @@ public class FloatSerializer implements Serializer<Float> {
 
   @Override
   public void writeObject(ByteBuf buf, Float object) {
-    buf.writeFloat(object == null ? 0.0F : object);
+    buf.writeFloat(object);
   }
 }

@@ -18,6 +18,6 @@ public class DoubleSerializer implements Serializer<Double> {
 
   @Override
   public void writeObject(ByteBuf buf, Double object) {
-    buf.writeDouble(object == null ? 0.0D : object);
+    buf.writeDouble(object);
   }
 }

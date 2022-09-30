@@ -18,6 +18,6 @@ public class ShortSerializer implements Serializer<Short> {
 
   @Override
   public void writeObject(ByteBuf buf, Short object) {
-    buf.writeShort(object == null ? 0 : object);
+    buf.writeShort(object);
   }
 }

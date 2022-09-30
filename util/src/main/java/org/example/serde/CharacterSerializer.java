@@ -18,6 +18,6 @@ public class CharacterSerializer implements Serializer<Character> {
 
   @Override
   public void writeObject(ByteBuf buf, Character object) {
-    buf.writeChar(object == null ? 0 : object);
+    buf.writeChar(object);
   }
 }

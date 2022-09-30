@@ -133,18 +133,34 @@ public class CommonSerializer implements Serializer<Object> {
 
 
   /**
-   * 注册序列化
+   * 注册普通序列化
    *
    * @param id    类型ID
    * @param clazz 类型
    * @since 2021年07月18日 11:37:14
    */
-  public void registerSerializer(Integer id, Class<?> clazz) {
+  public void registerObject(Integer id, Class<?> clazz) {
     Objects.requireNonNull(id);
     Objects.requireNonNull(clazz);
     ObjectSerializer.checkClass(clazz);
 
     Serializer<?> serializer = new ObjectSerializer(clazz, this);
+    registerSerializer(id, clazz, serializer);
+  }
+
+  /**
+   * 注册Record序列化
+   *
+   * @param id    类型ID
+   * @param clazz 类型
+   * @since 2021年07月18日 11:37:14
+   */
+  public void registerRecord(Integer id, Class<?> clazz) {
+    Objects.requireNonNull(id);
+    Objects.requireNonNull(clazz);
+    RecordSerializer.checkClass(clazz);
+
+    Serializer<?> serializer = new RecordSerializer(clazz, this);
     registerSerializer(id, clazz, serializer);
   }
 
@@ -179,7 +195,7 @@ public class CommonSerializer implements Serializer<Object> {
    * <p>ArrayList -> Collection</p>
    * <p>List -> Collection</p>
    * <p>
-   * 注意:序列化之后，原有信息会被抛弃。如何LinkHashMap会变成HashMap。如果想保留，请使用{@link CommonSerializer#registerSerializer}
+   * 注意:序列化之后，原有信息会被抛弃。如何LinkHashMap会变成HashMap。如果想保留，请使用{@link CommonSerializer#registerObject}
    *
    * @since 2021年07月18日 10:31:21
    */

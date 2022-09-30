@@ -56,7 +56,7 @@ public class ObjectSerializerTest {
     PrimitiveObj obj = new PrimitiveObj();
     obj.d = Double.MIN_VALUE;
 
-    serializer.registerSerializer(10, PrimitiveObj.class);
+    serializer.registerObject(10, PrimitiveObj.class);
     serializer.writeObject(buf, obj);
 
     PrimitiveObj res = serializer.read(buf);
@@ -68,9 +68,9 @@ public class ObjectSerializerTest {
     WrapperObj obj = new WrapperObj();
     obj.d = Double.MIN_VALUE;
     obj.str = "Hello World!";
-    obj.b = null;
+    obj.b = 123;
 
-    serializer.registerSerializer(10, WrapperObj.class);
+    serializer.registerObject(10, WrapperObj.class);
     serializer.writeObject(buf, obj);
 
     WrapperObj res = serializer.read(buf);
@@ -79,20 +79,22 @@ public class ObjectSerializerTest {
 
   @Test
   public void composeTest() {
-    serializer.registerSerializer(10, ComposeObj.class);
-    serializer.registerSerializer(11, PrimitiveObj.class);
-    serializer.registerSerializer(12, WrapperObj.class);
+    serializer.registerObject(10, PrimitiveObj.class);
+    serializer.registerObject(11, WrapperObj.class);
+    serializer.registerObject(12, ComposeObj.class);
+    serializer.registerRecord(13, AAA.class);
 
     PrimitiveObj pri = new PrimitiveObj();
     pri.l = Long.MIN_VALUE;
 
     WrapperObj wrap = new WrapperObj();
     wrap.str = "Hello World!";
-    wrap.l = null;
+    wrap.l = ThreadLocalRandom.current().nextLong();
 
     ComposeObj composeObj = new ComposeObj();
     composeObj.pri = pri;
     composeObj.wrap = wrap;
+    composeObj.aaa = new AAA(1, 2, 3);
 
     serializer.writeObject(buf, composeObj);
 
@@ -102,16 +104,16 @@ public class ObjectSerializerTest {
 
   @Test
   public void inheritanceTest() {
-    serializer.registerSerializer(11, PrimitiveObj.class);
-    serializer.registerSerializer(12, WrapperObj.class);
-    serializer.registerSerializer(13, Child.class);
+    serializer.registerObject(11, PrimitiveObj.class);
+    serializer.registerObject(12, WrapperObj.class);
+    serializer.registerObject(13, Child.class);
 
     PrimitiveObj pri = new PrimitiveObj();
     pri.l = Long.MIN_VALUE;
 
     WrapperObj wrap = new WrapperObj();
     wrap.str = "Hello World!";
-    wrap.l = null;
+    wrap.l = ThreadLocalRandom.current().nextLong();
 
     Child child = new Child();
     child.pri = pri;
@@ -236,6 +238,7 @@ public class ObjectSerializerTest {
 
     public PrimitiveObj pri;
     public WrapperObj wrap;
+    public AAA aaa;
 
     @Override
     public boolean equals(Object o) {
@@ -246,12 +249,13 @@ public class ObjectSerializerTest {
         return false;
       }
       ComposeObj that = (ComposeObj) o;
-      return pri.equals(that.pri) && wrap.equals(that.wrap);
+      return Objects.equals(pri, that.pri) && Objects.equals(wrap, that.wrap)
+          && Objects.equals(aaa, that.aaa);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(pri, wrap);
+      return Objects.hash(pri, wrap, aaa);
     }
   }
 
@@ -287,6 +291,10 @@ public class ObjectSerializerTest {
     public int hashCode() {
       return Objects.hash(super.hashCode(), A, a);
     }
+  }
+
+  record AAA(int a, int b, int c) {
+
   }
 
 

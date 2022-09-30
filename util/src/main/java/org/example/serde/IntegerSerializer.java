@@ -18,6 +18,6 @@ public class IntegerSerializer implements Serializer<Integer> {
 
   @Override
   public void writeObject(ByteBuf buf, Integer object) {
-    NettyByteBufUtil.writeInt32(buf, object == null ? 0 : object);
+    NettyByteBufUtil.writeInt32(buf, object);
   }
 }

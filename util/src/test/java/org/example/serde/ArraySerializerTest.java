@@ -21,7 +21,7 @@ public class ArraySerializerTest {
   public void beforeEach() {
     serializer = new CommonSerializer();
     serializer.registerSerializer(10, Object.class, new MarkSerializer());
-    serializer.registerSerializer(11, ArrayWrapper.class);
+    serializer.registerObject(11, ArrayWrapper.class);
     buf = Unpooled.buffer();
   }
 
@@ -121,10 +121,6 @@ public class ArraySerializerTest {
     ArrayWrapper[][][][] test = new ArrayWrapper[one][two][three][four];
     int special = 2;
     for (int f = 0; f < one; f++) {
-      //故意不设值
-      if (f == special) {
-        continue;
-      }
       for (int o = 0; o < two; o++) {
         for (int t = 0; t < three; t++) {
           for (int th = 0; th < four; th++) {
