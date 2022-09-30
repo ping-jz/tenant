@@ -18,6 +18,8 @@ public class RecordSerializer implements Serializer<Object> {
    * 默认无参构造
    */
   private MethodHandle constructor;
+
+  private CommonSerializer serializer;
   /**
    * 字段信息
    */
@@ -25,6 +27,7 @@ public class RecordSerializer implements Serializer<Object> {
 
   public RecordSerializer(Class<?> clazz, CommonSerializer serializer) {
     this.clazz = clazz;
+    this.serializer = serializer;
     register(serializer, clazz);
   }
 
@@ -36,7 +39,8 @@ public class RecordSerializer implements Serializer<Object> {
       for (int i = 0; i < fields.length; i++) {
         FieldInfo field = fields[i];
         try {
-          Object value = field.serializer.readObject(buf);
+          Serializer<Object> ser = field.serializer != null ? field.serializer : serializer;
+          Object value = ser.readObject(buf);
           args[i] = value;
         } catch (Throwable e) {
           throw new RuntimeException(String.format("反序列化:%s, 字段:%s 错误", clazz, field.name()), e);
@@ -61,7 +65,8 @@ public class RecordSerializer implements Serializer<Object> {
     for (FieldInfo field : fields) {
       try {
         Object value = field.getter().invoke(object);
-        field.serializer.writeObject(buf, value);
+        Serializer<Object> ser = field.serializer != null ? field.serializer : serializer;
+        ser.writeObject(buf, value);
       } catch (Throwable e) {
         throw new RuntimeException(String.format("序列化:%s, 字段:%s 错误", clazz, field.name()), e);
       }
