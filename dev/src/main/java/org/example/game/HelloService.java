@@ -7,8 +7,6 @@ import static io.netty.handler.codec.http.HttpHeaderValues.CLOSE;
 import static io.netty.handler.codec.http.HttpHeaderValues.KEEP_ALIVE;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 
-import org.example.common.HelloWorld;
-import org.example.game.log.LoggerService;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -25,6 +23,8 @@ import java.lang.management.RuntimeMXBean;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.PostConstruct;
+import org.example.common.HelloWorld;
+import org.example.game.log.LoggerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -62,9 +62,7 @@ public class HelloService extends SimpleChannelInboundHandler<HttpObject> {
   @Override
   public void channelRead0(ChannelHandlerContext ctx, HttpObject msg) {
     //直接从netty的示例代码复制过来的，稍微改了下
-    if (msg instanceof HttpRequest) {
-      HttpRequest req = (HttpRequest) msg;
-
+    if (msg instanceof HttpRequest req) {
       String content = helloWorld
           .hello(String.format("%s 进程:%s hello world 计数:%s", name, pid, count.incrementAndGet()));
 
@@ -97,6 +95,7 @@ public class HelloService extends SimpleChannelInboundHandler<HttpObject> {
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    //TODO replace with logging
     cause.printStackTrace();
     ctx.close();
   }

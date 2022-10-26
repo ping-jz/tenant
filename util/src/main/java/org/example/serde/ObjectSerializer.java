@@ -12,7 +12,6 @@ import java.util.List;
 /**
  * 通用对象序列化实现
  *
- * <p>1.根据字段名字进行排序，不能随机更改字段名</p>
  * <p>2.字段类型也需要注册进{@link CommonSerializer}, 顺序无关</p>
  * <p>3.因为接口和抽象类的存在，无法确定具体类型，所以不提供自动注册</p>
  * <p>
@@ -152,6 +151,4 @@ public class ObjectSerializer implements Serializer<Object> {
                    String name) {
 
   }
-
-  ;
 }

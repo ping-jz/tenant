@@ -120,8 +120,7 @@ public class DefaultDispatcher extends SimpleChannelInboundHandler<Message> impl
         response = Message.of(Math.negateExact(msg.proto())).msgId(msg.msgId())
             .status(MessageStatus.SUCCESS).packet(result);
 
-        if (result instanceof Message) {
-          Message resMsg = (Message) result;
+        if (result instanceof Message resMsg) {
           if (resMsg.proto() != 0) {
             response.proto(Math.negateExact(msg.proto()));
           }
