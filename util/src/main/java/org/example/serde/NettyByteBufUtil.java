@@ -112,7 +112,7 @@ public class NettyByteBufUtil {
    * @since 2021年07月17日 09:40:01
    */
   public static void writeInt64(ByteBuf buf, long value) {
-    writeRawVaraint64(buf, encodeZigZag64(value));
+    writeRawVarint64(buf, encodeZigZag64(value));
   }
 
   /**
@@ -155,11 +155,11 @@ public class NettyByteBufUtil {
   /**
    * 写入varint64
    *
-   * @param buf 目前buff
+   * @param buf   目前buff
    * @param value 写入的内容
    * @since 2021年07月17日 09:40:01
    */
-  public static void writeRawVaraint64(ByteBuf buf, long value) {
+  public static void writeRawVarint64(ByteBuf buf, long value) {
     while (true) {
       if ((value & ~0x7F) == 0) {
         buf.writeByte((byte) value);
