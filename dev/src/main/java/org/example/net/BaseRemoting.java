@@ -1,9 +1,10 @@
 package org.example.net;
 
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class BaseRemoting {
 
@@ -92,7 +93,6 @@ public class BaseRemoting {
       DefaultInvokeFuture<T> f = conn.removeInvokeFuture(msgId);
       if (f != null) {
         f.cancelTimeout();
-        f.executeThrowAble(e);
       }
       logger.error("Exception caught when sending invocation. The address is {}",
           conn.channel().remoteAddress(), e);

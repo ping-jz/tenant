@@ -58,13 +58,6 @@ public class DefaultInvokeFuture<T> implements InvokeFuture<T> {
     sucCallBack = callback;
   }
 
-  public void executeThrowAble(Throwable cause) {
-    if (errCallBack instanceof ErrCallback && executeCallbackOnlyOnce.compareAndExchange(false,
-        true)) {
-      ((ErrCallback<T>) errCallBack).onException(cause);
-    }
-  }
-
   public void executeCallBack(Message message) {
     if (executeCallbackOnlyOnce.compareAndSet(false, true)) {
       try {
@@ -74,9 +67,7 @@ public class DefaultInvokeFuture<T> implements InvokeFuture<T> {
           errCallBack.onMessage(message);
         }
       } catch (Exception e) {
-        if (errCallBack instanceof ErrCallback) {
-          ((ErrCallback<T>) errCallBack).onException(e);
-        }
+        //TODO Logger me
       }
     }
   }

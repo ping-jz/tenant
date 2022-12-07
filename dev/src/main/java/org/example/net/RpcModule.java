@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
  * @author ZJP
  * @since 2021年07月25日 14:27:59
  **/
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RpcModule {
 }
