@@ -1,4 +1,4 @@
-package org.example.proxy.message;
+package org.example.proxy.util;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -11,7 +11,10 @@ import org.example.serde.NettyByteBufUtil;
  * @author zhongjianping
  * @since 2022/12/12 18:22
  */
-public class NettyProxyMessageUtil {
+public final class NettyProxyMessageUtil {
+
+  private NettyProxyMessageUtil() {
+  }
 
   /**
    * 封装中转消息
@@ -21,8 +24,8 @@ public class NettyProxyMessageUtil {
    * @param body   消息体(使用之后会降低引用)
    * @since 2022年12月12日“ 18:32
    */
-  public ByteBuf wrapperProxyMessage(int source, int target, ByteBuf body) {
-    return wrapperProxyMessage(PooledByteBufAllocator.DEFAULT.buffer(), source, target, body);
+  public static ByteBuf proxyMessage(int source, int target, ByteBuf body) {
+    return proxyMessage(PooledByteBufAllocator.DEFAULT.buffer(), source, target, body);
   }
 
   /**
@@ -34,7 +37,7 @@ public class NettyProxyMessageUtil {
    * @param body   消息体(使用之后会降低引用)
    * @since 2022年12月12日“ 18:32
    */
-  public ByteBuf wrapperProxyMessage(ByteBuf out, int source, int target, ByteBuf body) {
+  public static ByteBuf proxyMessage(ByteBuf out, int source, int target, ByteBuf body) {
     //预留长度字段
     int writeIdx = out.writerIndex();
     out.writerIndex(writeIdx + Integer.BYTES);
