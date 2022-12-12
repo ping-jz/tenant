@@ -1,10 +1,10 @@
 package org.example.serde;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * 编码，反编码工具类测试
@@ -19,7 +19,7 @@ public class NettyByteBufUtilTest {
     ByteBuf buf = Unpooled.buffer();
     for (long i = -10000000L; i <= 10000000L; i++) {
       buf.clear();
-      NettyByteBufUtil.writeRawVaraint64(buf, i);
+      NettyByteBufUtil.writeRawVarint64(buf, i);
       assertEquals(i, NettyByteBufUtil.readRawVarint64(buf));
     }
   }
@@ -29,7 +29,7 @@ public class NettyByteBufUtilTest {
     ByteBuf buf = Unpooled.buffer();
     for (long i = -10000000L; i <= 10000000L; i++) {
       buf.clear();
-      NettyByteBufUtil.writeRawVaraint64(buf, i);
+      NettyByteBufUtil.writeRawVarint64(buf, i);
       assertEquals(i, NettyByteBufUtil.readRawVarint64SlowPath(buf));
     }
   }

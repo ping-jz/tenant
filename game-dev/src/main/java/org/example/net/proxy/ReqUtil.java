@@ -1,18 +1,13 @@
 package org.example.net.proxy;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 import org.example.net.ReqMethod;
 import org.example.net.RespMethod;
 
-public class ReqUtil {
+import java.lang.reflect.Method;
+import java.util.*;
 
-  public static int METHOD_LIMIT_PER_MODULE = 100;
+public class ReqUtil {
 
   /**
    * 根据{@link ReqMethod#value()}的约定来获取协议ID
