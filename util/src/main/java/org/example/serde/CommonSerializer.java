@@ -135,6 +135,16 @@ public class CommonSerializer implements Serializer<Object> {
   /**
    * 注册普通序列化
    *
+   * @param clazz 类型
+   * @since 2021年07月18日 11:37:14
+   */
+  public void registerObject(Class<?> clazz) {
+    registerObject(clazz.getName().hashCode(), clazz);
+  }
+
+  /**
+   * 注册普通序列化
+   *
    * @param id    类型ID
    * @param clazz 类型
    * @since 2021年07月18日 11:37:14

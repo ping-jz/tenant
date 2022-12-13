@@ -96,7 +96,8 @@
     <module>game-dev</module>
     <module>util</module>
     <module>proxy-util-dev</module>
-    <module>proxy-dev</module>
+    <module>proxy-ser-dev</module>
+    <module>proxy-cli-dev</module>
   </modules>
 
   <dependencyManagement>
