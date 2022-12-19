@@ -1,11 +1,16 @@
-package org.example.net.proxy;
-
-import org.apache.commons.lang3.tuple.Pair;
-import org.example.net.ReqMethod;
-import org.example.net.RespMethod;
+package org.example.net;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.example.net.anno.ReqMethod;
+import org.example.net.anno.RespMethod;
 
 public class ReqUtil {
 
@@ -80,5 +85,27 @@ public class ReqUtil {
 
     result.sort(Comparator.comparingInt(Pair::getLeft));
     return result;
+  }
+
+  /**
+   * 是否需要注入链接
+   *
+   * @author zhongjianping
+   * @since 2022/12/19 23:10
+   */
+  public static boolean reqConnection(Method method) {
+    Class[] types = method.getParameterTypes();
+    if (ArrayUtils.isEmpty(types)) {
+      return false;
+    }
+
+    if (ArrayUtils.indexOf(types, Collection.class, 1) != ArrayUtils.INDEX_NOT_FOUND) {
+      throw new IllegalArgumentException(
+          String.format("类型:%s.%s,Connection必须作为第一个参数",
+              method.getDeclaringClass().getName(),
+              method.getName()));
+    }
+
+    return types[0] == Connection.class;
   }
 }

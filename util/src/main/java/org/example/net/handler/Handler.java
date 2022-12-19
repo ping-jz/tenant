@@ -2,6 +2,7 @@ package org.example.net.handler;
 
 import java.lang.invoke.MethodHandle;
 import java.util.Objects;
+import org.example.net.Connection;
 
 /**
  * 请求处理数据
@@ -23,6 +24,8 @@ public class Handler {
    * 请求协议编号
    */
   private int reqId;
+  /** 需要注入Connection吗 */
+  private boolean reqConn;
 
   public Handler() {
   }
@@ -43,12 +46,36 @@ public class Handler {
     return method.invoke();
   }
 
+  public Object invoke(Connection connection) throws Throwable {
+    if (reqConn) {
+      return method.invoke(connection);
+    } else {
+      return method.invoke();
+    }
+  }
+
   public int reqId() {
     return reqId;
   }
 
   public Object invoke(Object... params) throws Throwable {
     return method.invokeWithArguments(params);
+  }
+
+  public Object invoke(Connection connection, Object... params) throws Throwable {
+    if (reqConn) {
+      return method.invokeWithArguments(connection, params);
+    } else {
+      return method.invokeWithArguments(params);
+    }
+  }
+
+  public boolean isReqConn() {
+    return reqConn;
+  }
+
+  public void setReqConn(boolean reqConn) {
+    this.reqConn = reqConn;
   }
 
   @Override
@@ -62,6 +89,7 @@ public class Handler {
     Handler handler = (Handler) o;
     return reqId == handler.reqId && Objects.equals(method, handler.method);
   }
+
 
   @Override
   public int hashCode() {

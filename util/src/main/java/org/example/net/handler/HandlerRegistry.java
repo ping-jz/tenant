@@ -9,9 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.tuple.Pair;
-import org.example.net.ReqMethod;
-import org.example.net.RpcModule;
-import org.example.net.proxy.ReqUtil;
+import org.example.net.ReqUtil;
+import org.example.net.anno.ReqMethod;
+import org.example.net.anno.RpcModule;
 
 /**
  * 根据协议号int,提供获取和注册处理者的方法。
@@ -56,6 +56,7 @@ public class HandlerRegistry {
         String name = method.getDeclaringClass() + "." + method.getName();
         MethodHandle handle = lookup.unreflect(method).bindTo(object);
         Handler handler = Handler.of(name, handle, req);
+        handler.setReqConn(ReqUtil.reqConnection(method));
         res.add(handler);
       } catch (Exception e) {
         throw new RuntimeException(
@@ -72,6 +73,7 @@ public class HandlerRegistry {
           String name = method.getDeclaringClass() + "." + method.getName();
           MethodHandle handle = lookup.unreflect(method).bindTo(object);
           Handler handler = Handler.of(name, handle, req);
+          handler.setReqConn(ReqUtil.reqConnection(method));
           res.add(handler);
         } catch (Exception e) {
           throw new RuntimeException(

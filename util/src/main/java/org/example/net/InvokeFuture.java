@@ -1,9 +1,11 @@
 package org.example.net;
 
+import org.example.util.Identity;
+
 /**
  * 远程异步任务
  */
-public interface InvokeFuture<T> {
+public interface InvokeFuture<T> extends Identity<Integer> {
 
     /**
      * 执行成功

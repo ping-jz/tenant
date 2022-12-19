@@ -7,8 +7,9 @@ import java.lang.reflect.Method;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.example.net.HelloWorld;
-import org.example.net.ReqMethod;
-import org.example.net.RpcModule;
+import org.example.net.ReqUtil;
+import org.example.net.anno.ReqMethod;
+import org.example.net.anno.RpcModule;
 import org.junit.jupiter.api.Test;
 
 public class ReqProxyUtilTest {

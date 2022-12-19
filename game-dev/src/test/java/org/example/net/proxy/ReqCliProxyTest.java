@@ -4,15 +4,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.example.common.ThreadCommonResource;
+import org.example.net.Connection;
 import org.example.net.DefaultDispatcher;
 import org.example.net.HelloWorld;
 import org.example.net.InvokeFuture;
 import org.example.net.Message;
 import org.example.net.MessageStatus;
-import org.example.net.ReqMethod;
-import org.example.net.RespMethod;
 import org.example.net.ResultInvokeFuture;
-import org.example.net.RpcModule;
+import org.example.net.anno.ReqMethod;
+import org.example.net.anno.RespMethod;
+import org.example.net.anno.RpcModule;
 import org.example.net.client.DefaultClient;
 import org.example.net.handler.HandlerRegistry;
 import org.example.net.server.DefaultServer;
@@ -257,7 +258,7 @@ public class ReqCliProxyTest {
     public AtomicInteger integer = new AtomicInteger();
 
     @RespMethod(HelloWorld.ECHO)
-    public void echoRes(Object o) {
+    public void echoRes(Connection connection, Object o) {
       integer.incrementAndGet();
     }
   }

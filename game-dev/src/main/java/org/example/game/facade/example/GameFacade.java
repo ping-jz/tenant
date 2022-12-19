@@ -3,8 +3,8 @@ package org.example.game.facade.example;
 import java.util.Collections;
 import java.util.List;
 import org.example.game.facade.example.model.CommonRes;
-import org.example.net.ReqMethod;
-import org.example.net.RpcModule;
+import org.example.net.anno.ReqMethod;
+import org.example.net.anno.RpcModule;
 
 /**
  * 游戏门面(文档生产插件测试)

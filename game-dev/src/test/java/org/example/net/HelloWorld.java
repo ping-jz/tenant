@@ -1,5 +1,8 @@
 package org.example.net;
 
+import org.example.net.anno.ReqMethod;
+import org.example.net.anno.RpcModule;
+
 @RpcModule
 public interface HelloWorld {
 

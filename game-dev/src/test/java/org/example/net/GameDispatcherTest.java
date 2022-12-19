@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.example.net.anno.ReqMethod;
+import org.example.net.anno.RpcModule;
 import org.example.net.codec.MessageCodec;
 import org.example.net.handler.HandlerRegistry;
 import org.example.serde.CommonSerializer;
@@ -35,6 +37,7 @@ public class GameDispatcherTest {
   @Test
   public void helloWorldTest() {
     EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(Integer.BYTES, serializer));
+    new Connection(channel, Connection.IdGenerator.incrementAndGet());
 
     Message echoRequest = new Message();
     echoRequest.proto(HelloWorldFacade.ECHO);
@@ -58,6 +61,7 @@ public class GameDispatcherTest {
   @Test
   public void multiHelloWorldTest() {
     EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(Integer.BYTES, serializer));
+    new Connection(channel, Connection.IdGenerator.incrementAndGet());
 
     for (int i = 0; i < 5; i++) {
       Message echoRequest = new Message();

@@ -96,15 +96,20 @@ public class DefaultDispatcher extends SimpleChannelInboundHandler<Message> impl
    * @since 2021年08月15日 20:22:04
    */
   private void invokeHandler(Channel channel, Message msg, Handler handler) {
+    Connection connection = channel.attr(Connection.CONNECTION).get();
+    if (connection == null) {
+      return;
+    }
+
     try {
       //TODO 这里需要增加, handler可以接受Connection和Message作为参数
       Object result = null;
       if (msg.packet() == null) {
         result = handler.invoke();
       } else if (msg.packet().getClass().isArray()) {
-        result = handler.invoke((Object[]) msg.packet());
+        result = handler.invoke(connection, (Object[]) msg.packet());
       } else {
-        result = handler.invoke(msg.packet());
+        result = handler.invoke(connection, msg.packet());
       }
 
       if (0 < msg.proto()) {

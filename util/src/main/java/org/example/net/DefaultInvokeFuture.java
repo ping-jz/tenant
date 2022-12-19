@@ -83,7 +83,8 @@ public class DefaultInvokeFuture<T> implements InvokeFuture<T> {
     }
   }
 
-  public int id() {
+  @Override
+  public Integer id() {
     return id;
   }
 

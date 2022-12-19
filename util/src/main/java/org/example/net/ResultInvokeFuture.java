@@ -37,4 +37,9 @@ public class ResultInvokeFuture<T> implements InvokeFuture<T> {
   public void invoke() {
     throw new UnsupportedOperationException("此实现不支持回调");
   }
+
+  @Override
+  public Integer id() {
+    return 0;
+  }
 }

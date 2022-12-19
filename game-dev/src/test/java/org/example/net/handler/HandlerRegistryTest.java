@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.example.net.HelloWorld;
-import org.example.net.ReqMethod;
-import org.example.net.RpcModule;
+import org.example.net.anno.ReqMethod;
+import org.example.net.anno.RpcModule;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
