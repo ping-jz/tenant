@@ -97,7 +97,7 @@
     <module>util</module>
     <module>proxy-util-dev</module>
     <module>proxy-ser-dev</module>
-    <module>proxy-cli-dev</module>
+    <module>proxy-test-dev</module>
   </modules>
 
   <dependencyManagement>
@@ -130,6 +130,24 @@
       <dependency>
         <groupId>io.netty</groupId>
         <artifactId>netty-buffer</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-transport</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-codec</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-transport-native-epoll</artifactId>
         <version>${netty.version}</version>
       </dependency>
 

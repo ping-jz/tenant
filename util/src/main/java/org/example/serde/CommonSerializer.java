@@ -1,6 +1,8 @@
 package org.example.serde;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -261,6 +263,19 @@ public class CommonSerializer implements Serializer<Object> {
       buf.readerIndex(readerIndex);
       throw new RuntimeException(e);
     }
+  }
+
+
+  public ByteBuf writeObject(Object object) {
+    ByteBuf buf = PooledByteBufAllocator.DEFAULT.directBuffer();
+    ;
+    try {
+      writeObject(buf, object);
+    } catch (Exception e) {
+      ReferenceCountUtil.release(buf);
+      throw new RuntimeException(e);
+    }
+    return buf;
   }
 
   @Override

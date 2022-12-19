@@ -15,7 +15,6 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.AttributeKey;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.StringUtils;
@@ -34,10 +33,6 @@ import org.slf4j.LoggerFactory;
  * @since 2022/12/12 23:00
  */
 public class ProxyService {
-
-  /** 服务器信息注册key */
-  public static final AttributeKey<ServerRegister> serverRegister = AttributeKey.valueOf(
-      "ServerRegister");
 
   /** 日志 */
   private Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -92,7 +87,7 @@ public class ProxyService {
     return true;
   }
 
-  public void start(String ip, int port) {
+  public ChannelFuture start() {
     if (boss == null) {
       boss = new NioEventLoopGroup(1);
     }
@@ -103,8 +98,10 @@ public class ProxyService {
 
     ProxyService proxyService = this;
     ServerBootstrap bootstrap = new ServerBootstrap().channel(NioServerSocketChannel.class)
-        .option(ChannelOption.SO_BACKLOG, 1024).option(ChannelOption.SO_REUSEADDR, true)
-        .option(ChannelOption.TCP_NODELAY, true).handler(new LoggingHandler(LogLevel.INFO))
+        .option(ChannelOption.SO_BACKLOG, 1024)
+        .option(ChannelOption.SO_REUSEADDR, true)
+        .option(ChannelOption.TCP_NODELAY, true)
+        .handler(new LoggingHandler(LogLevel.INFO))
         .group(boss, workers).childHandler(new ChannelInitializer<SocketChannel>() {
           @Override
           protected void initChannel(SocketChannel ch) {
@@ -117,26 +114,31 @@ public class ProxyService {
           }
         });
 
+    ChannelFuture channelFuture;
     try {
-      ChannelFuture channelFuture;
-      if (StringUtils.isNoneEmpty(ip)) {
-        channelFuture = bootstrap.bind(ip, port).sync();
+      if (StringUtils.isNoneEmpty(proxyServerConfig.getAddress())) {
+        channelFuture = bootstrap.bind(proxyServerConfig.getAddress(),
+            proxyServerConfig.getPort()).sync();
       } else {
-        channelFuture = bootstrap.bind(port).sync();
+        channelFuture = bootstrap.bind(proxyServerConfig.getPort()).sync();
       }
 
       logger.info("[Proxy Server] binding on:{}", channelFuture.channel().localAddress());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+
+    return channelFuture;
   }
 
   public void close() {
     if (boss != null) {
       boss.shutdownGracefully();
+      boss = null;
     }
     if (workers != null) {
       workers.shutdownGracefully();
+      workers = null;
     }
 
     logger.info("[Proxy Server] close");
@@ -182,4 +184,6 @@ public class ProxyService {
   public void setWorkers(EventLoopGroup workers) {
     this.workers = workers;
   }
+
+
 }

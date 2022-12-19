@@ -1,8 +1,6 @@
 package org.example.proxy.config;
 
 
-import java.net.SocketAddress;
-
 /**
  * 中转服配置
  *
@@ -13,7 +11,10 @@ public class ProxyServerConfig {
 
   /** 服务ID */
   private int id;
-  private SocketAddress socketAddress;
+  /** 监听地址 */
+  private String address;
+  /** 端口 */
+  private int port;
   /** 注册密码 */
   private String registerKey = "none";
 
@@ -33,11 +34,19 @@ public class ProxyServerConfig {
     this.id = id;
   }
 
-  public SocketAddress getSocketAddress() {
-    return socketAddress;
+  public String getAddress() {
+    return address;
   }
 
-  public void setSocketAddress(SocketAddress socketAddress) {
-    this.socketAddress = socketAddress;
+  public void setAddress(String address) {
+    this.address = address;
+  }
+
+  public int getPort() {
+    return port;
+  }
+
+  public void setPort(int port) {
+    this.port = port;
   }
 }

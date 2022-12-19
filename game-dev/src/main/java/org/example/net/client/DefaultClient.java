@@ -68,6 +68,7 @@ public class DefaultClient implements AutoCloseable {
   }
 
 
+  //创建链接和管理链接不该Client来管理，以后抽出去吧
   /**
    * @since 2021年08月13日 18:47:18
    */

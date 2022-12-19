@@ -97,12 +97,6 @@ public class DefaultDispatcher extends SimpleChannelInboundHandler<Message> impl
    */
   private void invokeHandler(Channel channel, Message msg, Handler handler) {
     try {
-      if (msg.isErr()) {
-        logger.error("from:{}, proto:{}, 错误代码:{}", channel.remoteAddress(), msg.proto(),
-            msg.status());
-        return;
-      }
-
       //TODO 这里需要增加, handler可以接受Connection和Message作为参数
       Object result = null;
       if (msg.packet() == null) {
