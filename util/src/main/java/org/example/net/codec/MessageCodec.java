@@ -5,6 +5,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import java.util.List;
 import org.example.net.Message;
+import org.example.serde.NettyByteBufUtil;
 import org.example.serde.Serializer;
 
 /**
@@ -15,69 +16,64 @@ import org.example.serde.Serializer;
  **/
 public class MessageCodec extends ByteToMessageCodec<Message> {
 
-  /** 长度字段占多少个字节 */
-  private int lengthFieldLength;
+
   /** 序列化实现 */
   private Serializer<Object> serializer;
 
   public MessageCodec(Serializer<?> serializer) {
-    this(Integer.BYTES, (Serializer<Object>) serializer);
-  }
-
-  public MessageCodec(int lengthFieldLength,
-      Serializer<Object> serializer) {
-    this.lengthFieldLength = lengthFieldLength;
-    this.serializer = serializer;
+    this.serializer = (Serializer<Object>) serializer;
   }
 
   @Override
   protected void encode(ChannelHandlerContext ctx, Message msg, ByteBuf out) throws Exception {
+    int lengthFieldLength = Integer.BYTES;
     int start = out.writerIndex();
     //serializing
-    int messageStart = start + lengthFieldLength;
-    out.writerIndex(messageStart);
-    out.writeInt(msg.proto());
-    out.writeInt(msg.msgId());
-    out.writeShort(msg.status());
+    out.writerIndex(start + lengthFieldLength);
+
+    NettyByteBufUtil.writeInt32(out, msg.target());
+    NettyByteBufUtil.writeInt32(out, msg.source());
+    NettyByteBufUtil.writeInt32(out, msg.proto());
+    NettyByteBufUtil.writeInt32(out, msg.msgId());
     serializer.writeObject(out, msg.packet());
 
     //set the length
-    int length = out.writerIndex() - messageStart;
+    int length = out.writerIndex() - start;
     out.setInt(start, length);
   }
 
   @Override
   protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
+    int lengthFieldLength = Integer.BYTES;
     if (in.readableBytes() < lengthFieldLength) {
       return;
     }
 
     int length = in.getInt(in.readerIndex());
     if (length <= 0) {
-      throw new RuntimeException(String
-          .format("address:%s, Body Size is incorrect:%s", ctx.channel().remoteAddress(),
+      throw new RuntimeException(
+          String.format("address:%s, Body Size is incorrect:%s", ctx.channel().remoteAddress(),
               length));
     }
 
-    if (in.readableBytes() - lengthFieldLength < length) {
+    if (in.readableBytes() < length) {
       return;
     }
 
     in.skipBytes(lengthFieldLength);
 
     Message message = new Message();
-    message.proto(in.readInt());
-    message.msgId(in.readInt());
-    message.status(in.readShort());
+    message.target(NettyByteBufUtil.readInt32(in));
+    message.source(NettyByteBufUtil.readInt32(in));
+    message.proto(NettyByteBufUtil.readInt32(in));
+    message.msgId(NettyByteBufUtil.readInt32(in));
     message.packet(serializer.readObject(in));
 
     out.add(message);
-
   }
 
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-      throws Exception {
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
     ctx.close();
   }
 }

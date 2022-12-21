@@ -20,10 +20,6 @@ public class DefaultInvokeFuture<T> implements InvokeFuture<T> {
    */
   private volatile InvokeCallback<T> sucCallBack;
   /**
-   * 处理错误回调
-   */
-  private volatile InvokeCallback<Message> errCallBack;
-  /**
    * 超时任务
    */
   private Future<?> timeout;
@@ -61,10 +57,8 @@ public class DefaultInvokeFuture<T> implements InvokeFuture<T> {
   public void executeCallBack(Message message) {
     if (executeCallbackOnlyOnce.compareAndSet(false, true)) {
       try {
-        if (message != null && message.isSuc()) {
+        if (message != null) {
           sucCallBack.onMessage((T) message.packet());
-        } else if (errCallBack != null) {
-          errCallBack.onMessage(message);
         }
       } catch (Exception e) {
         //TODO Logger me
@@ -91,12 +85,6 @@ public class DefaultInvokeFuture<T> implements InvokeFuture<T> {
   @Override
   public InvokeFuture<T> onSuc(InvokeCallback<T> t) {
     sucCallBack = t;
-    return this;
-  }
-
-  @Override
-  public InvokeFuture<T> onErr(InvokeCallback<Message> t) {
-    errCallBack = t;
     return this;
   }
 

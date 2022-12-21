@@ -24,10 +24,13 @@ import org.slf4j.LoggerFactory;
 
 /**
  * 默认服务器，专注于链接的管理。尽量保持代码的专一
+ * <p>
+ * 这两个抽象什么用
  *
  * @author ZJP
  * @since 2021年08月13日 14:56:18
  **/
+@Deprecated
 public class DefaultServer implements AutoCloseable {
 
   private Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -58,8 +61,8 @@ public class DefaultServer implements AutoCloseable {
 
   public DefaultServer(String ip, int port) {
     if (port < 0 || port > 65535) {
-      throw new IllegalArgumentException(String.format(
-          "Illegal port value: %d, which should between 0 and 65535.", port));
+      throw new IllegalArgumentException(
+          String.format("Illegal port value: %d, which should between 0 and 65535.", port));
     }
     this.ip = ip;
     this.port = port;
@@ -82,8 +85,7 @@ public class DefaultServer implements AutoCloseable {
    * @param threadCommonResource 线程资源(线程由外部管理)
    * @since 2021年08月17日 17:39:02
    */
-  public boolean start(ThreadCommonResource threadCommonResource)
-      throws InterruptedException {
+  public boolean start(ThreadCommonResource threadCommonResource) throws InterruptedException {
     Objects.requireNonNull(handler, "connection can't be null");
 
     final DefaultServer server = this;
@@ -91,16 +93,14 @@ public class DefaultServer implements AutoCloseable {
     b.option(ChannelOption.SO_BACKLOG, 1024);
     b.group(threadCommonResource.getBoss(), threadCommonResource.getWorker())
         .channel(NettyEventLoopUtil.getServerSocketChannelClass())
-        .option(ChannelOption.SO_REUSEADDR, true)
-        .handler(new LoggingHandler(LogLevel.INFO))
+        .option(ChannelOption.SO_REUSEADDR, true).handler(new LoggingHandler(LogLevel.INFO))
         .childHandler(new ChannelInitializer<>() {
           @Override
           protected void initChannel(Channel ch) {
             ChannelPipeline pipeline = ch.pipeline();
             if (server.connectionManager() != null) {
               pipeline.addLast("idleStateHandler",
-                  new IdleStateHandler(0, 0, ConnectionManager.IDLE_TIME,
-                      TimeUnit.MILLISECONDS));
+                  new IdleStateHandler(0, 0, ConnectionManager.IDLE_TIME, TimeUnit.MILLISECONDS));
               pipeline.addLast("manager", server.connectionManager());
             }
             pipeline.addLast("codec", new MessageCodec(server.serializer()));

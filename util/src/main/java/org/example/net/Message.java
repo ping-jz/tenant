@@ -8,17 +8,18 @@ package org.example.net;
  **/
 public class Message {
 
+  /** 目标 */
+  private int target;
+  /** 源 */
+  private int source;
   /** 协议编号 (0 < 接收/发送请求,  接收/发送结果 < 0) */
   private int proto;
   /** 序列号(客户端发什么，服务端就返回什么) */
   private int msgId;
-  /** 消息状态 */
-  private short status;
   /** 内容 */
   private Object packet;
 
   public Message() {
-    status = MessageStatus.SUCCESS.status();
   }
 
   public static Message of() {
@@ -66,24 +67,30 @@ public class Message {
     return this;
   }
 
-  public short status() {
-    return status;
+  public int target() {
+    return target;
   }
 
-  public Message status(short status) {
-    this.status = status;
+  public Message target(int target) {
+    this.target = target;
     return this;
   }
 
-  public Message status(MessageStatus status) {
-    this.status = status.status();
+  public Message source(int source) {
+    this.source = source;
     return this;
   }
 
+  public int source() {
+    return source;
+  }
+
+  @Deprecated
   public boolean isSuc() {
-    return status == MessageStatus.SUCCESS.status();
+    return true;
   }
 
+  @Deprecated
   public boolean isErr() {
     return !isSuc();
   }

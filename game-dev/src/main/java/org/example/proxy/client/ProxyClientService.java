@@ -1,9 +1,13 @@
-package org.example.proxy;
+package org.example.proxy.client;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.EventLoopGroup;
+import io.netty.util.ReferenceCountUtil;
+import org.example.net.Message;
+import org.example.net.util.NettyMessageUtil;
+import org.example.proxy.message.ProxyProtoId;
 import org.example.proxy.model.ServerRegister;
-import org.example.proxy.util.NettyProxyMessageUtil;
 import org.example.serde.CommonSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,9 +30,32 @@ public class ProxyClientService {
 
 
   public void register(ServerRegister register) {
-    proxyClient.getChannel().writeAndFlush(
-        NettyProxyMessageUtil.proxyMessage(proxyClientConfig.getId(), 0,
-            commonSerializer.writeObject(register)));
+    ByteBuf msg = NettyMessageUtil.proxyMessage(proxyClientConfig.getId(),
+        proxyClientConfig.proxyId(),
+        ProxyProtoId.REGISTER, 0, commonSerializer.writeObject(register));
+    proxyClient.getChannel().writeAndFlush(msg);
+  }
+
+  public void send(int target, Message msg) {
+    ByteBuf byteBuf = NettyMessageUtil.proxyMessage(proxyClientConfig.getId(), target,
+        msg.proto(), msg.msgId(), commonSerializer.writeObject(msg.packet()));
+    proxyClient.getChannel().writeAndFlush(byteBuf);
+  }
+
+  public void send(Iterable<Integer> targets, Message msg) {
+    ByteBuf buf = null;
+    try {
+      buf = commonSerializer.writeObject(msg.packet());
+      int source = proxyClientConfig.getId();
+      for (Integer target : targets) {
+        ByteBuf byteBuf = NettyMessageUtil.proxyMessage(source, target, msg.proto(),
+            msg.msgId(), buf.retainedSlice());
+        proxyClient.getChannel().write(byteBuf);
+      }
+      proxyClient.getChannel().flush();
+    } finally {
+      ReferenceCountUtil.release(buf);
+    }
   }
 
   public void connect(EventLoopGroup eventLoop, ChannelHandler channelHandler) {
@@ -37,8 +64,7 @@ public class ProxyClientService {
     client.setPort(proxyClientConfig.getPort());
     client.setHandler(channelHandler);
 
-    boolean isSuc = client.connect(eventLoop).syncUninterruptibly()
-        .isSuccess();
+    boolean isSuc = client.connect(eventLoop).syncUninterruptibly().isSuccess();
     if (isSuc) {
       proxyClient = client;
       logger.info("[Proxy Client]成功连接至【{}/{}】中转服", client.getAddress(), client.getPort());

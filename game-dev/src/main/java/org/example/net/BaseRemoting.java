@@ -1,10 +1,9 @@
 package org.example.net;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BaseRemoting {
 
@@ -72,9 +71,6 @@ public class BaseRemoting {
     try {
       Future<?> timeoutFuture = conn.channel().eventLoop().schedule(() -> {
         DefaultInvokeFuture<T> f = conn.removeInvokeFuture(msgId);
-        if (f != null) {
-          f.executeCallBack(Message.of().status(MessageStatus.TIMEOUT));
-        }
       }, timeout, TimeUnit.MILLISECONDS);
       future.addTimeout(timeoutFuture);
 
@@ -83,7 +79,6 @@ public class BaseRemoting {
           DefaultInvokeFuture<T> f = conn.removeInvokeFuture(msgId);
           if (f != null) {
             f.cancelTimeout();
-            f.executeCallBack(Message.of().status(MessageStatus.SEND_ERROR));
           }
           logger.error("Invoke send failed. The address is {}", conn.channel().remoteAddress(),
               cf.cause());

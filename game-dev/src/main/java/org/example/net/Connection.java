@@ -79,7 +79,6 @@ public class Connection {
   private void closeFuture(DefaultInvokeFuture<?> future) {
     try {
       future.cancelTimeout();
-      future.executeCallBack(Message.of().status(MessageStatus.CLOSE));
     } catch (Exception e) {
       logger.error("Exception occurred in user defined InvokeCallback#onResponse() logic.", e);
     }

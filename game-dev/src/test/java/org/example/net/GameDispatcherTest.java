@@ -11,6 +11,7 @@ import org.example.net.anno.RpcModule;
 import org.example.net.codec.MessageCodec;
 import org.example.net.handler.HandlerRegistry;
 import org.example.serde.CommonSerializer;
+import org.example.serde.NettyByteBufUtil;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
@@ -36,7 +37,7 @@ public class GameDispatcherTest {
 
   @Test
   public void helloWorldTest() {
-    EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(Integer.BYTES, serializer));
+    EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(serializer));
     new Connection(channel, Connection.IdGenerator.incrementAndGet());
 
     Message echoRequest = new Message();
@@ -50,9 +51,10 @@ public class GameDispatcherTest {
     ByteBuf buf = channel.readOutbound();
 
     assertTrue(0 < buf.readInt());
-    assertEquals(Math.negateExact(echoRequest.proto()), buf.readInt());
-    assertEquals(echoRequest.msgId(), buf.readInt());
-    assertEquals(echoRequest.status(), buf.readShort());
+    assertEquals(0, NettyByteBufUtil.readInt32(buf));
+    assertEquals(0, NettyByteBufUtil.readInt32(buf));
+    assertEquals(Math.negateExact(echoRequest.proto()), NettyByteBufUtil.readInt32(buf));
+    assertEquals(echoRequest.msgId(), NettyByteBufUtil.readInt32(buf));
     assertEquals(echoRequest.packet(), serializer.readObject(buf));
 
     channel.finishAndReleaseAll();
@@ -60,7 +62,7 @@ public class GameDispatcherTest {
 
   @Test
   public void multiHelloWorldTest() {
-    EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(Integer.BYTES, serializer));
+    EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(serializer));
     new Connection(channel, Connection.IdGenerator.incrementAndGet());
 
     for (int i = 0; i < 5; i++) {
@@ -75,9 +77,10 @@ public class GameDispatcherTest {
       ByteBuf buf = channel.readOutbound();
 
       assertTrue(0 < buf.readInt());
-      assertEquals(Math.negateExact(echoRequest.proto()), buf.readInt());
-      assertEquals(echoRequest.msgId(), buf.readInt());
-      assertEquals(echoRequest.status(), buf.readShort());
+      assertEquals(0, NettyByteBufUtil.readInt32(buf));
+      assertEquals(0, NettyByteBufUtil.readInt32(buf));
+      assertEquals(Math.negateExact(echoRequest.proto()), NettyByteBufUtil.readInt32(buf));
+      assertEquals(echoRequest.msgId(), NettyByteBufUtil.readInt32(buf));
       assertArrayEquals((Object[]) echoRequest.packet(), new Object[]{serializer.read(buf)});
     }
 

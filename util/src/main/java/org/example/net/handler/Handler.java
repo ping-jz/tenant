@@ -2,6 +2,7 @@ package org.example.net.handler;
 
 import java.lang.invoke.MethodHandle;
 import java.util.Objects;
+import org.apache.commons.lang3.ArrayUtils;
 import org.example.net.Connection;
 
 /**
@@ -64,10 +65,9 @@ public class Handler {
 
   public Object invoke(Connection connection, Object... params) throws Throwable {
     if (reqConn) {
-      return method.invokeWithArguments(connection, params);
-    } else {
-      return method.invokeWithArguments(params);
+      params = ArrayUtils.insert(0, params, connection);
     }
+    return method.invokeWithArguments(params);
   }
 
   public boolean isReqConn() {

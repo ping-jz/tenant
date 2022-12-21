@@ -44,13 +44,14 @@ public class DefaultDispatcher extends SimpleChannelInboundHandler<Message> impl
    * 根据{@link Message#proto()}进行消息分发
    *
    * @param channel 通信channel
-   * @param req 请求消息
+   * @param req     请求消息
    * @since 2021年07月24日 15:58:39
    */
   public void doDispatcher(Channel channel, Message req) {
     Handler handler = handlerRegistry.getHandler(req.proto());
     if (handler == null && req.msgId() == 0) {
-      logger.error("地址:{}, 协议号:{}, 消息ID:{} 无对应处理器", channel.remoteAddress(), req.proto(),
+      logger.error("地址:{}, 协议号:{}, 消息ID:{} 无对应处理器", channel.remoteAddress(),
+          req.proto(),
           req.msgId());
       return;
     }
@@ -91,7 +92,7 @@ public class DefaultDispatcher extends SimpleChannelInboundHandler<Message> impl
   /**
    * 执行处理器
    *
-   * @param msg 请求消息
+   * @param msg     请求消息
    * @param handler 注册的处理器
    * @since 2021年08月15日 20:22:04
    */
@@ -112,30 +113,25 @@ public class DefaultDispatcher extends SimpleChannelInboundHandler<Message> impl
         result = handler.invoke(connection, msg.packet());
       }
 
-      if (0 < msg.proto()) {
+      if (0 < msg.proto() && result != null) {
         Message response;
         result = extractResult(result);
 
-        response = Message.of(Math.negateExact(msg.proto())).msgId(msg.msgId())
-            .status(MessageStatus.SUCCESS).packet(result);
+        response = Message.of(Math.negateExact(msg.proto()))
+            .target(msg.source())
+            .source(msg.target())
+            .msgId(msg.msgId())
+            .packet(result);
 
         if (result instanceof Message resMsg) {
           if (resMsg.proto() != 0) {
             response.proto(Math.negateExact(msg.proto()));
-          }
-
-          if (resMsg.status() != MessageStatus.NONE.status()) {
-            response.status(resMsg.status());
           }
         }
         channel.write(response);
       }
 
     } catch (Throwable e) {
-      if (0 < msg.proto()) {
-        channel.write(Message.of(Math.negateExact(msg.proto())).msgId(msg.msgId())
-            .status(MessageStatus.SERVER_EXCEPTION));
-      }
       logger.error("from:{}, proto:{}, handler error", channel.remoteAddress(), msg.proto(), e);
     }
   }
@@ -155,6 +151,12 @@ public class DefaultDispatcher extends SimpleChannelInboundHandler<Message> impl
   }
 
   @Override
+  public void channelActive(ChannelHandlerContext ctx) {
+    new Connection(ctx.channel(), Connection.IdGenerator.incrementAndGet());
+  }
+
+
+  @Override
   protected void channelRead0(ChannelHandlerContext ctx, Message msg) {
     dispatcher(ctx.channel(), msg);
   }
@@ -164,8 +166,6 @@ public class DefaultDispatcher extends SimpleChannelInboundHandler<Message> impl
     ctx.flush();
     ctx.fireChannelReadComplete();
   }
-
-
 
   @Override
   public void dispatcher(Channel channel, Message message) {

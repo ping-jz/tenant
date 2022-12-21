@@ -12,10 +12,5 @@ public interface InvokeFuture<T> extends Identity<Integer> {
      */
     InvokeFuture<T> onSuc(InvokeCallback<T> t);
 
-    /**
-     * 执行失败
-     */
-    InvokeFuture<T> onErr(InvokeCallback<Message> t);
-
     void invoke();
 }

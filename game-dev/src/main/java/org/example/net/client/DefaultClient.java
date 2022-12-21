@@ -20,10 +20,13 @@ import org.slf4j.LoggerFactory;
 
 /**
  * 默认客户端，专注于链接的管理。尽量保持代码的专一
+ * <p>
+ * 这两个抽象没什么用
  *
  * @author ZJP
  * @since 2021年08月13日 14:56:18
  **/
+@Deprecated
 public class DefaultClient implements AutoCloseable {
 
   private Logger logger = LoggerFactory.getLogger(getClass());

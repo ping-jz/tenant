@@ -7,8 +7,6 @@ import org.example.common.ThreadCommonResource;
 import org.example.net.DefaultDispatcher;
 import org.example.net.HelloWorld;
 import org.example.net.InvokeFuture;
-import org.example.net.Message;
-import org.example.net.MessageStatus;
 import org.example.net.ResultInvokeFuture;
 import org.example.net.anno.ReqMethod;
 import org.example.net.anno.RespMethod;
@@ -90,7 +88,6 @@ public class ReqTest {
   private CommonSerializer createSerializer() {
     CommonSerializer serializer = new CommonSerializer();
     serializer.registerSerializer(10, Object.class, new ObjectSerializer(Object.class, serializer));
-    serializer.registerObject(11, Message.class);
     return serializer;
   }
 
@@ -156,7 +153,7 @@ public class ReqTest {
       }).invoke();
     }
 
-    Assertions.assertTrue(latch.await(1000, TimeUnit.MILLISECONDS));
+    Assertions.assertTrue(latch.await(3000, TimeUnit.MILLISECONDS));
     Assertions.assertEquals(invokeTimes, serFacade.integer.get());
   }
 
@@ -172,23 +169,7 @@ public class ReqTest {
       }).invoke();
     }
 
-    Assertions.assertTrue(latch.await(1000, TimeUnit.MILLISECONDS));
-    Assertions.assertEquals(invokeTimes, serFacade.integer.get());
-  }
-
-  @Test
-  public void calErrMessageTest() throws InterruptedException {
-    CallBackReq req = callBackReqReq.to(id);
-    CountDownLatch latch = new CountDownLatch(invokeTimes);
-    for (int i = 0; i < invokeTimes; i++) {
-      req.errMsg().onErr(msg -> {
-        Assertions.assertTrue(msg.isErr());
-        Assertions.assertEquals(MessageStatus.SERVER_EXCEPTION.status(), msg.status());
-        latch.countDown();
-      }).invoke();
-    }
-
-    Assertions.assertTrue(latch.await(1000, TimeUnit.MILLISECONDS));
+    Assertions.assertTrue(latch.await(3000, TimeUnit.MILLISECONDS));
     Assertions.assertEquals(invokeTimes, serFacade.integer.get());
   }
 
@@ -201,8 +182,6 @@ public class ReqTest {
     @ReqMethod
     InvokeFuture<long[]> callBackArray(long[] longs);
 
-    @ReqMethod
-    InvokeFuture<Message> errMsg();
   }
 
   /**
@@ -237,13 +216,6 @@ public class ReqTest {
     public InvokeFuture<long[]> callBackArray(long[] longs) {
       integer.incrementAndGet();
       return ResultInvokeFuture.withResult(longs);
-    }
-
-    @Override
-    public InvokeFuture<Message> errMsg() {
-      integer.incrementAndGet();
-      Message message = Message.of().status(MessageStatus.SERVER_EXCEPTION);
-      return ResultInvokeFuture.withResult(message);
     }
   }
 

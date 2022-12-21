@@ -1,4 +1,4 @@
-package org.example.proxy;
+package org.example.proxy.client;
 
 /**
  * @author zhongjianping
@@ -8,6 +8,8 @@ public class ProxyClientConfig {
 
   /** ID */
   private int id;
+  /** 中转服ID */
+  private int proxyId;
   /** 目标地址 */
   private String address;
   /** 端口 */
@@ -36,5 +38,13 @@ public class ProxyClientConfig {
 
   public void setId(int id) {
     this.id = id;
+  }
+
+  public int proxyId() {
+    return proxyId;
+  }
+
+  public void proxyId(int proxyId) {
+    this.proxyId = proxyId;
   }
 }
