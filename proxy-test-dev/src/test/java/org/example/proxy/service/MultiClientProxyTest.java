@@ -47,7 +47,7 @@ public class MultiClientProxyTest {
   }
 
   @Test
-  public void connectTest() throws Exception {
+  public void clientsTest() throws Exception {
     HelloWorldFacade oneFacade = new HelloWorldFacade();
     ProxyClientService mainClient = defaultProxyClient(1, oneFacade);
     ServerRegister oneServerRegister = new ServerRegister();
@@ -74,6 +74,41 @@ public class MultiClientProxyTest {
         message.packet("hello World");
         mainClient.send(clientService.getProxyClientConfig().getId(), message);
       }
+    }
+
+    TimeUnit.MILLISECONDS.sleep(100);
+    Assertions.assertEquals(100 * clients.size(), oneFacade.integer.get());
+    for (HelloWorldFacade facade : facadeList) {
+      Assertions.assertEquals(100, facade.integer.get());
+    }
+  }
+
+  @Test
+  public void broadCastTest() throws Exception {
+    HelloWorldFacade oneFacade = new HelloWorldFacade();
+    ProxyClientService mainClient = defaultProxyClient(1, oneFacade);
+    ServerRegister oneServerRegister = new ServerRegister();
+    oneServerRegister.setId(mainClient.getProxyClientConfig().getId());
+    mainClient.register(oneServerRegister);
+
+    List<HelloWorldFacade> facadeList = new ArrayList<>();
+    List<Integer> clients = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      HelloWorldFacade twoFacade = new HelloWorldFacade();
+      ProxyClientService twoClient = defaultProxyClient(i + 10, twoFacade);
+      ServerRegister twoServerRegister = new ServerRegister();
+      twoServerRegister.setId(twoClient.getProxyClientConfig().getId());
+      twoClient.register(twoServerRegister);
+
+      clients.add(twoClient.getProxyClientConfig().getId());
+      facadeList.add(twoFacade);
+    }
+
+    for (int i = 0; i < 100; i++) {
+      Message message = new Message();
+      message.proto(HelloWorldFacade.echo);
+      message.packet("hello World");
+      mainClient.send(clients, message);
     }
 
     TimeUnit.MILLISECONDS.sleep(100);
