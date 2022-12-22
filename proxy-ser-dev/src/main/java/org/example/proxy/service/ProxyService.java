@@ -2,6 +2,7 @@ package org.example.proxy.service;
 
 
 import io.netty.channel.Channel;
+import io.netty.util.AttributeKey;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +24,9 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ProxyService {
+
+  public static final AttributeKey<ServerRegister> REGISTER_INFO = AttributeKey.valueOf(
+      "REGISTER_INFO");
 
   /** 日志 */
   private Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -49,12 +53,13 @@ public class ProxyService {
       logger.error("[proxy]服务器ID:{}, 子服务器:{}, 注册成功", serverRegister.getId(),
           Arrays.toString(serverRegister.getSubIds()));
     } else {
-      channels.remove(serverRegister.getId());
+      channels.remove(serverRegister.getId(), connection.channel());
       if (ArrayUtils.isNotEmpty(serverRegister.getSubIds())) {
         for (int id : serverRegister.getSubIds()) {
-          channels.remove(id);
+          channels.remove(id, connection.channel());
         }
       }
+      connection.channel().close();
     }
     return isSuc;
   }
@@ -64,8 +69,7 @@ public class ProxyService {
     Channel oldChannel = channels.putIfAbsent(serverRegister.getId(), channel);
     if (oldChannel != null) {
       logger.error("[proxy]服务器ID:{}, 新:{}, 旧:{}, 注册目标冲突", serverRegister.getId(),
-          channel.remoteAddress(),
-          oldChannel.remoteAddress());
+          channel.remoteAddress(), oldChannel.remoteAddress());
       return false;
     }
 
@@ -80,7 +84,22 @@ public class ProxyService {
       }
     }
 
+    channel.attr(REGISTER_INFO).set(serverRegister);
     return true;
+  }
+
+  public void channelInactive(Channel channel) {
+    ServerRegister serverRegister = channel.attr(REGISTER_INFO).get();
+    if (serverRegister == null) {
+      return;
+    }
+
+    channels.remove(serverRegister.getId(), channel);
+    if (ArrayUtils.isNotEmpty(serverRegister.getSubIds())) {
+      for (int id : serverRegister.getSubIds()) {
+        channels.remove(id, channel);
+      }
+    }
   }
 
   public ProxyServerConfig getProxyServerConfig() {

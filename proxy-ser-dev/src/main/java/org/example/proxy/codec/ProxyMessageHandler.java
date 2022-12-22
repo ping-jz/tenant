@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 /**
- * 消息中转处理器,请配合一起使用 {@link io.netty.handler.codec.LengthFieldBasedFrameDecoder}
+ * 消息中转处理器,请配合一起使用
  *
  * @author zhongjianping
  * @since 2022/12/20 17:14
@@ -75,8 +75,12 @@ public class ProxyMessageHandler extends ByteToMessageDecoder {
   }
 
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-      throws Exception {
+  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    proxyService.channelInactive(ctx.channel());
+  }
+
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     ctx.close();
   }
 }
