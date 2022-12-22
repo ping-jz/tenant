@@ -151,12 +151,6 @@ public class DefaultDispatcher extends SimpleChannelInboundHandler<Message> impl
   }
 
   @Override
-  public void channelActive(ChannelHandlerContext ctx) {
-    new Connection(ctx.channel(), Connection.IdGenerator.incrementAndGet());
-  }
-
-
-  @Override
   protected void channelRead0(ChannelHandlerContext ctx, Message msg) {
     dispatcher(ctx.channel(), msg);
   }

@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import org.example.net.DefaultDispatcher;
 import org.example.net.Message;
 import org.example.net.codec.MessageCodec;
+import org.example.net.handler.ConnectionCreate;
 import org.example.net.handler.HandlerRegistry;
 import org.example.proxy.ProxyStart;
 import org.example.proxy.client.ProxyClientConfig;
@@ -79,7 +80,10 @@ public class ProxyTest {
     client.connect(worker, new ChannelInitializer<>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
-        ch.pipeline().addLast(new MessageCodec(commonSerializer)).addLast(defaultDispatcher);
+        ch.pipeline()
+            .addLast(new MessageCodec(commonSerializer))
+            .addLast(new ConnectionCreate())
+            .addLast(defaultDispatcher);
       }
     });
     return client;
