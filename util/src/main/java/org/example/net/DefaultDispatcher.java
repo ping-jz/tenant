@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
  * @author ZJP
  * @since 2021年07月24日 14:41:27
  **/
-public class DefaultDispatcher extends SimpleChannelInboundHandler<Message> implements Dispatcher {
+public class DefaultDispatcher implements Dispatcher {
 
   /**
    * 消息处理器集合
@@ -148,17 +148,6 @@ public class DefaultDispatcher extends SimpleChannelInboundHandler<Message> impl
       res = ((ResultInvokeFuture<?>) obj).result();
     }
     return res;
-  }
-
-  @Override
-  protected void channelRead0(ChannelHandlerContext ctx, Message msg) {
-    dispatcher(ctx.channel(), msg);
-  }
-
-  @Override
-  public void channelReadComplete(ChannelHandlerContext ctx) {
-    ctx.flush();
-    ctx.fireChannelReadComplete();
   }
 
   @Override

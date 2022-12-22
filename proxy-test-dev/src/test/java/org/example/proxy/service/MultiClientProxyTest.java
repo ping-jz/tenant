@@ -1,14 +1,17 @@
 package org.example.proxy.service;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.example.net.DefaultDispatcher;
 import org.example.net.Message;
 import org.example.net.codec.MessageCodec;
-import org.example.net.handler.ConnectionCreate;
+import org.example.net.handler.DispatcherHandler;
 import org.example.net.handler.HandlerRegistry;
 import org.example.proxy.ProxyStart;
 import org.example.proxy.client.ProxyClientConfig;
@@ -21,7 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-public class ProxyTest {
+public class MultiClientProxyTest {
 
   private EventLoopGroup boss;
   private EventLoopGroup worker;
@@ -45,25 +48,44 @@ public class ProxyTest {
 
   @Test
   public void connectTest() throws Exception {
-    HelloWorldFacade helloWorldFacade = new HelloWorldFacade();
-    ProxyClientService client = defaultProxyClient(helloWorldFacade);
+    HelloWorldFacade oneFacade = new HelloWorldFacade();
+    ProxyClientService mainClient = defaultProxyClient(1, oneFacade);
+    ServerRegister oneServerRegister = new ServerRegister();
+    oneServerRegister.setId(mainClient.getProxyClientConfig().getId());
+    mainClient.register(oneServerRegister);
 
-    ServerRegister serverRegister = new ServerRegister();
-    serverRegister.setId(client.getProxyClientConfig().getId());
-    client.register(serverRegister);
+    List<HelloWorldFacade> facadeList = new ArrayList<>();
+    List<ProxyClientService> clients = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      HelloWorldFacade twoFacade = new HelloWorldFacade();
+      ProxyClientService twoClient = defaultProxyClient(i + 10, twoFacade);
+      ServerRegister twoServerRegister = new ServerRegister();
+      twoServerRegister.setId(twoClient.getProxyClientConfig().getId());
+      twoClient.register(twoServerRegister);
 
-    Message message = new Message();
-    message.proto(HelloWorldFacade.echo);
-    message.packet("hello World");
-    client.send(client.getProxyClientConfig().getId(), message);
+      clients.add(twoClient);
+      facadeList.add(twoFacade);
+    }
+
+    for (ProxyClientService clientService : clients) {
+      for (int i = 0; i < 100; i++) {
+        Message message = new Message();
+        message.proto(HelloWorldFacade.echo);
+        message.packet("hello World");
+        mainClient.send(clientService.getProxyClientConfig().getId(), message);
+      }
+    }
 
     TimeUnit.MILLISECONDS.sleep(100);
-    Assertions.assertEquals(2, helloWorldFacade.integer.get());
+    Assertions.assertEquals(100 * clients.size(), oneFacade.integer.get());
+    for (HelloWorldFacade facade : facadeList) {
+      Assertions.assertEquals(100, facade.integer.get());
+    }
   }
 
-  private ProxyClientService defaultProxyClient(Object... facades) {
+  private ProxyClientService defaultProxyClient(int clientId, Object... facades) {
     ProxyClientConfig clientConfig = new ProxyClientConfig();
-    clientConfig.setId(1);
+    clientConfig.setId(clientId);
     clientConfig.proxyId(110);
     clientConfig.setAddress("localhost");
     clientConfig.setPort(55555);
@@ -76,14 +98,11 @@ public class ProxyTest {
     for (Object o : facades) {
       handlerRegistry.registerHandlers(o);
     }
-    DefaultDispatcher defaultDispatcher = new DefaultDispatcher(handlerRegistry);
+    ChannelHandler handler = new DispatcherHandler(new DefaultDispatcher(handlerRegistry));
     client.connect(worker, new ChannelInitializer<>() {
       @Override
-      protected void initChannel(Channel ch) throws Exception {
-        ch.pipeline()
-            .addLast(new MessageCodec(commonSerializer))
-            .addLast(new ConnectionCreate())
-            .addLast(defaultDispatcher);
+      protected void initChannel(Channel ch) {
+        ch.pipeline().addLast(new MessageCodec(commonSerializer)).addLast(handler);
       }
     });
     return client;
@@ -91,8 +110,7 @@ public class ProxyTest {
 
   private AnnotationConfigApplicationContext defaultProxyService() {
     ProxyStart start = new ProxyStart();
-    AnnotationConfigApplicationContext context = start.start();
-    return context;
+    return start.start();
   }
 
 }

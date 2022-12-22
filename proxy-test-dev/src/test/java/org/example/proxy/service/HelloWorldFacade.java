@@ -11,8 +11,6 @@ public class HelloWorldFacade {
   public AtomicInteger integer = new AtomicInteger();
 
   public static final int echo = 1;
-  public static final int callBackArgs = 2;
-  public static final int callBackArray = 3;
 
   @ReqMethod(echo)
   public Object echo(Object o) {
@@ -24,10 +22,4 @@ public class HelloWorldFacade {
   public void echoRes(Object o) {
     integer.incrementAndGet();
   }
-
-  @ReqMethod
-  public void doNothing() {
-    integer.incrementAndGet();
-  }
-
 }

@@ -12,6 +12,7 @@ import org.example.net.anno.ReqMethod;
 import org.example.net.anno.RespMethod;
 import org.example.net.anno.RpcModule;
 import org.example.net.client.DefaultClient;
+import org.example.net.handler.DispatcherHandler;
 import org.example.net.handler.HandlerRegistry;
 import org.example.net.server.DefaultServer;
 import org.example.serde.CommonSerializer;
@@ -64,7 +65,7 @@ public class ReqTest {
     serFacade = new SerHelloWorldFacade();
     HandlerRegistry serverRegistry = new HandlerRegistry();
     serverRegistry.registerHandlers(serFacade);
-    rpcServer.handler(new DefaultDispatcher(serverRegistry));
+    rpcServer.handler(new DispatcherHandler(new DefaultDispatcher(serverRegistry)));
     rpcServer.serializer(serializer);
     rpcServer.start(resource);
 
@@ -72,7 +73,7 @@ public class ReqTest {
     cliFacade = new CliHelloWorldFacade();
     HandlerRegistry clientRegistry = new HandlerRegistry();
     clientRegistry.registerHandlers(cliFacade);
-    rpcClient.handler(new DefaultDispatcher(clientRegistry));
+    rpcClient.handler(new DispatcherHandler(new DefaultDispatcher(clientRegistry)));
     rpcClient.serializer(serializer);
     rpcClient.init(resource.getBoss());
     id = rpcClient.connection(rpcServer.ip(), rpcServer.port()).id();

@@ -13,9 +13,10 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.example.net.DefaultDispatcher;
-import org.example.net.handler.ConnectionCreate;
+import org.example.net.handler.DispatcherHandler;
 import org.example.proxy.codec.ProxyMessageHandler;
 import org.example.proxy.config.ProxyServerConfig;
+import org.example.serde.CommonSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,11 +34,11 @@ public class ProxyServer {
   /** 日志 */
   private Logger logger = LoggerFactory.getLogger(this.getClass());
   @Autowired
-  private ProxyMessageHandler proxyMessageHandler;
-  @Autowired
   private DefaultDispatcher dispatcher;
   @Autowired
   private ProxyService proxyService;
+  @Autowired
+  private CommonSerializer commonSerializer;
   /** 网络主线程 */
   private EventLoopGroup boss;
   /** 网络工作线程 */
@@ -56,14 +57,18 @@ public class ProxyServer {
       workers = new NioEventLoopGroup();
     }
 
+    DispatcherHandler handler = new DispatcherHandler(dispatcher);
     ServerBootstrap bootstrap = new ServerBootstrap().channel(NioServerSocketChannel.class)
         .option(ChannelOption.SO_BACKLOG, 1024).option(ChannelOption.SO_REUSEADDR, true)
         .option(ChannelOption.TCP_NODELAY, true).handler(new LoggingHandler(LogLevel.INFO))
         .group(boss, workers).childHandler(new ChannelInitializer<SocketChannel>() {
           @Override
           protected void initChannel(SocketChannel ch) {
-            ch.pipeline().addLast(proxyMessageHandler).addLast(new ConnectionCreate())
-                .addLast(dispatcher);
+            ProxyMessageHandler proxyMessageHandler = new ProxyMessageHandler(commonSerializer,
+                proxyService);
+            ch.pipeline()
+                .addLast(proxyMessageHandler)
+                .addLast(handler);
           }
         });
 
@@ -114,14 +119,6 @@ public class ProxyServer {
 
   public void setWorkers(EventLoopGroup workers) {
     this.workers = workers;
-  }
-
-  public ProxyMessageHandler getProxyMessageHandler() {
-    return proxyMessageHandler;
-  }
-
-  public void setProxyMessageHandler(ProxyMessageHandler proxyMessageHandler) {
-    this.proxyMessageHandler = proxyMessageHandler;
   }
 
   public DefaultDispatcher getDispatcher() {

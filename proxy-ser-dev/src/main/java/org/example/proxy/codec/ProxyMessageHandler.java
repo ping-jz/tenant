@@ -12,15 +12,12 @@ import org.example.serde.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 /**
  * 消息中转处理器,请配合一起使用 {@link io.netty.handler.codec.LengthFieldBasedFrameDecoder}
  *
  * @author zhongjianping
  * @since 2022/12/20 17:14
  */
-@Component
 public class ProxyMessageHandler extends ByteToMessageDecoder {
 
   private Logger logger = LoggerFactory.getLogger(this.getClass());
