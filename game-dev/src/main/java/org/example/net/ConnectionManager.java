@@ -12,11 +12,14 @@ import org.slf4j.LoggerFactory;
 
 /**
  * 链接管理者
+ * <p>
+ * //TODO 这个需要改造
  *
  * @author ZJP
  * @since 2021年08月15日 22:34:55
  **/
 @Sharable
+@Deprecated
 public class ConnectionManager extends ChannelInboundHandlerAdapter implements AutoCloseable {
 
   public static final Integer IDLE_TIME = 90000;

@@ -8,6 +8,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.example.net.ConnectionManager;
 import org.example.net.DefaultDispatcher;
 import org.example.net.Message;
 import org.example.net.codec.MessageCodec;
@@ -137,7 +138,10 @@ public class MultiClientProxyTest {
     client.connect(worker, new ChannelInitializer<>() {
       @Override
       protected void initChannel(Channel ch) {
-        ch.pipeline().addLast(new MessageCodec(commonSerializer)).addLast(handler);
+        ch.pipeline()
+            .addLast(new MessageCodec(commonSerializer))
+            .addLast(new ConnectionManager())
+            .addLast(handler);
       }
     });
     return client;

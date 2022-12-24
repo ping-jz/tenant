@@ -5,6 +5,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import java.util.List;
+import java.util.Objects;
+import org.example.net.Connection;
 import org.example.net.Message;
 import org.example.proxy.service.ProxyService;
 import org.example.serde.NettyByteBufUtil;
@@ -72,6 +74,29 @@ public class ProxyMessageHandler extends ByteToMessageDecoder {
       }
       in.readerIndex(readIdx).skipBytes(length);
     }
+  }
+
+  @Override
+  public void channelActive(ChannelHandlerContext ctx) {
+    Channel channel = ctx.channel();
+    if (channel.attr(Connection.CONNECTION).get() == null) {
+      Connection connection = createConnection(channel);
+      channel.attr(Connection.CONNECTION).set(connection);
+    }
+
+    ctx.fireChannelActive();
+  }
+
+  public Connection createConnection(Channel channel) {
+    Objects.requireNonNull(channel, "channel can't not be null");
+    Connection oldConn = channel.attr(Connection.CONNECTION).get();
+    if (oldConn != null) {
+      throw new IllegalStateException("duplicated create connection");
+    }
+
+    Connection connection = new Connection(channel, Connection.IdGenerator.incrementAndGet());
+    channel.attr(Connection.CONNECTION).set(connection);
+    return connection;
   }
 
   @Override

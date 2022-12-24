@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 public class ReqTest {
@@ -127,6 +128,7 @@ public class ReqTest {
   }
 
   @Test
+  @RepeatedTest(100)
   public void callBackArgsTest() throws InterruptedException {
     CallBackReq req = callBackReqReq.to(id);
     CountDownLatch latch = new CountDownLatch(invokeTimes);
@@ -143,6 +145,7 @@ public class ReqTest {
   }
 
   @Test
+  @RepeatedTest(100)
   public void callBackArgsMessageTest() throws InterruptedException {
     CallBackReq req = callBackReqReq.to(id);
     CountDownLatch latch = new CountDownLatch(invokeTimes);
