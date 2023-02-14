@@ -53,11 +53,17 @@ public class NettyByteBufUtilTest {
 
     buf.clear();
     NettyByteBufUtil.writeInt64(buf, Long.MIN_VALUE);
+    NettyByteBufUtil.writeInt64(buf, -123123123);
     assertEquals(Long.MIN_VALUE, NettyByteBufUtil.readInt64(buf));
+    assertEquals(-123123123, NettyByteBufUtil.readInt64(buf));
+    assertEquals(0, buf.readableBytes());
 
     buf.clear();
     NettyByteBufUtil.writeInt64(buf, Long.MAX_VALUE);
+    NettyByteBufUtil.writeInt64(buf, 5555555);
     assertEquals(Long.MAX_VALUE, NettyByteBufUtil.readInt64(buf));
+    assertEquals(5555555, NettyByteBufUtil.readInt64(buf));
+    assertEquals(0, buf.readableBytes());
   }
 
   @Test
@@ -89,11 +95,17 @@ public class NettyByteBufUtilTest {
 
     buf.clear();
     NettyByteBufUtil.writeInt32(buf, Integer.MIN_VALUE);
+    NettyByteBufUtil.writeInt32(buf, -123123123);
     assertEquals(Integer.MIN_VALUE, NettyByteBufUtil.readInt32(buf));
+    assertEquals(-123123123, NettyByteBufUtil.readInt32(buf));
+    assertEquals(0, buf.readableBytes());
 
     buf.clear();
     NettyByteBufUtil.writeInt32(buf, Integer.MAX_VALUE);
+    NettyByteBufUtil.writeInt32(buf, 123123123);
     assertEquals(Integer.MAX_VALUE, NettyByteBufUtil.readInt32(buf));
+    assertEquals(123123123, NettyByteBufUtil.readInt32(buf));
+    assertEquals(0, buf.readableBytes());
   }
 
 }
