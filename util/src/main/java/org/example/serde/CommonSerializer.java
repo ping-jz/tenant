@@ -145,7 +145,7 @@ public class CommonSerializer implements Serializer<Object> {
   }
 
   /**
-   * 注册普通序列化
+   * 注册对象序列化
    *
    * @param id    类型ID
    * @param clazz 类型
@@ -157,6 +157,22 @@ public class CommonSerializer implements Serializer<Object> {
     ObjectSerializer.checkClass(clazz);
 
     Serializer<?> serializer = new ObjectSerializer(clazz, this);
+    registerSerializer(id, clazz, serializer);
+  }
+
+  /**
+   * 注册扁平对象序列化
+   *
+   * @param id    类型ID
+   * @param clazz 类型
+   * @since 2021年07月18日 11:37:14
+   */
+  public void registerFlattenObject(Integer id, Class<?> clazz) {
+    Objects.requireNonNull(id);
+    Objects.requireNonNull(clazz);
+    ObjectSerializer.checkClass(clazz);
+
+    Serializer<?> serializer = new FlattenObjectSerializer(clazz, this);
     registerSerializer(id, clazz, serializer);
   }
 
