@@ -46,7 +46,7 @@ public abstract class ExecutorTest {
     actorMark = actorSize - 1;
   }
 
-  public abstract DefaultExecutor[] createActors(ExecutorService service, int size);
+  public abstract DelegateExecutor[] createActors(ExecutorService service, int size);
 
 
   /**
@@ -57,7 +57,7 @@ public abstract class ExecutorTest {
   @RepeatedTest(REPEAT)
   public void forkJoinTest() throws InterruptedException {
     ExecutorService service = Executors.newWorkStealingPool(threads);
-    DefaultExecutor[] defaultExecutors = createActors(service, actorSize);
+    DelegateExecutor[] delegateExecutors = createActors(service, actorSize);
 
     CountDownLatch latch = new CountDownLatch(tasks);
     AtomicInteger count = new AtomicInteger();
@@ -65,7 +65,7 @@ public abstract class ExecutorTest {
       count.addAndGet(1);
       latch.countDown();
     };
-    IntStream.range(0, tasks).parallel().forEach(i -> defaultExecutors[i & actorMark].offer(run));
+    IntStream.range(0, tasks).parallel().forEach(i -> delegateExecutors[i & actorMark].execute(run));
 
     Assertions.assertTrue(latch.await(1, TimeUnit.MINUTES));
     Assertions.assertEquals(tasks, count.get());
@@ -80,7 +80,7 @@ public abstract class ExecutorTest {
   @RepeatedTest(REPEAT)
   public void threadPoolTest() throws InterruptedException {
     ExecutorService service = Executors.newFixedThreadPool(threads);
-    DefaultExecutor[] defaultExecutors = createActors(service, actorSize);
+    DelegateExecutor[] delegateExecutors = createActors(service, actorSize);
 
     CountDownLatch latch = new CountDownLatch(tasks);
     AtomicInteger count = new AtomicInteger();
@@ -88,7 +88,7 @@ public abstract class ExecutorTest {
       count.addAndGet(1);
       latch.countDown();
     };
-    IntStream.range(0, tasks).parallel().forEach(i -> defaultExecutors[i & actorMark].offer(run));
+    IntStream.range(0, tasks).parallel().forEach(i -> delegateExecutors[i & actorMark].execute(run));
 
     Assertions.assertTrue(latch.await(1, TimeUnit.MINUTES));
     Assertions.assertEquals(tasks, count.get());

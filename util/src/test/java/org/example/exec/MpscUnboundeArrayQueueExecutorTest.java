@@ -15,10 +15,10 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class MpscUnboundeArrayQueueExecutorTest extends ExecutorTest {
 
   @Override
-  public DefaultExecutor[] createActors(ExecutorService service, int size) {
-    DefaultExecutor[] actros = new DefaultExecutor[size];
+  public DelegateExecutor[] createActors(ExecutorService service, int size) {
+    DelegateExecutor[] actros = new DelegateExecutor[size];
     for (int i = 0; i < size; i++) {
-      actros[i] = new DefaultExecutor(new MpscUnboundedArrayQueue<>(1024), service);
+      actros[i] = new DelegateExecutor(new MpscUnboundedArrayQueue<>(1024), service);
     }
 
     return actros;
