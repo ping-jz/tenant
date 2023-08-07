@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.example.net.HelloWorld;
-import org.example.net.anno.ReqMethod;
+import org.example.net.anno.Req;
 import org.example.net.anno.RpcModule;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -86,7 +86,7 @@ public class HandlerRegistryTest {
      * @param str 内容
      * @since 2021年07月22日 21:58:45
      */
-    @ReqMethod(TEST_REQ)
+    @Req(TEST_REQ)
     public String test(String str) {
       return str;
     }
@@ -121,7 +121,7 @@ public class HandlerRegistryTest {
      * @param str 内容
      * @since 2021年07月22日 21:58:45
      */
-    @ReqMethod(TEST_REQ)
+    @Req(TEST_REQ)
     public String test(String str) {
       return str;
     }

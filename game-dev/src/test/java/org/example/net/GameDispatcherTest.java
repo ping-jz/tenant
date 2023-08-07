@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.example.net.anno.ReqMethod;
+import org.example.net.anno.Req;
 import org.example.net.anno.RpcModule;
 import org.example.net.codec.MessageCodec;
 import org.example.net.handler.HandlerRegistry;
@@ -105,7 +105,7 @@ public class GameDispatcherTest {
      * @since 2021年07月22日 21:58:45
      */
 
-    @ReqMethod(ECHO)
+    @Req(ECHO)
     public Object echo(Object str) {
       return str;
     }

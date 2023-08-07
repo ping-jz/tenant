@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.tuple.Pair;
 import org.example.net.ReqUtil;
-import org.example.net.anno.ReqMethod;
+import org.example.net.anno.Req;
 import org.example.net.anno.RpcModule;
 
 /**
@@ -33,7 +33,7 @@ public class HandlerRegistry {
   }
 
   /**
-   * 寻找被{@link ReqMethod}标记的非静态公共方法
+   * 寻找被{@link Req}标记的非静态公共方法
    *
    * @param object 需要被注册的对象
    * @since 2021年07月24日 10:04:05

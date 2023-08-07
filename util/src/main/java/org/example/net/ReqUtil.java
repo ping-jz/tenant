@@ -9,19 +9,19 @@ import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.example.net.anno.ReqMethod;
-import org.example.net.anno.RespMethod;
+import org.example.net.anno.Req;
+import org.example.net.anno.Resp;
 
 public class ReqUtil {
 
   /**
-   * 根据{@link ReqMethod#value()}的约定来获取协议ID
+   * 根据{@link Req#value()}的约定来获取协议ID
    *
    * @return 协议ID
    * @since 2022年06月15日 12:12:12
    */
   public static int protoReqId(Method method) {
-    ReqMethod reqMethod = method.getAnnotation(ReqMethod.class);
+    Req reqMethod = method.getAnnotation(Req.class);
     if (reqMethod == null) {
       return 0;
     }
@@ -32,13 +32,13 @@ public class ReqUtil {
   }
 
   /**
-   * 根据{@link RespMethod#value()}的约定来获取协议ID
+   * 根据{@link Resp#value()}的约定来获取协议ID
    *
    * @return 协议ID
    * @since 2022年06月15日 12:12:12
    */
   public static int protoRespId(Method method) {
-    RespMethod reqMethod = method.getAnnotation(RespMethod.class);
+    Resp reqMethod = method.getAnnotation(Resp.class);
     if (reqMethod == null) {
       return 0;
     }
@@ -58,7 +58,7 @@ public class ReqUtil {
     List<Pair<Integer, Method>> result = new ArrayList<>();
 
     for (Method m : clz.getDeclaredMethods()) {
-      if (m.getAnnotation(ReqMethod.class) != null) {
+      if (m.getAnnotation(Req.class) != null) {
         int reqId = protoReqId(m);
         if (ids.contains(reqId) || reqId <= 0) {
           throw new IllegalArgumentException(
@@ -69,7 +69,7 @@ public class ReqUtil {
         m.setAccessible(true);
         ids.add(reqId);
         result.add(Pair.of(reqId, m));
-      } else if (m.getAnnotation(RespMethod.class) != null) {
+      } else if (m.getAnnotation(Resp.class) != null) {
         int respId = protoRespId(m);
         if (ids.contains(respId) || 0 <= respId) {
           throw new IllegalArgumentException(

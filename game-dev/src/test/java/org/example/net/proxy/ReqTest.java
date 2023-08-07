@@ -8,8 +8,8 @@ import org.example.net.DefaultDispatcher;
 import org.example.net.HelloWorld;
 import org.example.net.InvokeFuture;
 import org.example.net.ResultInvokeFuture;
-import org.example.net.anno.ReqMethod;
-import org.example.net.anno.RespMethod;
+import org.example.net.anno.Req;
+import org.example.net.anno.Resp;
 import org.example.net.anno.RpcModule;
 import org.example.net.client.DefaultClient;
 import org.example.net.handler.DispatcherHandler;
@@ -180,10 +180,10 @@ public class ReqTest {
   @RpcModule
   interface CallBackReq {
 
-    @ReqMethod
+    @Req
     InvokeFuture<Long> callBackArgs(String str, Integer i, Long a);
 
-    @ReqMethod
+    @Req
     InvokeFuture<long[]> callBackArray(long[] longs);
 
   }
@@ -228,7 +228,7 @@ public class ReqTest {
 
     public AtomicInteger integer = new AtomicInteger();
 
-    @RespMethod(HelloWorld.ECHO)
+    @Resp(HelloWorld.ECHO)
     public void echoRes(Object o) {
       integer.incrementAndGet();
     }
