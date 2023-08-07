@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author ZJP
  * @since 2021年09月29日 23:40:00
  **/
-public class DefaultExecutor implements Runnable, Executor, Closeable {
+public class DelegateExecutor implements Runnable, Executor {
 
   public static final int IDLE = 1;
   public static final int WAITING = 2;
@@ -36,16 +36,12 @@ public class DefaultExecutor implements Runnable, Executor, Closeable {
    * 线程池(推荐使用{@link java.util.concurrent.ForkJoinPool})
    */
   private final ExecutorService service;
-  /**
-   * 是否停止
-   */
-  private boolean stopping;
 
-  public DefaultExecutor(ExecutorService service) {
+  public DelegateExecutor(ExecutorService service) {
     this(new MpscUnboundedArrayQueue<>(128), service);
   }
 
-  public DefaultExecutor(Queue<Runnable> queue, ExecutorService service) {
+  public DelegateExecutor(Queue<Runnable> queue, ExecutorService service) {
     this.queue = queue;
     this.service = service;
     this.state = new AtomicInteger(IDLE);
@@ -78,27 +74,6 @@ public class DefaultExecutor implements Runnable, Executor, Closeable {
   }
 
   /**
-   * 提交任务
-   *
-   * @return 是否成功
-   * @throws RuntimeException 如果队列停止收到新任务，报异常
-   */
-  public boolean offer(Runnable runnable) {
-    if (stopping) {
-      throw new RuntimeException("二级队列拒绝接收新任务");
-    }
-
-    boolean res = queue.add(runnable);
-    exec();
-    return res;
-  }
-
-  @Override
-  public void close() {
-    stopping = true;
-  }
-
-  /**
    * 把二级队列放到线程池等待执行
    */
   protected void exec() {
@@ -114,10 +89,6 @@ public class DefaultExecutor implements Runnable, Executor, Closeable {
 
   @Override
   public void execute(Runnable command) {
-    if (stopping) {
-      throw new RuntimeException("二级队列拒绝接收新任务");
-    }
-
     queue.add(command);
     exec();
   }
