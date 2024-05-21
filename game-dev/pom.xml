@@ -123,6 +123,11 @@
       <artifactId>javax.annotation-api</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>com.alibaba.fastjson2</groupId>
+      <artifactId>fastjson2</artifactId>
+    </dependency>
+
     <!-- https://mvnrepository.com/artifact/io.netty/netty-all -->
     <dependency>
       <groupId>io.netty</groupId>

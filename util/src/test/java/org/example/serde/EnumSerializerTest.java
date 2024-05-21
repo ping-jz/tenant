@@ -39,10 +39,10 @@ public class EnumSerializerTest {
   @Test
   public void intergateTest() {
     CommonSerializer serializer = new CommonSerializer();
-    serializer.registerSerializer(10, EnumOne.class, new EnumSerializer<>(EnumOne.class));
-    serializer.registerSerializer(11, EnumTwo.class, new EnumSerializer<>(EnumTwo.class));
-    serializer.registerObject(12, TestCaseOne.class);
-    serializer.registerSerializer(13, List.class, new CollectionSerializer(serializer));
+    serializer.registerSerializer(11, EnumOne.class, new EnumSerializer<>(EnumOne.class));
+    serializer.registerSerializer(12, EnumTwo.class, new EnumSerializer<>(EnumTwo.class));
+    serializer.registerObject(13, TestCaseOne.class);
+    serializer.registerSerializer(14, List.class, new CollectionSerializer(serializer));
     ByteBuf buf = Unpooled.buffer();
 
     serializer.writeObject(buf, EnumOne.values());

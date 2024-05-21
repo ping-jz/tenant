@@ -34,15 +34,16 @@ public class CommonSerializer implements Serializer<Object> {
    * 通用类型ID
    */
   public static final int NULL_ID = 0;
-  public static final int BYTE_ID = 1;
-  public static final int SHORT_ID = 2;
-  public static final int INTEGER_ID = 3;
-  public static final int LONG_ID = 4;
-  public static final int FLOAT_ID = 5;
-  public static final int DOUBLE_ID = 6;
-  public static final int CHARACTER_ID = 7;
-  public static final int STRING_ID = 8;
-  public static final int ARRAY_ID = 9;
+  public static final int BOOL_ID = 1;
+  public static final int BYTE_ID = 2;
+  public static final int SHORT_ID = 3;
+  public static final int INTEGER_ID = 4;
+  public static final int LONG_ID = 5;
+  public static final int FLOAT_ID = 6;
+  public static final int DOUBLE_ID = 7;
+  public static final int CHARACTER_ID = 8;
+  public static final int STRING_ID = 9;
+  public static final int ARRAY_ID = 10;
 
   /**
    * [类型ID, 具体类型]
@@ -113,6 +114,7 @@ public class CommonSerializer implements Serializer<Object> {
     linkTo(Float.class, Float.TYPE);
     linkTo(Double.class, Double.TYPE);
     linkTo(Character.class, Character.TYPE);
+    linkTo(Boolean.class, Character.TYPE);
   }
 
   /**
@@ -123,6 +125,7 @@ public class CommonSerializer implements Serializer<Object> {
   private void commonType() {
     registerSerializer(NULL_ID, NullSerializer.class, NullSerializer.INSTANCE);
     registerSerializer(BYTE_ID, Byte.TYPE, new ByteSerializer());
+    registerSerializer(BOOL_ID, Boolean.TYPE, new ByteSerializer());
     registerSerializer(SHORT_ID, Short.TYPE, new ShortSerializer());
     registerSerializer(INTEGER_ID, Integer.TYPE, new IntegerSerializer());
     registerSerializer(LONG_ID, Long.TYPE, new LongSerializer());

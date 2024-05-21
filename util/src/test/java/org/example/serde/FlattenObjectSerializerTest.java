@@ -48,7 +48,7 @@ public class FlattenObjectSerializerTest {
     PrimitiveObj obj = new PrimitiveObj();
     obj.d = Double.MIN_VALUE;
 
-    serializer.registerFlattenObject(10, PrimitiveObj.class);
+    serializer.registerFlattenObject(11, PrimitiveObj.class);
     serializer.writeObject(buf, obj);
 
     Object[] res = serializer.read(buf);
@@ -70,7 +70,7 @@ public class FlattenObjectSerializerTest {
     obj.str = "Hello World!";
     obj.b = 123;
 
-    serializer.registerFlattenObject(10, WrapperObj.class);
+    serializer.registerFlattenObject(11, WrapperObj.class);
     serializer.writeObject(buf, obj);
 
     Object[] res = serializer.read(buf);
@@ -87,10 +87,10 @@ public class FlattenObjectSerializerTest {
 
   @Test
   public void composeTest() {
-    serializer.registerObject(10, PrimitiveObj.class);
-    serializer.registerObject(11, WrapperObj.class);
-    serializer.registerFlattenObject(12, ComposeObj.class);
-    serializer.registerRecord(13, AAA.class);
+    serializer.registerObject(11, PrimitiveObj.class);
+    serializer.registerObject(12, WrapperObj.class);
+    serializer.registerFlattenObject(13, ComposeObj.class);
+    serializer.registerRecord(14, AAA.class);
 
     PrimitiveObj pri = new PrimitiveObj();
     pri.l = Long.MIN_VALUE;

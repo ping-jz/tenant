@@ -27,7 +27,7 @@ public class MapSerializerTest {
 
     MapSerializer<?, ?> map = new MapSerializer<>(serializer, HashMap::new);
 
-    serializer.registerSerializer(10, Map.class, map);
+    serializer.registerSerializer(11, Map.class, map);
   }
 
   @Test

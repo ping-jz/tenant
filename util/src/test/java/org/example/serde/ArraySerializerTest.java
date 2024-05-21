@@ -20,8 +20,8 @@ public class ArraySerializerTest {
   @BeforeEach
   public void beforeEach() {
     serializer = new CommonSerializer();
-    serializer.registerSerializer(10, Object.class, new MarkSerializer());
-    serializer.registerObject(11, ArrayWrapper.class);
+    serializer.registerSerializer( Object.class, new MarkSerializer());
+    serializer.registerObject(ArrayWrapper.class);
     buf = Unpooled.buffer();
   }
 

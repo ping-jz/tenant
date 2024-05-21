@@ -33,7 +33,7 @@ public class SetSerializerTest {
 
     CollectionSerializer collectSer = new CollectionSerializer(serializer, HashSet::new);
 
-    serializer.registerSerializer(10, Set.class, collectSer);
+    serializer.registerSerializer(11, Set.class, collectSer);
   }
 
   @Test

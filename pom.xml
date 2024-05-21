@@ -90,6 +90,7 @@
     <mongo.dervier.version>4.4.1</mongo.dervier.version>
     <appache.common>3.12.0</appache.common>
     <jctool.version>3.3.0</jctool.version>
+    <auto-service.version>1.1.1</auto-service.version>
   </properties>
 
   <modules>
@@ -118,6 +119,14 @@
         <artifactId>spring-data-mongodb</artifactId>
         <version>${spring.mongodb.version}</version>
       </dependency>
+
+      <!-- https://mvnrepository.com/artifact/com.alibaba.fastjson2/fastjson2 -->
+      <dependency>
+        <groupId>com.alibaba.fastjson2</groupId>
+        <artifactId>fastjson2</artifactId>
+        <version>2.0.23</version>
+      </dependency>
+
 
       <!-- https://mvnrepository.com/artifact/javax.annotation/javax.annotation-api -->
       <dependency>
@@ -211,6 +220,13 @@
         <groupId>org.jctools</groupId>
         <artifactId>jctools-core</artifactId>
         <version>${jctool.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.google.auto.service</groupId>
+        <artifactId>auto-service</artifactId>
+        <version>${auto-service.version}</version>
+        <scope>compile</scope>
       </dependency>
 
     </dependencies>
