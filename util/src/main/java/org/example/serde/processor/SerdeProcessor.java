@@ -3,6 +3,7 @@ package org.example.serde.processor;
 import com.google.auto.service.AutoService;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -16,6 +17,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 import org.apache.commons.lang3.StringUtils;
@@ -45,34 +47,41 @@ public class SerdeProcessor extends AbstractProcessor {
         if (lastDot > 0) {
           packageName = className.substring(0, lastDot);
         }
+
         String simpleClassName = className.substring(lastDot + 1);
         String builderClassName = className + "Serde";
         String builderSimpleClassName = builderClassName.substring(lastDot + 1);
 
         try {
           JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(builderClassName);
+          TypeElement typeElement = (TypeElement) clazz;
+          List<Element> fieldElements = getAllFieldElements(typeElement);
+
+          String template = """
+                import io.netty.buffer.ByteBuf;
+                import org.example.serde.CommonSerializer;
+               \s
+                import org.example.serde.NettyByteBufUtil;
+                import org.example.serde.Serializer;
+               \s
+                public class %s implements Serializer<%s> {
+                   private CommonSerializer serializer;
+                                              \s
+                   public %s(CommonSerializer serializer) {
+                     this.serializer = serializer;
+                   }
+              \s""";
 
           try (PrintWriter writer = new PrintWriter(builderFile.openWriter())) {
             if (packageName != null) {
               writer.println("package %s;".formatted(packageName));
             }
-            writer.println("""
-                  import io.netty.buffer.ByteBuf;
-                  import org.example.serde.CommonSerializer;
-                 \s
-                  import org.example.serde.NettyByteBufUtil;
-                  import org.example.serde.Serializer;
-                 \s
-                  public class %s implements Serializer<%s> {
-                     private CommonSerializer serializer;
-                                                \s
-                     public %s(CommonSerializer serializer) {
-                       this.serializer = serializer;
-                     }
-                \s""".formatted(builderSimpleClassName, simpleClassName, builderSimpleClassName));
 
-            deSerializerCode(simpleClassName, clazz, writer);
-            serializerCode(simpleClassName, clazz, writer);
+            writer.println(template.formatted(builderSimpleClassName, simpleClassName,
+                builderSimpleClassName));
+
+            deSerializerCode(simpleClassName, fieldElements, writer);
+            serializerCode(simpleClassName, fieldElements, writer);
 
             writer.println('}');
           }
@@ -88,7 +97,37 @@ public class SerdeProcessor extends AbstractProcessor {
     return true;
   }
 
-  private static void deSerializerCode(String simpleClassName, Element clazz, PrintWriter writer)
+  public List<Element> getAllFieldElements(TypeElement element) {
+    List<TypeElement> clazzs = new ArrayList<>();
+    clazzs.add(element);
+
+    TypeElement parent = element;
+    while (true) {
+      parent = getSuperclass(parent);
+      if (parent == null) {
+        break;
+      }
+
+      clazzs.add(0, parent);
+    }
+
+    List<Element> fields = new ArrayList<>();
+    for (TypeElement typeElement : clazzs) {
+
+      List<Element> fieldElements = typeElement.getEnclosedElements().stream()
+          .filter(e -> e.getKind() == ElementKind.FIELD).filter(
+              e -> !(e.getModifiers().contains(Modifier.FINAL) || e.getModifiers()
+                  .contains(Modifier.STATIC) || e.getModifiers().contains(Modifier.TRANSIENT)))
+          .collect(Collectors.toUnmodifiableList());
+
+      fields.addAll(fieldElements);
+    }
+
+    return fields;
+  }
+
+  private static void deSerializerCode(String simpleClassName, List<Element> fieldElements,
+      PrintWriter writer)
       throws IOException {
     String code = """
         @Override
@@ -99,11 +138,6 @@ public class SerdeProcessor extends AbstractProcessor {
         """;
     StringBuilder builder = new StringBuilder();
     builder.append("%s object = new %s();\n".formatted(simpleClassName, simpleClassName));
-
-    List<Element> fieldElements = clazz.getEnclosedElements().stream()
-        .filter(e -> e.getKind() == ElementKind.FIELD).filter(
-            e -> !(e.getModifiers().contains(Modifier.FINAL) || e.getModifiers()
-                .contains(Modifier.STATIC))).collect(Collectors.toUnmodifiableList());
 
     fieldElements.forEach(e -> {
       String fieldName = StringUtils.capitalize(e.getSimpleName().toString());
@@ -155,13 +189,9 @@ public class SerdeProcessor extends AbstractProcessor {
 
   }
 
-  private static void serializerCode(String simpleClassName, Element clazz, PrintWriter writer)
+  private static void serializerCode(String simpleClassName, List<Element> fieldElements,
+      PrintWriter writer)
       throws IOException {
-
-    List<Element> fieldElements = clazz.getEnclosedElements().stream()
-        .filter(e -> e.getKind() == ElementKind.FIELD).filter(
-            e -> !(e.getModifiers().contains(Modifier.FINAL) || e.getModifiers()
-                .contains(Modifier.STATIC))).collect(Collectors.toUnmodifiableList());
 
     StringBuilder builder = new StringBuilder();
     fieldElements.forEach(e -> {
@@ -182,11 +212,13 @@ public class SerdeProcessor extends AbstractProcessor {
         }
 
         case INT: {
-          builder.append("  NettyByteBufUtil.writeInt32(buf,object.get%s());\n".formatted(fieldName));
+          builder.append(
+              "  NettyByteBufUtil.writeInt32(buf,object.get%s());\n".formatted(fieldName));
           break;
         }
         case LONG: {
-          builder.append("  NettyByteBufUtil.writeInt64(buf,object.get%s());\n".formatted(fieldName));
+          builder.append(
+              "  NettyByteBufUtil.writeInt64(buf,object.get%s());\n".formatted(fieldName));
           break;
         }
 
@@ -217,6 +249,22 @@ public class SerdeProcessor extends AbstractProcessor {
              }
         """;
     writer.println(code.formatted(simpleClassName, builder.toString()));
+  }
+
+  private TypeElement getSuperclass(TypeElement type) {
+    if (type.getSuperclass().getKind() == TypeKind.DECLARED) {
+      TypeElement superclass = (TypeElement) processingEnv.getTypeUtils()
+          .asElement(type.getSuperclass());
+      String name = superclass.getQualifiedName().toString();
+      if (name.startsWith("java.") || name.startsWith("javax.") || name.startsWith("android.")) {
+        // Skip system classes, this just degrades performance
+        return null;
+      } else {
+        return superclass;
+      }
+    } else {
+      return null;
+    }
   }
 
 

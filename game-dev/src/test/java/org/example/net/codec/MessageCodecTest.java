@@ -96,6 +96,11 @@ public class MessageCodecTest {
     object.setId(random.nextInt());
     object.setAge(random.nextLong());
     object.setDatas(new long[]{random.nextLong(), random.nextLong(), random.nextLong()});
+    object.setSigned(true);
+    object.setType(random.nextInt());
+    byte[] bytes = new byte[10];
+    random.nextBytes(bytes);
+    object.setBitArray(bytes);
 
     ByteBuf buf = commonSerializer.writeObject(object);
     CodecObject object1 = commonSerializer.read(buf);

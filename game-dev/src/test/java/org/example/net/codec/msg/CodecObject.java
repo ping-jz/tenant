@@ -6,7 +6,7 @@ import java.util.Objects;
 import org.example.serde.Serde;
 
 @Serde
-public class CodecObject {
+public class CodecObject extends CodecParentObject {
 
   private List<String> msg;
 
@@ -77,13 +77,27 @@ public class CodecObject {
       return false;
     }
     CodecObject that = (CodecObject) o;
-    return id == that.id && age == that.age && signed == that.signed && Objects.equals(msg,
-        that.msg) && Objects.deepEquals(datas, that.datas) && Objects.deepEquals(
-        bitArray, that.bitArray);
+    return getId() == that.getId() && getAge() == that.getAge() && isSigned() == that.isSigned()
+        && Objects.equals(getMsg(), that.getMsg()) && Objects.deepEquals(
+        getDatas(), that.getDatas()) && Objects.deepEquals(getBitArray(),
+        that.getBitArray());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(msg, id, age, Arrays.hashCode(datas), signed, Arrays.hashCode(bitArray));
+    return Objects.hash(getMsg(), getId(), getAge(), Arrays.hashCode(getDatas()), isSigned(),
+        Arrays.hashCode(getBitArray()));
+  }
+
+  @Override
+  public String toString() {
+    return "CodecObject{" +
+        "msg=" + msg +
+        ", id=" + id +
+        ", age=" + age +
+        ", datas=" + Arrays.toString(datas) +
+        ", signed=" + signed +
+        ", bitArray=" + Arrays.toString(bitArray) +
+        '}';
   }
 }
