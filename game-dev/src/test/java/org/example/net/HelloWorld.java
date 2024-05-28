@@ -1,6 +1,6 @@
 package org.example.net;
 
-import org.example.net.anno.ReqMethod;
+import org.example.net.anno.Req;
 import org.example.net.anno.RpcModule;
 
 @RpcModule
@@ -15,10 +15,10 @@ public interface HelloWorld {
    *
    * @since 2021年07月25日 19:00:22
    */
-  @ReqMethod(ECHO)
+  @Req(ECHO)
   Object echo(Object o);
 
-  @ReqMethod(DO_NOTHING)
+  @Req(DO_NOTHING)
   void doNothing();
 
 

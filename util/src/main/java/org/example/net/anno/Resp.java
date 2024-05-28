@@ -13,10 +13,10 @@ import java.lang.annotation.Target;
  **/
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RespMethod {
+public @interface Resp {
 
   /**
-   * 对应的请求{@link ReqMethod#value()},代码会自动转为负数形成对应关系
+   * 对应的请求{@link Req#value()},代码会自动转为负数形成对应关系
    *
    * @since 2021年07月25日 14:29:21
    */

@@ -15,10 +15,10 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class ConcurrentLinkQueueExecutorTest extends ExecutorTest {
 
   @Override
-  public DefaultExecutor[] createActors(ExecutorService service, int size) {
-    DefaultExecutor[] actros = new DefaultExecutor[size];
+  public DelegateExecutor[] createActors(ExecutorService service, int size) {
+    DelegateExecutor[] actros = new DelegateExecutor[size];
     for (int i = 0; i < size; i++) {
-      actros[i] = new DefaultExecutor(new ConcurrentLinkedQueue<>(), service);
+      actros[i] = new DelegateExecutor(new ConcurrentLinkedQueue<>(), service);
     }
 
     return actros;

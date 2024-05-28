@@ -3,7 +3,7 @@ package org.example.game.facade.example;
 
 import org.example.game.facade.example.model.ReqMove;
 import org.example.game.facade.example.model.ResMove;
-import org.example.net.anno.ReqMethod;
+import org.example.net.anno.Req;
 import org.example.net.anno.RpcModule;
 
 /**
@@ -22,7 +22,7 @@ public class WorldFacade {
    * @author ZJP
    * @since 2021年09月27日 15:15:19
    **/
-  @ReqMethod(100)
+  @Req(100)
   public String echo(String str) {
     return str;
   }
@@ -33,7 +33,7 @@ public class WorldFacade {
    * @param move 移动数据
    * @since 2021年09月27日 15:33:00
    */
-  @ReqMethod(101)
+  @Req(101)
   public ResMove move(ReqMove move) {
     ResMove moveRes = new ResMove();
     moveRes.setId(move.getId());

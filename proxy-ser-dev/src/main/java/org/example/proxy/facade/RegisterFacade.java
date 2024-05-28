@@ -1,7 +1,7 @@
 package org.example.proxy.facade;
 
 import org.example.net.Connection;
-import org.example.net.anno.ReqMethod;
+import org.example.net.anno.Req;
 import org.example.net.anno.RpcModule;
 import org.example.proxy.message.ProxyProtoId;
 import org.example.proxy.model.ServerRegister;
@@ -27,7 +27,7 @@ public class RegisterFacade {
    *
    * @since 2022/12/19 18:24
    */
-  @ReqMethod(ProxyProtoId.REGISTER)
+  @Req(ProxyProtoId.REGISTER)
   public void register(Connection connection, ServerRegister serverRegister) {
     proxyService.register(connection, serverRegister);
   }
