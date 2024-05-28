@@ -39,7 +39,7 @@ public class SerdeProcessor extends AbstractProcessor {
       for (Element clazz : annotationElements) {
         if (clazz.getKind() != ElementKind.CLASS) {
           processingEnv.getMessager()
-              .printMessage(Kind.ERROR, "@BuilderProperty must be applied to a Class", clazz);
+              .printMessage(Kind.ERROR, "@Serde must be applied to a Class", clazz);
         }
         String className = clazz.toString();
         String packageName = null;
@@ -84,10 +84,15 @@ public class SerdeProcessor extends AbstractProcessor {
             serializerCode(simpleClassName, fieldElements, writer);
 
             writer.println('}');
+
+            for (Element e : annotationElements) {
+              writer.println("///" + e.toString());
+            }
           }
 
         } catch (IOException e) {
-          throw new RuntimeException(e);
+          processingEnv.getMessager()
+              .printMessage(Kind.ERROR, "@Serde build error, %s".formatted(e.toString()), clazz);
         }
 
       }
@@ -202,12 +207,12 @@ public class SerdeProcessor extends AbstractProcessor {
           break;
         }
         case BYTE: {
-          builder.append("  buf.writeByte(object.get%s();\n".formatted(fieldName));
+          builder.append("  buf.writeByte(object.get%s());\n".formatted(fieldName));
           break;
         }
 
         case SHORT: {
-          builder.append("  buf.writeShort(object.get%s();\n".formatted(fieldName));
+          builder.append("  buf.writeShort(object.get%s());\n".formatted(fieldName));
           break;
         }
 
@@ -223,16 +228,16 @@ public class SerdeProcessor extends AbstractProcessor {
         }
 
         case CHAR: {
-          builder.append("  buf.writeChar(object.get%s();\n".formatted(fieldName));
+          builder.append("  buf.writeChar(object.get%s());\n".formatted(fieldName));
           break;
         }
 
         case FLOAT: {
-          builder.append("  buf.writeFloat(object.get%s();\n".formatted(fieldName));
+          builder.append("  buf.writeFloat(object.get%s());\n".formatted(fieldName));
           break;
         }
         case DOUBLE: {
-          builder.append("  buf.writeDouble(object.get%s();\n".formatted(fieldName));
+          builder.append("  buf.writeDouble(object.get%s());\n".formatted(fieldName));
           break;
         }
         default: {

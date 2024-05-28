@@ -8,15 +8,12 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import org.checkerframework.checker.units.qual.C;
 import org.example.net.Message;
 import org.example.net.codec.msg.CodecObject;
 import org.example.net.codec.msg.CodecObjectSerde;
-import org.example.net.codec.msg.CodecObjectSerdeExample;
 import org.example.serde.CollectionSerializer;
 import org.example.serde.CommonSerializer;
 import org.example.serde.NettyByteBufUtil;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class MessageCodecTest {
@@ -85,10 +82,6 @@ public class MessageCodecTest {
 
   @Test
   public void codecObjectTest() {
-    CommonSerializer commonSerializer = new CommonSerializer();
-    commonSerializer.registerSerializer(CodecObject.class, new CodecObjectSerdeExample(commonSerializer));
-    commonSerializer.registerSerializer(List.class, new CollectionSerializer(commonSerializer));
-
 
     ThreadLocalRandom random = ThreadLocalRandom.current();
     CodecObject object = new CodecObject();
@@ -102,26 +95,18 @@ public class MessageCodecTest {
     random.nextBytes(bytes);
     object.setBitArray(bytes);
 
-    ByteBuf buf = commonSerializer.writeObject(object);
-    CodecObject object1 = commonSerializer.read(buf);
 
-
-    CommonSerializer commonSerializer2 = new CommonSerializer();
-    commonSerializer2.registerSerializer(CodecObject.class, new CodecObjectSerde(commonSerializer2));
-    commonSerializer2.registerSerializer(List.class, new CollectionSerializer(commonSerializer2));
+    CommonSerializer commonSerializer = new CommonSerializer();
+    commonSerializer.registerSerializer(CodecObject.class, new CodecObjectSerde(commonSerializer));
+    commonSerializer.registerSerializer(List.class, new CollectionSerializer(commonSerializer));
 
     ByteBuf buf2 = commonSerializer.writeObject(object);
     CodecObject object2 = commonSerializer.read(buf2);
 
 
-    assertEquals(object, object1);
-    assertEquals(object.hashCode(), object1.hashCode());
-
     assertEquals(object, object2);
     assertEquals(object.hashCode(), object2.hashCode());
 
-    assertEquals(object2, object1);
-    assertEquals(object2.hashCode(), object1.hashCode());
   }
 
 }

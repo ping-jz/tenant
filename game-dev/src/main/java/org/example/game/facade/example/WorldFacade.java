@@ -36,10 +36,10 @@ public class WorldFacade {
   @ReqMethod(101)
   public ResMove move(ReqMove move) {
     ResMove moveRes = new ResMove();
-    moveRes.id(move.id());
-    moveRes.x(move.x());
-    moveRes.y(move.y());
-    moveRes.dir(1);
+    moveRes.setId(move.getId());
+    moveRes.setX(move.getX());
+    moveRes.setY(move.getY());
+    moveRes.setDir(1);
     return moveRes;
   }
 }

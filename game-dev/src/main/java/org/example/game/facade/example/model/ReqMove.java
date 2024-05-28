@@ -1,11 +1,14 @@
 package org.example.game.facade.example.model;
 
+import org.example.serde.Serde;
+
 /**
  * 移动请求
  *
  * @author ZJP
  * @since 2021年09月27日 15:18:34
  **/
+@Serde
 public class ReqMove {
 
   /** 对象ID */
@@ -15,30 +18,37 @@ public class ReqMove {
   /** Y 轴 */
   private float y;
 
-  public long id() {
+  private int text;
+
+  public long getId() {
     return id;
   }
 
-  public ReqMove id(long id) {
+  public void setId(long id) {
     this.id = id;
-    return this;
   }
 
-  public float x() {
+  public float getX() {
     return x;
   }
 
-  public ReqMove x(float x) {
+  public void setX(float x) {
     this.x = x;
-    return this;
   }
 
-  public float y() {
+  public float getY() {
     return y;
   }
 
-  public ReqMove y(float y) {
+  public void setY(float y) {
     this.y = y;
-    return this;
+  }
+
+  public int getText() {
+    return text;
+  }
+
+  public void setText(int text) {
+    this.text = text;
   }
 }

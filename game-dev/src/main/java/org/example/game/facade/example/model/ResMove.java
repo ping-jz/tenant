@@ -1,11 +1,14 @@
 package org.example.game.facade.example.model;
 
+import org.example.serde.Serde;
+
 /**
  * 移动结果
  *
  * @author ZJP
  * @since 2021年09月27日 15:26:14
  **/
+@Serde
 public class ResMove {
 
   /** 对象ID */
@@ -17,39 +20,35 @@ public class ResMove {
   /** 方向 */
   private int dir;
 
-  public long id() {
+  public long getId() {
     return id;
   }
 
-  public ResMove id(long id) {
+  public void setId(long id) {
     this.id = id;
-    return this;
   }
 
-  public float x() {
+  public float getX() {
     return x;
   }
 
-  public ResMove x(float x) {
+  public void setX(float x) {
     this.x = x;
-    return this;
   }
 
-  public float y() {
+  public float getY() {
     return y;
   }
 
-  public ResMove y(float y) {
+  public void setY(float y) {
     this.y = y;
-    return this;
   }
 
-  public int dir() {
+  public int getDir() {
     return dir;
   }
 
-  public ResMove dir(int dir) {
+  public void setDir(int dir) {
     this.dir = dir;
-    return this;
   }
 }
