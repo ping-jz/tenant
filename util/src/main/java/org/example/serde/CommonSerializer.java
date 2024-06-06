@@ -125,7 +125,7 @@ public class CommonSerializer implements Serializer<Object> {
   private void commonType() {
     registerSerializer(NULL_ID, NullSerializer.class, NullSerializer.INSTANCE);
     registerSerializer(BYTE_ID, Byte.TYPE, new ByteSerializer());
-    registerSerializer(BOOL_ID, Boolean.TYPE, new ByteSerializer());
+    registerSerializer(BOOL_ID, Boolean.TYPE, new BooleanSerializer());
     registerSerializer(SHORT_ID, Short.TYPE, new ShortSerializer());
     registerSerializer(INTEGER_ID, Integer.TYPE, new IntegerSerializer());
     registerSerializer(LONG_ID, Long.TYPE, new LongSerializer());

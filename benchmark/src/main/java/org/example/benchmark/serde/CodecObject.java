@@ -1,12 +1,15 @@
-package org.example.net.codec.msg;
+package org.example.benchmark.serde;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ThreadLocalRandom;
 import org.example.serde.Serde;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
 
 @Serde
-public class CodecObject extends CodecParentObject {
+public class CodecObject {
 
   private List<String> msg;
 
@@ -14,11 +17,25 @@ public class CodecObject extends CodecParentObject {
 
   private long age;
 
+  private short s;
+
   private long[] datas;
 
   private boolean signed;
 
   private byte[] bitArray;
+
+  public CodecObject() {
+    ThreadLocalRandom random = ThreadLocalRandom.current();
+    msg = List.of(String.valueOf(random.nextLong()), String.valueOf(random.nextLong()), String.valueOf(random.nextLong()));
+    id = random.nextInt();
+    age = random.nextLong();
+    s = (short) random.nextInt();
+    datas = new long[]{random.nextLong(), random.nextLong(), random.nextLong(), random.nextLong()};
+    signed = random.nextBoolean();
+    bitArray = new byte[10];
+    random.nextBytes(bitArray);
+  }
 
   public List<String> getMsg() {
     return msg;
@@ -68,6 +85,14 @@ public class CodecObject extends CodecParentObject {
     this.bitArray = bitArray;
   }
 
+  public short getS() {
+    return s;
+  }
+
+  public void setS(short s) {
+    this.s = s;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -77,27 +102,16 @@ public class CodecObject extends CodecParentObject {
       return false;
     }
     CodecObject that = (CodecObject) o;
-    return getId() == that.getId() && getAge() == that.getAge() && isSigned() == that.isSigned()
-        && Objects.equals(getMsg(), that.getMsg()) && Objects.deepEquals(
-        getDatas(), that.getDatas()) && Objects.deepEquals(getBitArray(),
-        that.getBitArray());
+    return getId() == that.getId() && getAge() == that.getAge() && getS() == that.getS()
+        && isSigned() == that.isSigned() && Objects.equals(getMsg(), that.getMsg())
+        && Objects.deepEquals(getDatas(), that.getDatas()) && Objects.deepEquals(
+        getBitArray(), that.getBitArray());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getMsg(), getId(), getAge(), Arrays.hashCode(getDatas()), isSigned(),
+    return Objects.hash(getMsg(), getId(), getAge(), getS(), Arrays.hashCode(getDatas()),
+        isSigned(),
         Arrays.hashCode(getBitArray()));
-  }
-
-  @Override
-  public String toString() {
-    return "CodecObject{" +
-        "msg=" + msg +
-        ", id=" + id +
-        ", age=" + age +
-        ", datas=" + Arrays.toString(datas) +
-        ", signed=" + signed +
-        ", bitArray=" + Arrays.toString(bitArray) +
-        '}';
   }
 }

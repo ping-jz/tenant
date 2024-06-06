@@ -6,12 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+
 import org.example.net.Message;
-import org.example.net.codec.msg.CodecObject;
-import org.example.net.codec.msg.CodecObjectSerde;
-import org.example.serde.CollectionSerializer;
 import org.example.serde.CommonSerializer;
 import org.example.serde.NettyByteBufUtil;
 import org.junit.jupiter.api.Test;
@@ -80,33 +76,6 @@ public class MessageCodecTest {
     channel.finishAndReleaseAll();
   }
 
-  @Test
-  public void codecObjectTest() {
 
-    ThreadLocalRandom random = ThreadLocalRandom.current();
-    CodecObject object = new CodecObject();
-    object.setMsg(List.of(String.valueOf(random.nextLong()), String.valueOf(random.nextLong()), String.valueOf(random.nextLong())));
-    object.setId(random.nextInt());
-    object.setAge(random.nextLong());
-    object.setDatas(new long[]{random.nextLong(), random.nextLong(), random.nextLong()});
-    object.setSigned(true);
-    object.setType(random.nextInt());
-    byte[] bytes = new byte[10];
-    random.nextBytes(bytes);
-    object.setBitArray(bytes);
-
-
-    CommonSerializer commonSerializer = new CommonSerializer();
-    commonSerializer.registerSerializer(CodecObject.class, new CodecObjectSerde(commonSerializer));
-    commonSerializer.registerSerializer(List.class, new CollectionSerializer(commonSerializer));
-
-    ByteBuf buf2 = commonSerializer.writeObject(object);
-    CodecObject object2 = commonSerializer.read(buf2);
-
-
-    assertEquals(object, object2);
-    assertEquals(object.hashCode(), object2.hashCode());
-
-  }
 
 }

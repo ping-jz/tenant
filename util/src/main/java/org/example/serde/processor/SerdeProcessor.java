@@ -23,7 +23,7 @@ import javax.tools.JavaFileObject;
 import org.apache.commons.lang3.StringUtils;
 
 @SupportedAnnotationTypes("org.example.serde.Serde")
-@SupportedSourceVersion(SourceVersion.RELEASE_17)
+@SupportedSourceVersion(SourceVersion.RELEASE_21)
 @AutoService(Processor.class)
 public class SerdeProcessor extends AbstractProcessor {
 
