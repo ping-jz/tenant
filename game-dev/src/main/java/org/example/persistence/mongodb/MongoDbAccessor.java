@@ -1,4 +1,4 @@
-package org.example.persistence.mongo;
+package org.example.persistence.mongodb;
 
 import org.example.persistence.accessor.Accessor;
 import org.springframework.data.mongodb.core.MongoTemplate;

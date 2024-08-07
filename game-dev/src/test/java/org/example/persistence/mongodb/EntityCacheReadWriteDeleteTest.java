@@ -1,4 +1,4 @@
-package org.example.persistence.mongo;
+package org.example.persistence.mongodb;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;

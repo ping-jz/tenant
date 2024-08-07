@@ -1,4 +1,4 @@
-package org.example.persistence.mongo;
+package org.example.persistence.mongodb;
 
 import static com.mongodb.client.model.Filters.eq;
 
@@ -6,6 +6,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 import org.bson.Document;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -36,7 +37,7 @@ public class MongoClientSimpleTest {
     MongoDatabase database = client.getDatabase("sample_mflix");
     MongoCollection<Document> collection = database.getCollection("movies");
     collection.insertOne(new Document("title", "Back to the Future"));
-    Document doc = collection.find(eq("title", "Back to the Future")).first();
+    Document doc = collection.find(Filters.eq("title", "Back to the Future")).first();
 
     Assertions.assertEquals("Back to the Future", doc.getString("title"));
     Assertions.assertEquals(1L, collection.countDocuments());
