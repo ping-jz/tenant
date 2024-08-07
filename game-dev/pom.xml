@@ -15,6 +15,7 @@
   <packaging>jar</packaging>
 
   <build>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -86,22 +87,72 @@
         </executions>
       </plugin>
 
+      <!-- 添加 exec-maven-plugin 插件 -->
       <plugin>
-        <groupId>com.github.shalousun</groupId>
-        <artifactId>smart-doc-maven-plugin</artifactId>
-        <version>2.2.8</version>
-        <configuration>
-          <!--指定生成文档的使用的配置文件-->
-          <configFile>./src/main/resources/smart-doc.json</configFile>
-          <!--指定项目名称-->
-          <projectName>测试</projectName>
-        </configuration>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            &lt;!&ndash; 绑定到 compile 阶段之后 &ndash;&gt;-->
+<!--            <phase>compile</phase>-->
+<!--            <goals>-->
+<!--              <goal>exec</goal>-->
+<!--            </goals>-->
+<!--            <configuration>-->
+<!--              &lt;!&ndash; 指定要执行的命令或脚本 &ndash;&gt;-->
+<!--              <executable>java</executable>-->
+<!--              <arguments>-->
+<!--                <argument>-cp</argument>-->
+<!--                <classpath /> &lt;!&ndash; 这将自动包含项目的类路径 &ndash;&gt;-->
+<!--                <argument>org.example.Test</argument> &lt;!&ndash; 你的自定义类 &ndash;&gt;-->
+<!--              </arguments>-->
+<!--            </configuration>-->
+<!--          </execution>-->
+<!--        </executions>-->
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+          <encoding>${project.build.sourceEncoding}</encoding>
+        </configuration>
+
+        <executions>
+          <execution>
+            <id>compile</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>process-classes</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+
 
     </plugins>
   </build>
 
   <dependencies>
+
+    <!-- https://mvnrepository.com/artifact/io.github.classgraph/classgraph -->
+    <dependency>
+      <groupId>io.github.classgraph</groupId>
+      <artifactId>classgraph</artifactId>
+
+    </dependency>
+
+
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>game-util</artifactId>
@@ -155,5 +206,8 @@
       <artifactId>log4j-slf4j-impl</artifactId>
     </dependency>
   </dependencies>
+
+
+
 
 </project>

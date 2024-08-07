@@ -1,14 +1,14 @@
-package org.example.proxy.util;
+package org.example.proxy;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.nio.charset.StandardCharsets;
-import org.example.net.util.NettyMessageUtil;
+import org.example.net.util.ProxyMessageUtil;
 import org.example.serde.NettyByteBufUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class NettyMessageUtilTest {
+public class MessageUtilTest {
 
   @Test
   public void readWriteTest() {
@@ -16,7 +16,7 @@ public class NettyMessageUtilTest {
     int target = -source;
     ByteBuf buf = Unpooled.buffer();
     buf.writeBytes("Hello, World".getBytes(StandardCharsets.UTF_8));
-    ByteBuf out = NettyMessageUtil.proxyMessage(Unpooled.buffer(), source, target, 1, 2, buf);
+    ByteBuf out = ProxyMessageUtil.proxyMessage(Unpooled.buffer(), source, target, 1, 2, buf);
 
     //skip the length
     out.skipBytes(Integer.BYTES);

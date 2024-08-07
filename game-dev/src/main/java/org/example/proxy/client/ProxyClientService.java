@@ -5,7 +5,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.ReferenceCountUtil;
 import org.example.net.Message;
-import org.example.net.util.NettyMessageUtil;
+import org.example.net.util.ProxyMessageUtil;
 import org.example.proxy.message.ProxyProtoId;
 import org.example.proxy.model.ServerRegister;
 import org.example.serde.CommonSerializer;
@@ -30,14 +30,14 @@ public class ProxyClientService {
 
 
   public void register(ServerRegister register) {
-    ByteBuf msg = NettyMessageUtil.proxyMessage(proxyClientConfig.getId(),
+    ByteBuf msg = ProxyMessageUtil.proxyMessage(proxyClientConfig.getId(),
         proxyClientConfig.proxyId(),
         ProxyProtoId.REGISTER, 0, commonSerializer.writeObject(register));
     proxyClient.getChannel().writeAndFlush(msg);
   }
 
   public void send(int target, Message msg) {
-    ByteBuf byteBuf = NettyMessageUtil.proxyMessage(proxyClientConfig.getId(), target,
+    ByteBuf byteBuf = ProxyMessageUtil.proxyMessage(proxyClientConfig.getId(), target,
         msg.proto(), msg.msgId(), commonSerializer.writeObject(msg.packet()));
     proxyClient.getChannel().writeAndFlush(byteBuf);
   }
@@ -48,7 +48,7 @@ public class ProxyClientService {
       buf = commonSerializer.writeObject(msg.packet());
       int source = proxyClientConfig.getId();
       for (Integer target : targets) {
-        ByteBuf byteBuf = NettyMessageUtil.proxyMessage(source, target, msg.proto(),
+        ByteBuf byteBuf = ProxyMessageUtil.proxyMessage(source, target, msg.proto(),
             msg.msgId(), buf.retainedSlice());
         proxyClient.getChannel().write(byteBuf);
       }

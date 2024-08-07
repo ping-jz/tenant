@@ -45,6 +45,15 @@
           <version>2.2.8</version>
         </plugin>
 
+          <!-- 其他插件配置 -->
+
+          <!-- 添加 exec-maven-plugin 插件 -->
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.6.0</version> <!-- 使用最新的版本 -->
+          </plugin>
+
       </plugins>
     </pluginManagement>
 
@@ -97,14 +106,30 @@
   <modules>
     <module>game-dev</module>
     <module>util</module>
-    <module>proxy-util-dev</module>
     <module>proxy-ser-dev</module>
     <module>proxy-test-dev</module>
     <module>benchmark</module>
   </modules>
 
   <dependencyManagement>
+
+
+
     <dependencies>
+      <dependency>
+        <groupId>com.squareup</groupId>
+        <artifactId>javapoet</artifactId>
+        <version>1.13.0</version>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/io.github.classgraph/classgraph -->
+      <dependency>
+        <groupId>io.github.classgraph</groupId>
+        <artifactId>classgraph</artifactId>
+        <version>4.8.165</version>
+      </dependency>
+
+
       <dependency>
         <groupId>org.springframework</groupId>
         <artifactId>spring-context</artifactId>

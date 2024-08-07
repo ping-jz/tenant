@@ -1,5 +1,6 @@
 package org.example.game.facade.example.model;
 
+import java.util.Objects;
 import org.example.serde.Serde;
 
 /**
@@ -50,5 +51,23 @@ public class ReqMove {
 
   public void setText(int text) {
     this.text = text;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    ReqMove reqMove = (ReqMove) o;
+    return getId() == reqMove.getId() && Float.compare(getX(), reqMove.getX()) == 0
+        && Float.compare(getY(), reqMove.getY()) == 0 && getText() == reqMove.getText();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getId(), getX(), getY(), getText());
   }
 }

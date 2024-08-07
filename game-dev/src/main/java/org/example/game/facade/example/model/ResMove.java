@@ -1,5 +1,6 @@
 package org.example.game.facade.example.model;
 
+import java.util.Objects;
 import org.example.serde.Serde;
 
 /**
@@ -50,5 +51,23 @@ public class ResMove {
 
   public void setDir(int dir) {
     this.dir = dir;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    ResMove resMove = (ResMove) o;
+    return getId() == resMove.getId() && Float.compare(getX(), resMove.getX()) == 0
+        && Float.compare(getY(), resMove.getY()) == 0 && getDir() == resMove.getDir();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getId(), getX(), getY(), getDir());
   }
 }

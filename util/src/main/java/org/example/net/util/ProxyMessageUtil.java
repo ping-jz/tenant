@@ -11,9 +11,9 @@ import org.example.serde.NettyByteBufUtil;
  * @author zhongjianping
  * @since 2022/12/12 18:22
  */
-public final class NettyMessageUtil {
+public final class ProxyMessageUtil {
 
-  private NettyMessageUtil() {
+  private ProxyMessageUtil() {
   }
 
   /**
