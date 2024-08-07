@@ -7,6 +7,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
 import javax.lang.model.element.Modifier;
 
 public class SourceCodeGenerator {
@@ -18,20 +19,18 @@ public class SourceCodeGenerator {
     }
 
     String outputDir = args[0];
-    generateJavaSourceFile(outputDir);
+    generateJavaSourceFile(Path.of(outputDir));
   }
 
-  private static void generateJavaSourceFile(String outputDir) {
+  private static void generateJavaSourceFile(Path outputDir) {
     try {
-      File sourceDirectory = new File(outputDir);
-      sourceDirectory.mkdirs();
       TypeSpec typeSpec = TypeSpec.classBuilder("MyNewClass")
           .addMethod(MethodSpec.methodBuilder("main")
               .addModifiers(Modifier.PUBLIC, Modifier.STATIC).returns(Void.TYPE)
               .addParameter(String[].class, "args")
               .addStatement("System.out.println(\"Hello, World!\")").build()).build();
 
-      JavaFile.builder("org.example", typeSpec).build().writeToFile(sourceDirectory);
+      JavaFile.builder("org.example", typeSpec).build().writeTo(outputDir);
 
     } catch (IOException e) {
       e.printStackTrace();
