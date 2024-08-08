@@ -2,6 +2,7 @@ package org.example.serde;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -39,10 +40,12 @@ public class EnumSerializerTest {
   @Test
   public void intergateTest() {
     CommonSerializer serializer = new CommonSerializer();
-    serializer.registerSerializer(11, EnumOne.class, new EnumSerializer<>(EnumOne.class));
-    serializer.registerSerializer(12, EnumTwo.class, new EnumSerializer<>(EnumTwo.class));
-    serializer.registerObject(13, TestCaseOne.class);
-    serializer.registerSerializer(14, List.class, new CollectionSerializer(serializer));
+    serializer.registerSerializer( EnumOne.class, new EnumSerializer<>(EnumOne.class));
+    serializer.registerSerializer(EnumTwo.class, new EnumSerializer<>(EnumTwo.class));
+    serializer.registerSerializer(List.class, new CollectionSerializer(serializer));
+    serializer.registerSerializer(ArrayList.class, new CollectionSerializer(serializer));
+    serializer.registerObject(TestCaseOne.class);
+
     ByteBuf buf = Unpooled.buffer();
 
     serializer.writeObject(buf, EnumOne.values());
@@ -64,7 +67,7 @@ public class EnumSerializerTest {
       TestCaseOne caseOne = new TestCaseOne();
       caseOne.name = "casetwo";
       caseOne.two = EnumTwo.One;
-      caseOne.list = Arrays.asList(EnumOne.values());
+      caseOne.list = new ArrayList<>(Arrays.asList(EnumOne.values()));
 
       serializer.writeObject(buf, caseOne);
       Assertions.assertEquals(caseOne, serializer.read(buf));

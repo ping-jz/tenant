@@ -168,12 +168,6 @@
   </build>
 
   <dependencies>
-    <!-- https://mvnrepository.com/artifact/it.unimi.dsi/fastutil-core -->
-    <dependency>
-      <groupId>it.unimi.dsi</groupId>
-      <artifactId>fastutil-core</artifactId>
-    </dependency>
-
 
     <!-- https://mvnrepository.com/artifact/io.github.classgraph/classgraph -->
     <dependency>

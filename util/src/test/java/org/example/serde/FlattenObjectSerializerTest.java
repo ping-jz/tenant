@@ -48,7 +48,7 @@ public class FlattenObjectSerializerTest {
     PrimitiveObj obj = new PrimitiveObj();
     obj.d = Double.MIN_VALUE;
 
-    serializer.registerFlattenObject(11, PrimitiveObj.class);
+    serializer.registerFlattenObject(PrimitiveObj.class);
     serializer.writeObject(buf, obj);
 
     Object[] res = serializer.read(buf);
@@ -70,7 +70,7 @@ public class FlattenObjectSerializerTest {
     obj.str = "Hello World!";
     obj.b = 123;
 
-    serializer.registerFlattenObject(11, WrapperObj.class);
+    serializer.registerFlattenObject( WrapperObj.class);
     serializer.writeObject(buf, obj);
 
     Object[] res = serializer.read(buf);
@@ -87,10 +87,10 @@ public class FlattenObjectSerializerTest {
 
   @Test
   public void composeTest() {
-    serializer.registerObject(11, PrimitiveObj.class);
-    serializer.registerObject(12, WrapperObj.class);
-    serializer.registerFlattenObject(13, ComposeObj.class);
-    serializer.registerRecord(14, AAA.class);
+    serializer.registerObject( PrimitiveObj.class);
+    serializer.registerObject( WrapperObj.class);
+    serializer.registerFlattenObject(ComposeObj.class);
+    serializer.registerRecord(AAA.class);
 
     PrimitiveObj pri = new PrimitiveObj();
     pri.l = Long.MIN_VALUE;
@@ -115,9 +115,10 @@ public class FlattenObjectSerializerTest {
 
   @Test
   public void inheritanceTest() {
-    serializer.registerObject(11, PrimitiveObj.class);
-    serializer.registerObject(12, WrapperObj.class);
-    serializer.registerFlattenObject(13, Child.class);
+    serializer.registerObject( PrimitiveObj.class);
+    serializer.registerObject(WrapperObj.class);
+    serializer.registerRecord(AAA.class);
+    serializer.registerFlattenObject(Child.class);
 
     PrimitiveObj pri = new PrimitiveObj();
     pri.l = Long.MIN_VALUE;
@@ -284,7 +285,7 @@ public class FlattenObjectSerializerTest {
     }
   }
 
-  record AAA(int a, int b, int c) {
+  public record AAA(int a, int b, int c) {
 
   }
 

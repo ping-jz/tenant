@@ -20,7 +20,7 @@ public class ArraySerializerTest {
   @BeforeEach
   public void beforeEach() {
     serializer = new CommonSerializer();
-    serializer.registerSerializer( Object.class, new MarkSerializer());
+    serializer.registerSerializer(Object.class.getName().hashCode(), Object.class, new MarkSerializer());
     serializer.registerObject(ArrayWrapper.class);
     buf = Unpooled.buffer();
   }

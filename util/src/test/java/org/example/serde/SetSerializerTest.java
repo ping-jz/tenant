@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
@@ -33,7 +34,10 @@ public class SetSerializerTest {
 
     CollectionSerializer collectSer = new CollectionSerializer(serializer, HashSet::new);
 
-    serializer.registerSerializer(11, Set.class, collectSer);
+    serializer.registerSerializer(Set.class, collectSer);
+    serializer.registerSerializer(HashSet.class, collectSer);
+    serializer.registerSerializer(LinkedHashSet.class, new CollectionSerializer(serializer, LinkedHashSet::new));
+    serializer.registerSerializer(TreeSet.class, new CollectionSerializer(serializer, ignore -> new TreeSet<>()));
   }
 
   @Test

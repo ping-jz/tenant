@@ -69,12 +69,13 @@ public class FlattenObjectSerializer implements Serializer<Object> {
 
         f.setAccessible(true);
         try {
-          FieldInfo fieldInfo = new FieldInfo(serializer.getSerializer(f.getType()),
+          FieldInfo fieldInfo = new FieldInfo(
               lookup.unreflectGetter(f), f.getName());
           fields.add(fieldInfo);
         } catch (Exception e) {
           throw new RuntimeException(
-              String.format("类型:%s.%s, 创建getter和setter失败", clazz.getName(), f.getName()));
+              String.format("类型:%s, 字段:%s %s, 创建getter和setter失败", clazz.getName(),
+                  f.getType(), f.getName()), e);
         }
       }
     }
@@ -88,8 +89,7 @@ public class FlattenObjectSerializer implements Serializer<Object> {
     for (int i = 0; i < fields.length; i++) {
       FieldInfo field = fields[i];
       try {
-        Serializer<Object> serializer =
-            field.serializer != null ? field.serializer : this.serializer;
+        Serializer<Object> serializer = this.serializer;
         Object value = serializer.readObject(buf);
         o[i] = value;
       } catch (Throwable e) {
@@ -105,8 +105,7 @@ public class FlattenObjectSerializer implements Serializer<Object> {
     for (FieldInfo field : fields) {
       try {
         Object value = field.getter().invoke(object);
-        Serializer<Object> serializer =
-            field.serializer != null ? field.serializer : this.serializer;
+        Serializer<Object> serializer = this.serializer;
         serializer.writeObject(buf, value);
       } catch (Throwable e) {
         throw new RuntimeException(String.format("序列化:%s, 字段:%s 错误", clazz, field.name()),
@@ -115,7 +114,7 @@ public class FlattenObjectSerializer implements Serializer<Object> {
     }
   }
 
-  record FieldInfo(Serializer<Object> serializer, MethodHandle getter, String name) {
+  record FieldInfo(MethodHandle getter, String name) {
 
   }
 }

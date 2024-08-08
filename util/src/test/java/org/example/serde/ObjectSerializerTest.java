@@ -56,7 +56,7 @@ public class ObjectSerializerTest {
     PrimitiveObj obj = new PrimitiveObj();
     obj.d = Double.MIN_VALUE;
 
-    serializer.registerObject(11, PrimitiveObj.class);
+    serializer.registerObject(PrimitiveObj.class);
     serializer.writeObject(buf, obj);
 
     PrimitiveObj res = serializer.read(buf);
@@ -70,7 +70,7 @@ public class ObjectSerializerTest {
     obj.str = "Hello World!";
     obj.b = 123;
 
-    serializer.registerObject(11, WrapperObj.class);
+    serializer.registerObject(WrapperObj.class);
     serializer.writeObject(buf, obj);
 
     WrapperObj res = serializer.read(buf);
@@ -79,10 +79,10 @@ public class ObjectSerializerTest {
 
   @Test
   public void composeTest() {
-    serializer.registerObject(11, PrimitiveObj.class);
-    serializer.registerObject(12, WrapperObj.class);
-    serializer.registerObject(13, ComposeObj.class);
-    serializer.registerRecord(14, AAA.class);
+    serializer.registerObject(PrimitiveObj.class);
+    serializer.registerObject(WrapperObj.class);
+    serializer.registerObject(ComposeObj.class);
+    serializer.registerRecord(AAA.class);
 
     PrimitiveObj pri = new PrimitiveObj();
     pri.l = Long.MIN_VALUE;
@@ -104,9 +104,9 @@ public class ObjectSerializerTest {
 
   @Test
   public void inheritanceTest() {
-    serializer.registerObject(11, PrimitiveObj.class);
-    serializer.registerObject(12, WrapperObj.class);
-    serializer.registerObject(13, Child.class);
+    serializer.registerObject(PrimitiveObj.class);
+    serializer.registerObject(WrapperObj.class);
+    serializer.registerObject(Child.class);
 
     PrimitiveObj pri = new PrimitiveObj();
     pri.l = Long.MIN_VALUE;

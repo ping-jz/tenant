@@ -35,7 +35,10 @@ public class CollectionSerializerTest {
 
     CollectionSerializer collectSer = new CollectionSerializer(serializer);
 
-    serializer.registerSerializer(11, Collection.class, collectSer);
+    serializer.registerSerializer(Collection.class, collectSer);
+    serializer.registerSerializer(List.class, collectSer);
+    serializer.registerSerializer(ArrayList.class, collectSer);
+    serializer.registerSerializer(LinkedList.class, new CollectionSerializer(serializer, i -> new LinkedList<>()));
   }
 
   @RepeatedTest(3)

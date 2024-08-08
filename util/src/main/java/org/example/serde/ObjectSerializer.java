@@ -94,7 +94,7 @@ public class ObjectSerializer implements Serializer<Object> {
 
         f.setAccessible(true);
         try {
-          FieldInfo fieldInfo = new FieldInfo(serializer.getSerializer(f.getType()),
+          FieldInfo fieldInfo = new FieldInfo(
               lookup.unreflectSetter(f), lookup.unreflectGetter(f), f.getName());
           fields.add(fieldInfo);
         } catch (Exception e) {
@@ -119,7 +119,7 @@ public class ObjectSerializer implements Serializer<Object> {
     for (FieldInfo field : fields) {
       try {
         Serializer<Object> serializer =
-            field.serializer != null ? field.serializer : this.serializer;
+          this.serializer;
         Object value = serializer.readObject(buf);
         MethodHandle setter = field.setter();
         setter.invoke(o, value);
@@ -136,7 +136,7 @@ public class ObjectSerializer implements Serializer<Object> {
       try {
         Object value = field.getter().invoke(object);
         Serializer<Object> serializer =
-            field.serializer != null ? field.serializer : this.serializer;
+            this.serializer;
         serializer.writeObject(buf, value);
       } catch (Throwable e) {
         throw new RuntimeException(String.format("序列化:%s, 字段:%s 错误", clazz, field.name()), e);
@@ -144,7 +144,7 @@ public class ObjectSerializer implements Serializer<Object> {
     }
   }
 
-  record FieldInfo(Serializer<Object> serializer, MethodHandle setter, MethodHandle getter,
+  record FieldInfo(MethodHandle setter, MethodHandle getter,
                    String name) {
 
   }

@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
+import org.example.serde.CommonSerializer.SerializerPair;
 
 /**
  * JAVA数组序列化
@@ -112,12 +113,6 @@ public class ArraySerializer implements Serializer<Object> {
       final int typeId = NettyByteBufUtil.readInt32(buf);
       Serializer<Object> ser = serializer;
       Class<?> componentType = serializer.getClazz(typeId);
-      if (componentType == null || componentType == NullSerializer.class) {
-        componentType = Object.class;
-      } else if (Modifier.isFinal(componentType.getModifiers())) {
-        ser = serializer.getSerializer(componentType);
-      }
-
       Object array = Array.newInstance(componentType, dimensions);
       readArray(ser, buf, array, 0, dimensions);
       return array;
@@ -153,7 +148,6 @@ public class ArraySerializer implements Serializer<Object> {
       throw new RuntimeException("类型:" + object.getClass() + ",不是数组");
     }
     int[] dimensions = getDimensions(object);
-
     NettyByteBufUtil.writeInt32(buf, dimensions.length);
     for (int i : dimensions) {
       NettyByteBufUtil.writeInt32(buf, i);
@@ -164,18 +158,12 @@ public class ArraySerializer implements Serializer<Object> {
       componentType = componentType.getComponentType();
     }
 
-    Integer typeId = serializer.getTypeId(componentType);
-    Serializer<Object> serializer = this.serializer;
-    if (typeId == null) {
-      //默认Object
-      typeId = CommonSerializer.NULL_ID;
+    SerializerPair pair = serializer.getSerializerPair(componentType);
+    if(pair == null) {
+      throw new RuntimeException("类型:" + componentType + ",未注册");
     }
 
-    if (Modifier.isFinal(componentType.getModifiers())) {
-      serializer = this.serializer.findSerilaizer(componentType);
-    }
-
-    NettyByteBufUtil.writeInt32(buf, typeId);
+    NettyByteBufUtil.writeInt32(buf, pair.typeId());
     writeArray(serializer, buf, object, 0, dimensions);
   }
 

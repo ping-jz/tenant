@@ -43,7 +43,8 @@ public class RecordSerializer implements Serializer<Object> {
           Object value = ser.readObject(buf);
           args[i] = value;
         } catch (Throwable e) {
-          throw new RuntimeException(String.format("反序列化:%s, 字段:%s 错误", clazz, field.name()), e);
+          throw new RuntimeException(
+              String.format("反序列化:%s, 字段:%s 错误", clazz, field.name()), e);
         }
       }
     }
@@ -68,7 +69,8 @@ public class RecordSerializer implements Serializer<Object> {
         Serializer<Object> ser = field.serializer != null ? field.serializer : serializer;
         ser.writeObject(buf, value);
       } catch (Throwable e) {
-        throw new RuntimeException(String.format("序列化:%s, 字段:%s 错误", clazz, field.name()), e);
+        throw new RuntimeException(String.format("序列化:%s, 字段:%s 错误", clazz, field.name()),
+            e);
       }
     }
   }
@@ -100,7 +102,8 @@ public class RecordSerializer implements Serializer<Object> {
             lookup.unreflect(component.getAccessor()), component.getName());
       } catch (Exception e) {
         throw new RuntimeException(
-            String.format("类型:%s.%s, 创建getter和setter失败", clazz.getName(), component.getName()));
+            String.format("类型:%s, 字段：%s %s, 创建getter和setter失败", clazz.getName(),
+                component.getType(), component.getName()), e);
       }
     }
     try {

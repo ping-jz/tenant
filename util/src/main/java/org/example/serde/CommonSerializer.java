@@ -3,6 +3,8 @@ package org.example.serde;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectRBTreeMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -10,61 +12,31 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 序列化组合实现,业务主要入口
  *
- * <pre>
- * 基本类型ID(部分语言应该有类似的概念):
- * null:0
- * Byte:1
- * Short:2
- * Integer:3
- * Long:4
- * Float:5
- * Double:6
- * Character:7
- * String:8
- * Array:9
- * </pre>
- * <p>集合就按需注册吧，不写死了</p>
- * 此类提供整合功能和类型ID实现，内容的序列化和反序列化交给Serializer的子类去实现
+ * TODO 删除linkto, 基础类和包装类各自注册
+ * TODO 删除findSerilaizer, 使用饱和式注册替代，这样更加清晰
+ * TODO 各种神奇的集合注册
  *
  * @since 2021年07月17日 16:30:05
  **/
 public class CommonSerializer implements Serializer<Object> {
 
-  /**
-   * 通用类型ID
-   */
-  public static final int NULL_ID = 0;
-  public static final int BOOL_ID = 1;
-  public static final int BYTE_ID = 2;
-  public static final int SHORT_ID = 3;
-  public static final int INTEGER_ID = 4;
-  public static final int LONG_ID = 5;
-  public static final int FLOAT_ID = 6;
-  public static final int DOUBLE_ID = 7;
-  public static final int CHARACTER_ID = 8;
-  public static final int STRING_ID = 9;
   public static final int ARRAY_ID = 10;
 
   /**
    * [类型ID, 具体类型]
    */
-  private Map<Integer, Class<?>> id2Clazz;
+  private Int2ObjectOpenHashMap<Class<?>> id2Clazz;
   /**
    * 序列化注册 [目标类型 -> 序列化实现]
    */
-  private Map<Class<?>, Serializer<?>> serializers;
-  /**
-   * [具体类型, 类型ID]
-   */
-  private Map<Class<?>, Integer> clazz2Id;
+  private Map<Class<?>, SerializerPair> serializers;
+
+  public record SerializerPair(int typeId, Serializer<?> serializer) {}
 
   public CommonSerializer() {
     serializers = new ConcurrentHashMap<>();
-    id2Clazz = new ConcurrentHashMap<>();
-    clazz2Id = new ConcurrentHashMap<>();
+    id2Clazz = new Int2ObjectOpenHashMap<>();
     commonType();
-    registerWrapperType();
-
   }
 
   /**
@@ -73,8 +45,13 @@ public class CommonSerializer implements Serializer<Object> {
    * @param cls 类型
    * @since 2021年07月18日 16:18:08
    */
-  public Integer getTypeId(Class<?> cls) {
-    return clazz2Id.getOrDefault(cls, 0);
+  public SerializerPair getSerializerPair(Class<?> cls) {
+    SerializerPair pair = serializers.get(cls);
+    if (pair == null && cls.isArray()) {
+      cls = id2Clazz.get(ARRAY_ID);
+      pair = serializers.get(cls);
+    }
+    return pair;
   }
 
   /**
@@ -94,29 +71,7 @@ public class CommonSerializer implements Serializer<Object> {
    * @since 2021年07月18日 16:18:08
    */
   public <T> Serializer<T> getSerializer(Class<?> cls) {
-    return (Serializer<T>) serializers.get(cls);
-  }
-
-  /**
-   * 删除linkTo,包装类和基础类分开对待
-   * 注册包装类型
-   * <p>
-   * 如:把包装类导向基础类(包装类指向基础类类型的ID和序列化实现)
-   * <p>Integer -> int</p>
-   * <p>Double -> double</p>
-   *
-   * @since 2021年07月18日 10:31:21
-   */
-  @Deprecated
-  private void registerWrapperType() {
-    linkTo(Byte.class, Byte.TYPE);
-    linkTo(Short.class, Short.TYPE);
-    linkTo(Integer.class, Integer.TYPE);
-    linkTo(Long.class, Long.TYPE);
-    linkTo(Float.class, Float.TYPE);
-    linkTo(Double.class, Double.TYPE);
-    linkTo(Character.class, Character.TYPE);
-    linkTo(Boolean.class, Character.TYPE);
+    return (Serializer<T>) getSerializerPair(cls).serializer();
   }
 
   /**
@@ -125,17 +80,57 @@ public class CommonSerializer implements Serializer<Object> {
    * @since 2021年07月19日 23:00:35
    */
   private void commonType() {
-    registerSerializer(NULL_ID, NullSerializer.class, NullSerializer.INSTANCE);
-    registerSerializer(BYTE_ID, Byte.TYPE, new ByteSerializer());
-    registerSerializer(BOOL_ID, Boolean.TYPE, new BooleanSerializer());
-    registerSerializer(SHORT_ID, Short.TYPE, new ShortSerializer());
-    registerSerializer(INTEGER_ID, Integer.TYPE, new IntegerSerializer());
-    registerSerializer(LONG_ID, Long.TYPE, new LongSerializer());
-    registerSerializer(FLOAT_ID, Float.TYPE, new FloatSerializer());
-    registerSerializer(DOUBLE_ID, Double.TYPE, new DoubleSerializer());
-    registerSerializer(CHARACTER_ID, Character.TYPE, new CharacterSerializer());
-    registerSerializer(STRING_ID, String.class, new StringSerializer());
+    registerSerializer(-1, NullSerializer.class, NullSerializer.INSTANCE);
+    {
+      ByteSerializer serializer = new ByteSerializer();
+      registerSerializer(1, Byte.TYPE, serializer);
+      registerSerializer(11, Byte.class, serializer);
+    }
+
+    {
+      BooleanSerializer serializer = new BooleanSerializer();
+      registerSerializer(2, Boolean.TYPE, serializer);
+      registerSerializer(12, Boolean.class, serializer);
+    }
+
+    {
+      ShortSerializer serializer = new ShortSerializer();
+      registerSerializer(3, Short.TYPE, serializer);
+      registerSerializer(13, Short.class, serializer);
+    }
+
+    {
+      IntegerSerializer serializer = new IntegerSerializer();
+      registerSerializer(4, Integer.TYPE, serializer);
+      registerSerializer(14, Integer.class, serializer);
+    }
+
+    {
+      LongSerializer serializer = new LongSerializer();
+      registerSerializer(5, Long.TYPE, serializer);
+      registerSerializer(15, Long.class, serializer);
+    }
+
+    {
+      FloatSerializer serializer = new FloatSerializer();
+      registerSerializer(6, Float.TYPE, serializer);
+      registerSerializer(16, Float.class, serializer);
+    }
+
+    {
+      DoubleSerializer serializer = new DoubleSerializer();
+      registerSerializer(7, Double.TYPE, serializer);
+      registerSerializer(17, Double.class, serializer);
+    }
+
+    {
+      CharacterSerializer serializer = new CharacterSerializer();
+      registerSerializer(9, Character.TYPE, serializer);
+      registerSerializer(19, Character.class, serializer);
+    }
+
     registerSerializer(ARRAY_ID, ArraySerializer.class, new ArraySerializer(this));
+    registerSerializer(21, String.class, new StringSerializer());
   }
 
 
@@ -168,12 +163,25 @@ public class CommonSerializer implements Serializer<Object> {
   /**
    * 注册扁平对象序列化
    *
+   * @param clazz 类型
+   * @since 2021年07月18日 11:37:14
+   */
+  public void registerFlattenObject(Class<?> clazz) {
+    Objects.requireNonNull(clazz);
+    ObjectSerializer.checkClass(clazz);
+
+    Serializer<?> serializer = new FlattenObjectSerializer(clazz, this);
+    registerSerializer(clazz.hashCode(), clazz, serializer);
+  }
+
+  /**
+   * 注册扁平对象序列化
+   *
    * @param id    类型ID
    * @param clazz 类型
    * @since 2021年07月18日 11:37:14
    */
-  public void registerFlattenObject(Integer id, Class<?> clazz) {
-    Objects.requireNonNull(id);
+  public void registerFlattenObject(int id, Class<?> clazz) {
     Objects.requireNonNull(clazz);
     ObjectSerializer.checkClass(clazz);
 
@@ -184,12 +192,25 @@ public class CommonSerializer implements Serializer<Object> {
   /**
    * 注册Record序列化
    *
+   * @param clazz 类型
+   * @since 2021年07月18日 11:37:14
+   */
+  public void registerRecord(Class<?> clazz) {
+    Objects.requireNonNull(clazz);
+    RecordSerializer.checkClass(clazz);
+
+    Serializer<?> serializer = new RecordSerializer(clazz, this);
+    registerSerializer(clazz.getName().hashCode(), clazz, serializer);
+  }
+
+  /**
+   * 注册Record序列化
+   *
    * @param id    类型ID
    * @param clazz 类型
    * @since 2021年07月18日 11:37:14
    */
-  public void registerRecord(Integer id, Class<?> clazz) {
-    Objects.requireNonNull(id);
+  public void registerRecord(int id, Class<?> clazz) {
     Objects.requireNonNull(clazz);
     RecordSerializer.checkClass(clazz);
 
@@ -217,41 +238,16 @@ public class CommonSerializer implements Serializer<Object> {
    * @param serializer 序列化实现
    * @since 2021年07月18日 11:37:14
    */
-  public void registerSerializer(Integer id, Class<?> clazz, Serializer<?> serializer) {
-    Objects.requireNonNull(id);
+  public void registerSerializer(int id, Class<?> clazz, Serializer<?> serializer) {
     Objects.requireNonNull(clazz);
     Objects.requireNonNull(serializer);
 
-    serializers.put(clazz, serializer);
+
     Object old;
     if ((old = id2Clazz.put(id, clazz)) != null) {
       throw new RuntimeException(String.format("%s,%s 类型ID发生冲突", old, clazz));
     }
-    clazz2Id.put(clazz, id);
-  }
-
-  /**
-   * 类型绑定
-   * <p>
-   * 如:把包装类导向基础类(包装类指向基础类的ID和序列化实现)
-   * <p>Integer -> int</p>
-   * <p>Double -> double</p>
-   * <p>ArrayList -> Collection</p>
-   * <p>List -> Collection</p>
-   * <p>
-   * 注意:序列化之后，原有信息会被抛弃。如何LinkHashMap会变成HashMap。如果想保留，请使用{@link CommonSerializer#registerObject}
-   *
-   * @since 2021年07月18日 10:31:21
-   */
-  public void linkTo(Class<?> type, Class<?> targetType) {
-    Serializer<?> serializer = serializers.get(targetType);
-    Objects.requireNonNull(serializer);
-
-    Integer targetTypeId = clazz2Id.get(targetType);
-    Objects.requireNonNull(targetTypeId);
-
-    serializers.put(type, serializer);
-    clazz2Id.put(type, targetTypeId);
+    serializers.put(clazz, new SerializerPair(id, serializer));
   }
 
 
@@ -266,11 +262,11 @@ public class CommonSerializer implements Serializer<Object> {
       if (clazz == null) {
         throw new NullPointerException("类型ID:" + typeId + "，未注册");
       }
-      Serializer<?> serializer = serializers.get(clazz);
-      if (serializer == null) {
+      SerializerPair pair = serializers.get(clazz);
+      if (pair == null) {
         throw new NullPointerException("类型ID:" + typeId + "，未注册");
       }
-      return serializer.readObject(buf);
+      return pair.serializer.readObject(buf);
     } catch (Exception e) {
       buf.readerIndex(readerIndex);
       throw new RuntimeException(e);
@@ -291,52 +287,23 @@ public class CommonSerializer implements Serializer<Object> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void writeObject(ByteBuf buf, Object object) {
     Class<?> clazz = object == null ? NullSerializer.class : object.getClass();
-    if (clazz.isArray()) {
-      clazz = id2Clazz.get(ARRAY_ID);
-    }
+    SerializerPair pair = getSerializerPair(clazz);
 
     int writeIdx = buf.writerIndex();
     try {
-      Serializer<Object> serializer = findSerilaizer(clazz);
-      if (serializer == null) {
+      if (pair == null) {
         throw new RuntimeException("类型:" + clazz + "，未注册");
       }
 
-      Integer typeId = clazz2Id.get(clazz);
-      if (typeId == null) {
-        throw new RuntimeException("类型:" + clazz + "，没有类型ID");
-      }
-
-      NettyByteBufUtil.writeInt32(buf, typeId);
+      Serializer<Object> serializer = (Serializer<Object>) pair.serializer;
+      NettyByteBufUtil.writeInt32(buf, pair.typeId);
       serializer.writeObject(buf, object);
     } catch (Exception e) {
       buf.writerIndex(writeIdx);
       throw new RuntimeException("类型:" + clazz + ",序列化错误", e);
     }
-  }
-
-  /**
-   * TODO 不做动态查找，提供方法注册
-   * @since 2024/8/8 21:49
-   */
-  @SuppressWarnings("unchecked")
-  @Deprecated
-  public <T> Serializer<T> findSerilaizer(Class<?> clzz) {
-    Serializer<T> serializer = (Serializer<T>) serializers.get(clzz);
-    //没有找到，尝试寻找父类(父类必须是接口，接口更加通用)
-    if (serializer == null) {
-      for (Class<?> key : serializers.keySet()) {
-        if (key.isAssignableFrom(clzz) && key.isInterface()) {
-          linkTo(clzz, key);
-          break;
-        }
-      }
-
-      serializer = (Serializer<T>) serializers.get(clzz);
-    }
-
-    return serializer;
   }
 }

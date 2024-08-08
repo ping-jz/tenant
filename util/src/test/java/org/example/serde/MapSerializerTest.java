@@ -27,7 +27,12 @@ public class MapSerializerTest {
 
     MapSerializer<?, ?> map = new MapSerializer<>(serializer, HashMap::new);
 
-    serializer.registerSerializer(11, Map.class, map);
+    serializer.registerSerializer(Map.class, map);
+    serializer.registerSerializer(HashMap.class, map);
+    serializer.registerSerializer(LinkedHashMap.class,
+        new MapSerializer<>(serializer, LinkedHashMap::new));
+    serializer.registerSerializer(TreeMap.class,
+        new MapSerializer<>(serializer, ignore -> new TreeMap<>()));
   }
 
   @Test

@@ -3,19 +3,18 @@ package org.example.serde;
 import io.netty.buffer.ByteBuf;
 
 /**
- * 标记序列化(配合CommonSerializer,单纯填充标记)，用来解决Array的ComponentType
- *
- * @author ZJP
- * @since 2021年08月26日 15:33:04
- **/
-public class MarkSerializer implements Serializer<ObjectSerializer> {
+ * 用来做类型提示的，不能实列化
+ * @author zhongjianping
+ * @since 2024/8/9 9:27
+ */
+public class MarkSerializer implements Serializer<Object> {
 
   @Override
-  public ObjectSerializer readObject(ByteBuf buf) {
-    return null;
+  public Object readObject(ByteBuf buf) {
+    throw new UnsupportedOperationException();
   }
 
   @Override
-  public void writeObject(ByteBuf buf, ObjectSerializer object) {
+  public void writeObject(ByteBuf buf, Object object) {
   }
 }
