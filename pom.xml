@@ -137,6 +137,14 @@
         <version>4.8.165</version>
       </dependency>
 
+      <!-- https://mvnrepository.com/artifact/it.unimi.dsi/fastutil-core -->
+      <dependency>
+        <groupId>it.unimi.dsi</groupId>
+        <artifactId>fastutil-core</artifactId>
+        <version>8.5.12</version>
+      </dependency>
+
+
 
       <dependency>
         <groupId>org.springframework</groupId>

@@ -1,8 +1,8 @@
 package org.example.world;
 
 
-import org.example.model.ReqMove;
-import org.example.model.ResMove;
+import org.example.common.model.ReqMove;
+import org.example.common.model.ResMove;
 import org.example.net.anno.Req;
 import org.example.net.anno.RpcModule;
 

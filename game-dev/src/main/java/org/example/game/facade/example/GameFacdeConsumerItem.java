@@ -3,7 +3,7 @@ package org.example.game.facade.example;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.List;
-import org.example.model.CommonRes;
+import org.example.common.model.CommonRes;
 import org.example.net.Connection;
 import org.example.net.Message;
 import org.example.net.handler.Handler;
@@ -25,5 +25,4 @@ public class GameFacdeConsumerItem implements Handler {
     commonSerializer.writeObject(resBuf, res);
     return resBuf.array();
   }
-
 }

@@ -57,7 +57,7 @@
             <manifest>
               <addClasspath>true</addClasspath>
               <classpathPrefix>lib/</classpathPrefix>
-              <mainClass>org.example.MainApplication</mainClass>
+              <mainClass>org.example.GameApplication</mainClass>
             </manifest>
             <manifestEntries>
               <Class-Path>resources/</Class-Path>
@@ -97,6 +97,7 @@
         <artifactId>exec-maven-plugin</artifactId>
         <executions>
           <execution>
+            <id>codeGenerator</id>
             <!-- 选择一个合适的 Maven 构建生命周期阶段 -->
             <phase>compile</phase>
             <goals>
@@ -167,6 +168,13 @@
   </build>
 
   <dependencies>
+    <!-- https://mvnrepository.com/artifact/it.unimi.dsi/fastutil-core -->
+    <dependency>
+      <groupId>it.unimi.dsi</groupId>
+      <artifactId>fastutil-core</artifactId>
+    </dependency>
+
+
     <!-- https://mvnrepository.com/artifact/io.github.classgraph/classgraph -->
     <dependency>
       <groupId>io.github.classgraph</groupId>

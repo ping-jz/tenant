@@ -1,16 +1,31 @@
 package org.example;
 
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.TypeSpec;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import java.nio.file.Path;
-import javax.lang.model.element.Modifier;
+import java.util.List;
+import java.util.function.BiConsumer;
+import org.example.common.generator.SerdeConfigGenerator;
 
-public class SourceCodeGenerator {
+public final class SourceCodeGenerator {
+
+  /**
+   * @return 所有代码生成器，因为会并发执行所以写逻辑请不要相互依赖
+   * @since 2024/8/8 20:42
+   */
+  private static List<BiConsumer<Path, ScanResult>> codeGenerators() {
+    return List.of(SerdeConfigGenerator::serdeConfig);
+  }
+
+  /**
+   * @param outputDir  所有生成的代码，请放在这个目录
+   * @param classGraph 本项目所有类的信息
+   * @since 2024/8/8 20:37
+   */
+  private static void generateJavaSourceFile(Path outputDir, ScanResult classGraph) {
+    codeGenerators().parallelStream().forEach(c -> c.accept(outputDir, classGraph));
+  }
+
 
   public static void main(String[] args) {
     if (args.length < 1) {
@@ -19,21 +34,16 @@ public class SourceCodeGenerator {
     }
 
     String outputDir = args[0];
-    generateJavaSourceFile(Path.of(outputDir));
+    final String projectPackage = "org.example";
+    ScanResult classGraph = new ClassGraph()
+        .enableAnnotationInfo()
+        .enableClassInfo()
+        .enableFieldInfo()
+        .enableMethodInfo()
+        .acceptPackages(projectPackage).scan();
+
+    generateJavaSourceFile(Path.of(outputDir), classGraph);
   }
 
-  private static void generateJavaSourceFile(Path outputDir) {
-    try {
-      TypeSpec typeSpec = TypeSpec.classBuilder("MyNewClass")
-          .addMethod(MethodSpec.methodBuilder("main")
-              .addModifiers(Modifier.PUBLIC, Modifier.STATIC).returns(Void.TYPE)
-              .addParameter(String[].class, "args")
-              .addStatement("System.out.println(\"Hello, World!\")").build()).build();
 
-      JavaFile.builder("org.example", typeSpec).build().writeTo(outputDir);
-
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
 }
