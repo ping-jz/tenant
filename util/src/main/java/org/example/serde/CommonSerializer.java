@@ -253,16 +253,7 @@ public class CommonSerializer implements Serializer<Object> {
   }
 
 
-  /**
-   * readObject 包装方法
-   *
-   * @param buf 目标buff
-   * @since 2021年07月17日 16:36:14
-   */
-  @SuppressWarnings("unchecked")
-  public <T> T read(ByteBuf buf) {
-    return (T) readObject(buf);
-  }
+
 
   @Override
   public Object readObject(ByteBuf buf) {

@@ -35,7 +35,7 @@ public class HandlerRegistryTest {
     assertNotNull(echoHandler);
 
     String hi = "Hi";
-    assertEquals(hi, echoHandler.invoke(hi));
+    assertEquals(hi, echoHandler.invoke(null, null));
   }
 
   @Test
@@ -46,9 +46,9 @@ public class HandlerRegistryTest {
     assertNotNull(doNothing);
 
     String hi = "Hi";
-    assertEquals(hi, echoHandler.invoke(hi));
+    assertEquals(hi, echoHandler.invoke(null, null));
 
-    doNothing.invoke();
+    doNothing.invoke(null, null);
   }
 
   @Test

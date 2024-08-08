@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.nio.charset.StandardCharsets;
 import org.example.net.anno.Req;
 import org.example.net.anno.RpcModule;
 import org.example.net.codec.MessageCodec;
@@ -38,12 +39,12 @@ public class GameDispatcherTest {
   @Test
   public void helloWorldTest() {
     EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(serializer));
-    new Connection(channel, Connection.IdGenerator.incrementAndGet());
+    new Connection(channel,  -1);
 
     Message echoRequest = new Message();
     echoRequest.proto(HelloWorldFacade.ECHO);
     echoRequest.msgId(0);
-    echoRequest.packet("HelloWorld");
+    echoRequest.packet("HelloWorld".getBytes(StandardCharsets.UTF_8));
 
     dispatcher.dispatcher(channel, echoRequest);
     channel.flush();
@@ -63,13 +64,16 @@ public class GameDispatcherTest {
   @Test
   public void multiHelloWorldTest() {
     EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(serializer));
-    new Connection(channel, Connection.IdGenerator.incrementAndGet());
+
 
     for (int i = 0; i < 5; i++) {
       Message echoRequest = new Message();
       echoRequest.proto(HelloWorldFacade.ECHO);
       echoRequest.msgId(0);
-      echoRequest.wrapArray(new String[]{"Hello", "World", Integer.toString(i)});
+      if (true) {
+        throw new UnsupportedOperationException();
+      }
+      echoRequest.packet(new byte[0]);
 
       dispatcher.dispatcher(channel, echoRequest);
       channel.flush();
@@ -81,7 +85,7 @@ public class GameDispatcherTest {
       assertEquals(0, NettyByteBufUtil.readInt32(buf));
       assertEquals(Math.negateExact(echoRequest.proto()), NettyByteBufUtil.readInt32(buf));
       assertEquals(echoRequest.msgId(), NettyByteBufUtil.readInt32(buf));
-      assertArrayEquals((Object[]) echoRequest.packet(), new Object[]{serializer.read(buf)});
+      assertArrayEquals(echoRequest.packet(), serializer.read(buf));
     }
 
     channel.finishAndReleaseAll();

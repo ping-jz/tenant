@@ -54,15 +54,20 @@ public class ProxyMessageHandler extends ByteToMessageDecoder {
 
     in.skipBytes(lengthFieldLength);
 
-    int target = NettyByteBufUtil.readInt32(in);
-    int source = NettyByteBufUtil.readInt32(in);
+    ByteBuf buf = in.slice(in.readerIndex(), length);
+    in.skipBytes(length);
+
+
+    int target = NettyByteBufUtil.readInt32(buf);
+    int source = NettyByteBufUtil.readInt32(buf);
     if (proxyService.getProxyServerConfig().getId() == target) {
       Message message = new Message();
       message.target(target);
       message.source(source);
       message.proto(NettyByteBufUtil.readInt32(in));
       message.msgId(NettyByteBufUtil.readInt32(in));
-      message.packet(serializer.readObject(in));
+      message.packet(new byte[buf.readableBytes()]);
+      buf.readBytes(message.packet());
       out.add(message);
     } else {
       Channel channel = proxyService.getChannels().get(target);

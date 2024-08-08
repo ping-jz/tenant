@@ -89,7 +89,7 @@ public class DefaultClient implements AutoCloseable {
       boolean suc = future.awaitUninterruptibly().isSuccess();
       if (suc) {
         future.channel().pipeline().addLast("manager", manager);
-        return new Connection(future.channel(), Connection.IdGenerator.incrementAndGet());
+        return new Connection(future.channel(),0);
       } else {
         throw new RuntimeException(String.format("connect to %s:%s failed", ip, port));
       }

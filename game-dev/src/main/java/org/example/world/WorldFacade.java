@@ -1,8 +1,8 @@
-package org.example.game.facade.example;
+package org.example.world;
 
 
-import org.example.game.facade.example.model.ReqMove;
-import org.example.game.facade.example.model.ResMove;
+import org.example.model.ReqMove;
+import org.example.model.ResMove;
 import org.example.net.anno.Req;
 import org.example.net.anno.RpcModule;
 

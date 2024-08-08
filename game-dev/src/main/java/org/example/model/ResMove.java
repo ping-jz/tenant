@@ -1,25 +1,25 @@
-package org.example.game.facade.example.model;
+package org.example.model;
 
 import java.util.Objects;
 import org.example.serde.Serde;
 
 /**
- * 移动请求
+ * 移动结果
  *
  * @author ZJP
- * @since 2021年09月27日 15:18:34
+ * @since 2021年09月27日 15:26:14
  **/
 @Serde
-public class ReqMove {
+public class ResMove {
 
   /** 对象ID */
   private long id;
-  /** X 轴 */
+  /** x轴 */
   private float x;
-  /** Y 轴 */
+  /** y轴 */
   private float y;
-
-  private int text;
+  /** 方向 */
+  private int dir;
 
   public long getId() {
     return id;
@@ -45,12 +45,12 @@ public class ReqMove {
     this.y = y;
   }
 
-  public int getText() {
-    return text;
+  public int getDir() {
+    return dir;
   }
 
-  public void setText(int text) {
-    this.text = text;
+  public void setDir(int dir) {
+    this.dir = dir;
   }
 
   @Override
@@ -61,13 +61,13 @@ public class ReqMove {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ReqMove reqMove = (ReqMove) o;
-    return getId() == reqMove.getId() && Float.compare(getX(), reqMove.getX()) == 0
-        && Float.compare(getY(), reqMove.getY()) == 0 && getText() == reqMove.getText();
+    ResMove resMove = (ResMove) o;
+    return getId() == resMove.getId() && Float.compare(getX(), resMove.getX()) == 0
+        && Float.compare(getY(), resMove.getY()) == 0 && getDir() == resMove.getDir();
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getId(), getX(), getY(), getText());
+    return Objects.hash(getId(), getX(), getY(), getDir());
   }
 }

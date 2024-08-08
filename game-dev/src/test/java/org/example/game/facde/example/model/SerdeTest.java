@@ -3,14 +3,12 @@ package org.example.game.facde.example.model;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.util.ReferenceCountUtil;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
-import org.example.game.facade.example.model.ReqMove;
-import org.example.game.facade.example.model.ReqMoveSerde;
-import org.example.game.facade.example.model.ResMove;
-import org.example.game.facade.example.model.ResMoveSerde;
+import org.example.model.ReqMove;
+import org.example.model.ReqMoveSerde;
+import org.example.model.ResMove;
+import org.example.model.ResMoveSerde;
 import org.example.serde.CollectionSerializer;
 import org.example.serde.CommonSerializer;
 import org.example.serde.processor.SerdeProcessor;

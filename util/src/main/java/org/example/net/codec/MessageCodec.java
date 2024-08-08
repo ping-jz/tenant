@@ -44,7 +44,7 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
 
   @Override
   protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
-    int lengthFieldLength = Integer.BYTES;
+    final int lengthFieldLength = Integer.BYTES;
     if (in.readableBytes() < lengthFieldLength) {
       return;
     }
@@ -61,13 +61,16 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
     }
 
     in.skipBytes(lengthFieldLength);
+    ByteBuf buf = in.slice(in.readerIndex(), length);
+    in.skipBytes(length);
 
     Message message = new Message();
-    message.target(NettyByteBufUtil.readInt32(in));
-    message.source(NettyByteBufUtil.readInt32(in));
-    message.proto(NettyByteBufUtil.readInt32(in));
-    message.msgId(NettyByteBufUtil.readInt32(in));
-    message.packet(serializer.readObject(in));
+    message.target(NettyByteBufUtil.readInt32(buf));
+    message.source(NettyByteBufUtil.readInt32(buf));
+    message.proto(NettyByteBufUtil.readInt32(buf));
+    message.msgId(NettyByteBufUtil.readInt32(buf));
+    message.packet(new byte[buf.readableBytes()]);
+    buf.readBytes(message.packet());
 
     out.add(message);
   }

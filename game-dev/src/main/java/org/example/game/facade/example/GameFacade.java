@@ -2,7 +2,7 @@ package org.example.game.facade.example;
 
 import java.util.Collections;
 import java.util.List;
-import org.example.game.facade.example.model.CommonRes;
+import org.example.model.CommonRes;
 import org.example.net.anno.Req;
 import org.example.net.anno.RpcModule;
 

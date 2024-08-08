@@ -30,6 +30,11 @@ public interface Serializer<T> {
    */
   T readObject(ByteBuf buf);
 
+  @SuppressWarnings("unchecked")
+  default <V> V read(ByteBuf buf) {
+    return (V) readObject(buf);
+  }
+
   /**
    * 把{@param object}序列化至{@param buff}
    *

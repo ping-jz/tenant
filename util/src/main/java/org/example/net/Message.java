@@ -10,14 +10,15 @@ public class Message {
 
   /** 目标 */
   private int target;
-  /** 源 */
+  /** 源(好像没什么用，先删除吧) */
+  @Deprecated
   private int source;
-  /** 协议编号 (0 < 接收/发送请求,  接收/发送结果 < 0) */
+  /** 协议编号 (0 < [接收/发送]请求,  [接收/发送]结果 < 0) */
   private int proto;
   /** 序列号(客户端发什么，服务端就返回什么) */
   private int msgId;
   /** 内容 */
-  private Object packet;
+  private byte[] packet;
 
   public Message() {
   }
@@ -48,22 +49,13 @@ public class Message {
     return this;
   }
 
-  public Object packet() {
+  public byte[] packet() {
     return packet;
   }
 
-  public Message packet(Object o) {
-    this.packet = o;
-    return this;
-  }
 
-  public Message packet(Object... packet) {
+  public Message packet(byte[] packet) {
     this.packet = packet;
-    return this;
-  }
-
-  public Message wrapArray(Object[] o) {
-    packet = new Object[]{o};
     return this;
   }
 

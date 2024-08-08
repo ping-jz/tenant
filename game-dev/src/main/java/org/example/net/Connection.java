@@ -22,9 +22,6 @@ public class Connection {
    */
   public static final AttributeKey<Connection> CONNECTION = AttributeKey.valueOf("connection");
 
-  /** channelId 生产 */
-  public static final AtomicInteger IdGenerator = new AtomicInteger();
-
   /** channelId */
   private Integer id;
   /** a netty channel */

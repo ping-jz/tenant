@@ -38,8 +38,8 @@ public class ReqTest {
   private DefaultServer rpcServer;
   /** 客户端 */
   private DefaultClient rpcClient;
-  private ReqProxy<HelloWorld> world;
-  private ReqProxy<CallBackReq> callBackReqReq;
+//  private ReqProxy<HelloWorld> world;
+//  private ReqProxy<CallBackReq> callBackReqReq;
   /** 服务端地址 */
   private Integer id;
 
@@ -80,10 +80,10 @@ public class ReqTest {
     id = rpcClient.connection(rpcServer.ip(), rpcServer.port()).id();
 
     //链接的创建和管理交给client，proxy不要管，直接用就行了
-    /** 请求代理管理 */
-    ReqProxyManager reqsManager = new ReqProxyManager(new ReqCliProxy(rpcClient.manager()));
-    this.world = reqsManager.getReq(HelloWorld.class);
-    this.callBackReqReq = reqsManager.getReq(CallBackReq.class);
+//    /** 请求代理管理 */
+//    ReqProxyManager reqsManager = new ReqProxyManager(new ReqCliProxy(rpcClient.manager()));
+//    this.world = reqsManager.getReq(HelloWorld.class);
+//    this.callBackReqReq = reqsManager.getReq(CallBackReq.class);
 
   }
 
@@ -106,7 +106,7 @@ public class ReqTest {
 
   @Test
   public void doNothingTest() throws Exception {
-    HelloWorld world = this.world.to(id);
+    HelloWorld world = null;
     for (int i = 0; i < invokeTimes; i++) {
       world.doNothing();
     }
@@ -117,7 +117,7 @@ public class ReqTest {
 
   @Test
   public void echoTest() throws Exception {
-    HelloWorld world = this.world.to(id);
+    HelloWorld world =null;
     for (int i = 0; i < invokeTimes; i++) {
       world.echo("hi");
     }
@@ -127,10 +127,9 @@ public class ReqTest {
     Assertions.assertEquals(invokeTimes, cliFacade.integer.get());
   }
 
-  @Test
   @RepeatedTest(100)
   public void callBackArgsTest() throws InterruptedException {
-    CallBackReq req = callBackReqReq.to(id);
+    CallBackReq req = null;
     CountDownLatch latch = new CountDownLatch(invokeTimes);
     long answer = 2012;
     for (int i = 0; i < invokeTimes; i++) {
@@ -144,10 +143,9 @@ public class ReqTest {
     Assertions.assertEquals(invokeTimes, serFacade.integer.get());
   }
 
-  @Test
   @RepeatedTest(100)
   public void callBackArgsMessageTest() throws InterruptedException {
-    CallBackReq req = callBackReqReq.to(id);
+    CallBackReq req = null;
     CountDownLatch latch = new CountDownLatch(invokeTimes);
     long answer = 2012;
     for (int i = 0; i < invokeTimes; i++) {
@@ -163,7 +161,7 @@ public class ReqTest {
 
   @Test
   public void callBackArrayMessageTest() throws InterruptedException {
-    CallBackReq req = callBackReqReq.to(id);
+    CallBackReq req = null;
     CountDownLatch latch = new CountDownLatch(invokeTimes);
     long[] longs = {1, 2, 3, 4, 5, 6};
     for (int i = 0; i < invokeTimes; i++) {

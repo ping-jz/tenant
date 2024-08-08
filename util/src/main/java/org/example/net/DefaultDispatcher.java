@@ -1,8 +1,6 @@
 package org.example.net;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 import org.example.net.handler.Handler;
 import org.example.net.handler.HandlerRegistry;
 import org.slf4j.Logger;
@@ -103,51 +101,20 @@ public class DefaultDispatcher implements Dispatcher {
     }
 
     try {
-      //TODO 这里需要增加, handler可以接受Connection和Message作为参数
-      Object result = null;
-      if (msg.packet() == null) {
-        result = handler.invoke();
-      } else if (msg.packet().getClass().isArray()) {
-        result = handler.invoke(connection, (Object[]) msg.packet());
-      } else {
-        result = handler.invoke(connection, msg.packet());
-      }
+      byte[] result = handler.invoke(connection, msg);
 
       if (0 < msg.proto() && result != null) {
-        Message response;
-        result = extractResult(result);
-
-        response = Message.of(Math.negateExact(msg.proto()))
+        Message response = Message.of(Math.negateExact(msg.proto()))
             .target(msg.source())
-            .source(msg.target())
             .msgId(msg.msgId())
             .packet(result);
 
-        if (result instanceof Message resMsg) {
-          if (resMsg.proto() != 0) {
-            response.proto(Math.negateExact(msg.proto()));
-          }
-        }
         channel.write(response);
       }
 
     } catch (Throwable e) {
       logger.error("from:{}, proto:{}, handler error", channel.remoteAddress(), msg.proto(), e);
     }
-  }
-
-  /**
-   * 处理特殊返回值，如{@link InvokeFuture}
-   *
-   * @param obj 调用返回值
-   * @since 2021年08月31日 15:49:56
-   */
-  private Object extractResult(Object obj) {
-    Object res = obj;
-    if (obj instanceof ResultInvokeFuture) {
-      res = ((ResultInvokeFuture<?>) obj).result();
-    }
-    return res;
   }
 
   @Override

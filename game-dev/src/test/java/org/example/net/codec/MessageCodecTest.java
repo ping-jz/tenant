@@ -7,6 +7,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 
+import java.nio.charset.StandardCharsets;
 import org.example.net.Message;
 import org.example.serde.CommonSerializer;
 import org.example.serde.NettyByteBufUtil;
@@ -24,7 +25,7 @@ public class MessageCodecTest {
     message.source(321);
     message.proto(1);
     message.msgId(2);
-    message.packet("Hello World");
+    message.packet("Hello World".getBytes(StandardCharsets.UTF_8));
     channel.writeOutbound(message);
 
     ByteBuf out = channel.readOutbound();

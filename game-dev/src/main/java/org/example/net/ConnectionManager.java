@@ -83,7 +83,7 @@ public class ConnectionManager extends ChannelInboundHandlerAdapter implements A
       throw new IllegalStateException("duplicated create connection");
     }
 
-    Connection connection = new Connection(channel, Connection.IdGenerator.incrementAndGet());
+    Connection connection = new Connection(channel, -1);
     channel.attr(Connection.CONNECTION).set(connection);
     return connection;
   }

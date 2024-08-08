@@ -1,4 +1,4 @@
-package org.example.game.facade.example.model;
+package org.example.model;
 
 public class CommonRes<T> {
 
