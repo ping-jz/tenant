@@ -52,32 +52,29 @@ public class ProxyMessageHandler extends ByteToMessageDecoder {
       return;
     }
 
-    in.skipBytes(lengthFieldLength);
-
-    ByteBuf buf = in.slice(in.readerIndex(), length);
+    ByteBuf buf = in.slice(readIdx, length);
     in.skipBytes(length);
-
+    buf.skipBytes(lengthFieldLength);
 
     int target = NettyByteBufUtil.readInt32(buf);
     int source = NettyByteBufUtil.readInt32(buf);
+    int proto = NettyByteBufUtil.readInt32(buf);
     if (proxyService.getProxyServerConfig().getId() == target) {
       Message message = new Message();
       message.target(target);
       message.source(source);
-      message.proto(NettyByteBufUtil.readInt32(in));
-      message.msgId(NettyByteBufUtil.readInt32(in));
+      message.proto(proto);
+      message.msgId(NettyByteBufUtil.readInt32(buf));
       message.packet(new byte[buf.readableBytes()]);
       buf.readBytes(message.packet());
       out.add(message);
     } else {
       Channel channel = proxyService.getChannels().get(target);
       if (channel != null) {
-        channel.writeAndFlush(in.retainedSlice(readIdx, length));
+        channel.writeAndFlush(buf.retainedSlice(0, length));
       } else {
-        int proto = NettyByteBufUtil.readInt32(in);
         logger.error("【Proxy Server】源:{}, 无法转发至目标:{},协议号:{}", source, target, proto);
       }
-      in.readerIndex(readIdx).skipBytes(length);
     }
   }
 

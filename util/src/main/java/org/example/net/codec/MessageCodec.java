@@ -35,7 +35,7 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
     NettyByteBufUtil.writeInt32(out, msg.source());
     NettyByteBufUtil.writeInt32(out, msg.proto());
     NettyByteBufUtil.writeInt32(out, msg.msgId());
-    serializer.writeObject(out, msg.packet());
+    out.writeBytes(msg.packet());
 
     //set the length
     int length = out.writerIndex() - start;
@@ -49,6 +49,7 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
       return;
     }
 
+    int readIdx = in.readerIndex();
     int length = in.getInt(in.readerIndex());
     if (length <= 0) {
       throw new RuntimeException(
@@ -60,9 +61,10 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
       return;
     }
 
-    in.skipBytes(lengthFieldLength);
-    ByteBuf buf = in.slice(in.readerIndex(), length);
     in.skipBytes(length);
+    ByteBuf buf = in.slice(readIdx, length);
+    buf.skipBytes(lengthFieldLength);
+
 
     Message message = new Message();
     message.target(NettyByteBufUtil.readInt32(buf));
