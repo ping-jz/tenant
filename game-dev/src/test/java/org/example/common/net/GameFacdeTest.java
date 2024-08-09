@@ -5,7 +5,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.concurrent.ThreadLocalRandom;
 import org.apache.commons.lang3.ArrayUtils;
-import org.example.common.net.proxy.invoker.GameFacdeInvoker;
+import org.example.common.net.proxy.invoker.GameFacadeInvoker;
 import org.example.game.facade.example.GameFacade;
 import org.example.game.facade.example.GameFacdeHandler;
 import org.example.net.Connection;
@@ -23,7 +23,7 @@ public class GameFacdeTest {
 
   private static EmbeddedChannel embeddedChannel;
   private static CommonSerializer commonSerializer;
-  private static GameFacdeInvoker invoker;
+  private static GameFacadeInvoker invoker;
   private static final int ECHO = 200;
   private static final int OK = 202;
 
@@ -44,7 +44,7 @@ public class GameFacdeTest {
         .addLast(new MessageCodec())
         .addLast(new DispatcherHandler(new DefaultDispatcher(handlerRegistry)));
 
-    invoker = new GameFacdeInvoker(new ConnectionManager(), commonSerializer);
+    invoker = new GameFacadeInvoker(new ConnectionManager()::connection, commonSerializer);
   }
 
   @RepeatedTest(10)

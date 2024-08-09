@@ -48,8 +48,6 @@ public class MessageCodecTest {
     CommonSerializer serializer = new CommonSerializer();
     EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(serializer));
 
-    int source = ThreadLocalRandom.current().nextInt();
-    int target = ThreadLocalRandom.current().nextInt();
     int proto = ThreadLocalRandom.current().nextInt();
     int optIdx = ThreadLocalRandom.current().nextInt();
     byte[] helloWorld = "Hello World".getBytes(StandardCharsets.UTF_8);
@@ -57,8 +55,6 @@ public class MessageCodecTest {
     ByteBuf inBuf = Unpooled.buffer();
     int start = inBuf.writerIndex();
     inBuf.writerIndex(Integer.BYTES);
-    NettyByteBufUtil.writeInt32(inBuf, target);
-    NettyByteBufUtil.writeInt32(inBuf, source);
     NettyByteBufUtil.writeInt32(inBuf, proto);
     NettyByteBufUtil.writeInt32(inBuf, optIdx);
     inBuf.writeBytes(helloWorld);
