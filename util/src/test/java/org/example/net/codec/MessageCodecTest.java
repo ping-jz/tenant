@@ -23,8 +23,6 @@ public class MessageCodecTest {
     EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(serializer));
 
     Message message = new Message();
-    message.target(ThreadLocalRandom.current().nextInt());
-    message.source(ThreadLocalRandom.current().nextInt());
     message.proto(ThreadLocalRandom.current().nextInt());
     message.msgId(ThreadLocalRandom.current().nextInt());
     message.packet("Hello World".getBytes(StandardCharsets.UTF_8));
@@ -35,8 +33,6 @@ public class MessageCodecTest {
     int length = out.readInt();
     assertTrue(0 < length);
 
-    assertEquals(message.target(), NettyByteBufUtil.readInt32(out));
-    assertEquals(message.source(), NettyByteBufUtil.readInt32(out));
     assertEquals(message.proto(), NettyByteBufUtil.readInt32(out));
     assertEquals(message.msgId(), NettyByteBufUtil.readInt32(out));
     byte[] bytes = new byte[out.readableBytes()];
@@ -71,8 +67,6 @@ public class MessageCodecTest {
     channel.writeInbound(inBuf);
 
     Message out = channel.readInbound();
-    assertEquals(target, out.target());
-    assertEquals(source, out.source());
     assertEquals(proto, out.proto());
     assertEquals(optIdx, out.msgId());
     assertArrayEquals(helloWorld, out.packet());

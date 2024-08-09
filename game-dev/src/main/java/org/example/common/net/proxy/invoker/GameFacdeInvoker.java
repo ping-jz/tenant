@@ -4,10 +4,13 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.Collections;
 import java.util.List;
-import org.example.common.net.BaseRemoting;
+import java.util.Objects;
 import org.example.common.net.ConnectionManager;
+import org.example.net.BaseRemoting;
 import org.example.net.Connection;
 import org.example.net.Message;
+import org.example.serde.CommonSerializer;
+import org.example.serde.NettyByteBufUtil;
 import org.example.serde.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,12 +24,24 @@ public final class GameFacdeInvoker {
   /** 调用逻辑 */
   private BaseRemoting remoting;
   /** 编码 */
-  private Serializer<Object> serializer;
+  private CommonSerializer serializer;
+
+  public GameFacdeInvoker(ConnectionManager manager, CommonSerializer serializer) {
+    this.manager = manager;
+    this.serializer = serializer;
+    this.remoting = new BaseRemoting();
+  }
+
 
   public InnerInvoker of(int id) {
     Connection connection = manager.connection(id);
-    if (connection == null || connection.isActive()) {
-      logger.error("{} 未链接", id);
+    return of(connection);
+  }
+
+  public InnerInvoker of(Connection connection) {
+    Objects.requireNonNull(connection);
+    if (!connection.isActive()) {
+      logger.error("[RPC] GameFacdeInvoker, 因为链接【{}】失效：无法处理", connection.id());
     }
 
     return new InnerInvoker(Collections.singletonList(connection));
@@ -37,35 +52,27 @@ public final class GameFacdeInvoker {
     /** 解释下 */
     private final List<Connection> connections;
 
-    public InnerInvoker(List<Connection> connections) {
-      this.connections = connections;
+    InnerInvoker(List<Connection> cs) {
+      connections = cs;
     }
 
-    public void getServerIds() {
+    public void echo(String string) {
       final int id = 200;
 
-      for (Connection connection : connections) {
-        Message message = Message.of(id).target(connection.id());
-        remoting.invoke(connection, message);
-      }
-    }
-
-    public void cnsumerItem(List<Long> ids) {
-      final int id = 201;
-
       ByteBuf buf = Unpooled.buffer();
-      serializer.writeObject(buf, ids);
+      serializer.writeObject(buf, string);
+      Message message = Message.of(id).packet(NettyByteBufUtil.readBytes(buf));
+
       for (Connection connection : connections) {
-        Message message = Message.of(id).target(connection.id()).packet(buf.array());
         remoting.invoke(connection, message);
       }
     }
 
-    public void req() {
+    public void ok() {
       final int id = 202;
 
+      Message message = Message.of(id);
       for (Connection connection : connections) {
-        Message message = Message.of(id).target(connection.id());
         remoting.invoke(connection, message);
       }
     }

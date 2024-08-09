@@ -45,6 +45,7 @@ public final class SerdeConfigGenerator {
     TypeSpec.Builder typeSpecBuilder = TypeSpec
         .classBuilder("SerdeConfig")
         .addJavadoc("协议注册配置，自动。不能手动更改\n")
+        .addJavadoc("协议数量：$L\n", classGraph.getClassesWithAnnotation(Serde.class).size())
         .addJavadoc("@author zhongjianping\n")
         .addJavadoc("@since $S\n", LocalDateTime.now())
         .addAnnotation(Configuration.class);
@@ -69,8 +70,6 @@ public final class SerdeConfigGenerator {
         .addAnnotation(Bean.class)
         .returns(CommonSerializer.class);
     methodBuilder.addStatement("$T serializer = new $T();", CommonSerializer.class, CommonSerializer.class);
-    ClassInfoList list = classGraph.getClassesWithAnnotation(Serde.class);
-    logger.info("协议数量：{}", list.size());
     for (ClassInfo info : classGraph.getClassesWithAnnotation(Serde.class)) {
       int protoId = Math.abs(info.getName().hashCode());
       ClassInfo serdeInfo = classGraph.getClassInfo(getSerdeName(info.getName()));

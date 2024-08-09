@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.lang3.concurrent.ConcurrentInitializer;
 import org.apache.commons.lang3.tuple.Pair;
 import org.example.net.ReqUtil;
 import org.example.net.anno.Req;
@@ -86,11 +87,16 @@ public class HandlerRegistry {
   //  return res;
   }
 
+  public Handler registeHandler(int id, Handler handler) {
+    return handles.put(id, handler);
+  }
+
   /**
    * 根据{@link Handler#reqId()}获取协议ID然后进行注册，协议ID不允许重复
    *
    * @since 2021年07月24日 10:25:05
    */
+  @Deprecated
   public void registerHandlers(Object o) {
     throw new UnsupportedOperationException();
 //    for (Handler h : findHandler(o)) {

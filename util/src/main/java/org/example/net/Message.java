@@ -1,5 +1,9 @@
 package org.example.net;
 
+import java.util.Arrays;
+import java.util.Objects;
+import org.apache.commons.lang3.ArrayUtils;
+
 /**
  * 网络通信协议格式
  *
@@ -8,17 +12,12 @@ package org.example.net;
  **/
 public class Message {
 
-  /** 目标 */
-  private int target;
-  /** 源(好像没什么用，先删除吧) */
-  @Deprecated
-  private int source;
   /** 协议编号 (0 < [接收/发送]请求,  [接收/发送]结果 < 0) */
   private int proto;
   /** 序列号(客户端发什么，服务端就返回什么) */
   private int msgId;
   /** 内容 */
-  private byte[] packet;
+  private byte[] packet = ArrayUtils.EMPTY_BYTE_ARRAY;
 
   public Message() {
   }
@@ -59,24 +58,6 @@ public class Message {
     return this;
   }
 
-  public int target() {
-    return target;
-  }
-
-  public Message target(int target) {
-    this.target = target;
-    return this;
-  }
-
-  public Message source(int source) {
-    this.source = source;
-    return this;
-  }
-
-  public int source() {
-    return source;
-  }
-
   @Deprecated
   public boolean isSuc() {
     return true;
@@ -85,5 +66,23 @@ public class Message {
   @Deprecated
   public boolean isErr() {
     return !isSuc();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Message message = (Message) o;
+    return proto == message.proto && msgId == message.msgId && Objects.deepEquals(packet,
+        message.packet);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(proto, msgId, Arrays.hashCode(packet));
   }
 }

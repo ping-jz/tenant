@@ -55,6 +55,7 @@ public class SerdeProcessor extends AbstractProcessor {
         if (clazz.getKind() != ElementKind.CLASS) {
           processingEnv.getMessager()
               .printMessage(Kind.ERROR, "@Serde must be applied to a Class", clazz);
+          return false;
         }
         String className = clazz.toString();
         String packageName = null;

@@ -1,6 +1,7 @@
 package org.example.serde;
 
 import io.netty.buffer.ByteBuf;
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * 编码，反编码工具类。代码部分从ProtoBuf那里复制过来。方便实现自己的需求
@@ -255,6 +256,20 @@ public class NettyByteBufUtil {
       }
     }
     throw new RuntimeException();
+  }
+
+  /**
+   * 读取指定ByteBuf全部的全部数据
+   * @since 2024/8/9 15:15
+   */
+  public static byte[] readBytes(ByteBuf buf) {
+    if (buf.isReadable()) {
+      byte[] bytes = new byte[buf.readableBytes()];
+      buf.readBytes(bytes);
+      return bytes;
+    } else {
+      return ArrayUtils.EMPTY_BYTE_ARRAY;
+    }
   }
 
 

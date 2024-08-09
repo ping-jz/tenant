@@ -34,12 +34,7 @@ public class WorldFacade {
    * @since 2021年09月27日 15:33:00
    */
   @Req(101)
-  public ResMove move(ReqMove move) {
-    ResMove moveRes = new ResMove();
-    moveRes.setId(move.getId());
-    moveRes.setX(move.getX());
-    moveRes.setY(move.getY());
-    moveRes.setDir(1);
-    return moveRes;
+  public void move(ReqMove move) {
+    System.out.println(move);
   }
 }

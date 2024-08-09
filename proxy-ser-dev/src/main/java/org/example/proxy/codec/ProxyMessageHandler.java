@@ -61,8 +61,8 @@ public class ProxyMessageHandler extends ByteToMessageDecoder {
     int proto = NettyByteBufUtil.readInt32(buf);
     if (proxyService.getProxyServerConfig().getId() == target) {
       Message message = new Message();
-      message.target(target);
-      message.source(source);
+//      message.target(target);
+//      message.source(source);
       message.proto(proto);
       message.msgId(NettyByteBufUtil.readInt32(buf));
       message.packet(new byte[buf.readableBytes()]);

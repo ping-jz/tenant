@@ -97,6 +97,7 @@ public class DefaultDispatcher implements Dispatcher {
   private void invokeHandler(Channel channel, Message msg, Handler handler) {
     Connection connection = channel.attr(Connection.CONNECTION).get();
     if (connection == null) {
+      logger.error("channel:{}, 没有与绑定Connection。无法处理消息:{}", channel.remoteAddress(), msg.proto());
       return;
     }
 
@@ -105,7 +106,7 @@ public class DefaultDispatcher implements Dispatcher {
 
       if (0 < msg.proto() && result != null) {
         Message response = Message.of(Math.negateExact(msg.proto()))
-            .target(msg.source())
+            //.target(msg.source())
             .msgId(msg.msgId())
             .packet(result);
 

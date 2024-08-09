@@ -5,6 +5,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -72,7 +73,7 @@ public class MultiClientProxyTest {
       for (int i = 0; i < 100; i++) {
         Message message = new Message();
         message.proto(HelloWorldFacade.echo);
-        message.packet("hello World");
+        message.packet("hello World".getBytes(StandardCharsets.UTF_8));
         mainClient.send(clientService.getProxyClientConfig().getId(), message);
       }
     }
@@ -108,7 +109,7 @@ public class MultiClientProxyTest {
     for (int i = 0; i < 100; i++) {
       Message message = new Message();
       message.proto(HelloWorldFacade.echo);
-      message.packet("hello World");
+      message.packet("hello World".getBytes(StandardCharsets.UTF_8));
       mainClient.send(clients, message);
     }
 

@@ -16,12 +16,11 @@ import org.example.serde.Serializer;
  **/
 public class MessageCodec extends ByteToMessageCodec<Message> {
 
+  public MessageCodec() {
+  }
 
-  /** 序列化实现 */
-  private Serializer<Object> serializer;
 
   public MessageCodec(Serializer<?> serializer) {
-    this.serializer = (Serializer<Object>) serializer;
   }
 
   @Override
@@ -30,9 +29,6 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
     int start = out.writerIndex();
     //serializing
     out.writerIndex(start + lengthFieldLength);
-
-    NettyByteBufUtil.writeInt32(out, msg.target());
-    NettyByteBufUtil.writeInt32(out, msg.source());
     NettyByteBufUtil.writeInt32(out, msg.proto());
     NettyByteBufUtil.writeInt32(out, msg.msgId());
     out.writeBytes(msg.packet());
@@ -62,13 +58,9 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
     }
 
     in.skipBytes(length);
-    ByteBuf buf = in.slice(readIdx, length);
-    buf.skipBytes(lengthFieldLength);
-
+    ByteBuf buf = in.slice(readIdx, length).skipBytes(lengthFieldLength);
 
     Message message = new Message();
-    message.target(NettyByteBufUtil.readInt32(buf));
-    message.source(NettyByteBufUtil.readInt32(buf));
     message.proto(NettyByteBufUtil.readInt32(buf));
     message.msgId(NettyByteBufUtil.readInt32(buf));
     message.packet(new byte[buf.readableBytes()]);

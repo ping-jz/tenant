@@ -54,6 +54,16 @@ public class ReqMove {
   }
 
   @Override
+  public String toString() {
+    return "ReqMove{" +
+        "id=" + id +
+        ", x=" + x +
+        ", y=" + y +
+        ", text=" + text +
+        '}';
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;

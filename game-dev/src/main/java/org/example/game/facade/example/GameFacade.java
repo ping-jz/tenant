@@ -1,8 +1,5 @@
 package org.example.game.facade.example;
 
-import java.util.Collections;
-import java.util.List;
-import org.example.common.model.CommonRes;
 import org.example.net.anno.Req;
 import org.example.net.anno.RpcModule;
 
@@ -15,27 +12,16 @@ import org.example.net.anno.RpcModule;
 @RpcModule
 public class GameFacade {
 
+
   /**
-   * 获取此进程的全部游戏服ID
+   * 回声
    *
    * @author ZJP
    * @since 2021年09月27日 16:01:08
    **/
   @Req(200)
-  public List<Integer> getServerIds() {
-    return Collections.emptyList();
-  }
-
-  /**
-   * 消耗指定物品
-   *
-   * @param ids 物品ID
-   * @since 2021年09月28日 11:58:07
-   */
-  @Req(201)
-  public CommonRes<Integer> consumerItem(List<Long> ids) {
-    CommonRes<Integer> res = new CommonRes<>();
-    return res.setSuc(true).setRes(10);
+  public String echo(String str) {
+    return str;
   }
 
   /**
@@ -45,9 +31,10 @@ public class GameFacade {
    * @since 2021年09月28日 12:16:00
    **/
   @Req(202)
-  public String req() {
+  public String ok() {
     return "ok";
   }
+
 
 
 }
