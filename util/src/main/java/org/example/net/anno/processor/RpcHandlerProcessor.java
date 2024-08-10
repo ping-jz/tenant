@@ -1,17 +1,5 @@
 package org.example.net.anno.processor;
 
-import static org.example.net.anno.processor.RpcProcessorConstant.BASE_REMOTING;
-import static org.example.net.anno.processor.RpcProcessorConstant.BYTEBUF_UTIL;
-import static org.example.net.anno.processor.RpcProcessorConstant.BYTE_BUF;
-import static org.example.net.anno.processor.RpcProcessorConstant.COMMON_SERIALIZER;
-import static org.example.net.anno.processor.RpcProcessorConstant.CONNECTION;
-import static org.example.net.anno.processor.RpcProcessorConstant.CONNECTION_GETTER;
-import static org.example.net.anno.processor.RpcProcessorConstant.LOGGER;
-import static org.example.net.anno.processor.RpcProcessorConstant.LOGGER_FACTOR;
-import static org.example.net.anno.processor.RpcProcessorConstant.MESSAGE;
-import static org.example.net.anno.processor.RpcProcessorConstant.POOLED_UTIL;
-
-import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
@@ -27,11 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -47,17 +31,36 @@ import org.example.net.anno.Req;
 /**
  * 负责RPC方法的调用类和代理类
  * <p>
+ * //TODO 处理下会话参数Connection, Message等，这些不用生成。用调用者自己传入
  *
  * @author zhongjianping
  * @since 2024/8/9 11:19
  */
-@SupportedAnnotationTypes("org.example.net.anno.RpcModule")
-@SupportedSourceVersion(SourceVersion.RELEASE_21)
-@AutoService(Processor.class)
-public class RpcInvokerProcessor extends AbstractProcessor {
+//@SupportedAnnotationTypes("org.example.net.anno.RpcModule")
+//@SupportedSourceVersion(SourceVersion.RELEASE_21)
+//@AutoService(Processor.class)
+public class RpcHandlerProcessor extends AbstractProcessor {
 
   private static final String INVOKER_PACKAGE = "org.example.common.net.proxy.invoker";
   private static final String INNER_SIMPLE_NAME = "Invoker";
+
+  /** 常用类型 */
+  private static final ClassName CONNECTION = ClassName.get("org.example.net", "Connection");
+  private static final ParameterizedTypeName connectionGet = ParameterizedTypeName.get(
+      ClassName.get("java.util.function", "Function"),
+      TypeName.INT.box(), CONNECTION
+  );
+  private static final ClassName baseRemoting = ClassName.get("org.example.net", "BaseRemoting");
+  private static final ClassName commonSerializer = ClassName.get("org.example.serde",
+      "CommonSerializer");
+  private static final ClassName ByteBuf = ClassName.get("io.netty.buffer", "ByteBuf");
+  private static final ClassName BYTEBUF_UTIL = ClassName.get("org.example.serde",
+      "NettyByteBufUtil");
+  private static final ClassName POOLED_UTIL = ClassName.get("io.netty.buffer",
+      "PooledByteBufAllocator");
+  private static final ClassName MESSAGE = ClassName.get("org.example.net", "Message");
+  private static final ClassName LOGGER = ClassName.get("org.slf4j", "Logger");
+  private static final ClassName LOGGER_FACTOR = ClassName.get("org.slf4j", "LoggerFactory");
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -86,12 +89,13 @@ public class RpcInvokerProcessor extends AbstractProcessor {
 
           TypeSpec inner = generateInner(typeElement, elements);
 
-          TypeSpec outer = generateOuter(typeElement)
-              .addType(inner).build();
+          TypeSpec.Builder outerBuilder = generateOuter(typeElement)
+              .addType(inner);
 
-          JavaFile javaFile = JavaFile.builder(INVOKER_PACKAGE, outer).build();
+          JavaFile javaFile = JavaFile.builder(INVOKER_PACKAGE, outerBuilder.build()).build();
 
-          String qualifiedName = "%s.%s".formatted(INVOKER_PACKAGE, outer.name);
+          String qualifiedName = "%s.%s".formatted(INVOKER_PACKAGE,
+              typeElement.getSimpleName() + "Invoker");
           JavaFileObject file = processingEnv.getFiler().createSourceFile(qualifiedName);
           try (PrintWriter writer = new PrintWriter(file.openWriter())) {
             javaFile.writeTo(writer);
@@ -114,7 +118,6 @@ public class RpcInvokerProcessor extends AbstractProcessor {
     String simpleName = clazz.getSimpleName() + "Invoker";
 
     TypeSpec.Builder typeSpecBuilder = TypeSpec.classBuilder(simpleName)
-        .addJavadoc("{@link $T}\n", clazz)
         .addJavadoc("@since $S", LocalDateTime.now())
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addField(FieldSpec
@@ -123,25 +126,25 @@ public class RpcInvokerProcessor extends AbstractProcessor {
             .initializer("$T.getLogger($L.class)", LOGGER_FACTOR, simpleName)
             .build())
         .addField(FieldSpec
-            .builder(CONNECTION_GETTER, "manager")
+            .builder(connectionGet, "manager")
             .addModifiers(Modifier.PRIVATE)
             .build())
         .addField(FieldSpec
-            .builder(BASE_REMOTING, "remoting")
+            .builder(baseRemoting, "remoting")
             .addModifiers(Modifier.PRIVATE)
             .build())
         .addField(FieldSpec
-            .builder(COMMON_SERIALIZER, "serializer")
+            .builder(commonSerializer, "serializer")
             .addModifiers(Modifier.PRIVATE).build());
 
     MethodSpec constructor = MethodSpec
         .constructorBuilder()
         .addModifiers(Modifier.PUBLIC)
-        .addParameter(CONNECTION_GETTER, "manager")
-        .addParameter(COMMON_SERIALIZER, "serializer")
+        .addParameter(connectionGet, "manager")
+        .addParameter(commonSerializer, "serializer")
         .addStatement("this.manager = manager")
         .addStatement("this.serializer = serializer")
-        .addStatement("remoting = new $T()", BASE_REMOTING)
+        .addStatement("remoting = new $T()", baseRemoting)
         .build();
 
     ClassName inner_type = ClassName.get(String.format("%s.%s", INVOKER_PACKAGE, simpleName),
@@ -209,7 +212,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
       if (!pparameters.isEmpty()) {
         methodBuilder
             .addCode("\n")
-            .addStatement("$T buf = $T.DEFAULT.buffer()", BYTE_BUF, POOLED_UTIL)
+            .addStatement("$T buf = $T.DEFAULT.buffer()", ByteBuf, POOLED_UTIL)
             .beginControlFlow("try")
         ;
 
@@ -217,14 +220,8 @@ public class RpcInvokerProcessor extends AbstractProcessor {
         for (VariableElement variableElement : method.getParameters()) {
           Name name = variableElement.getSimpleName();
           TypeMirror paramType = variableElement.asType();
-          TypeName paramTypeName = TypeName.get(paramType);
+          methodBuilder.addParameter(TypeName.get(paramType), name.toString());
 
-          // Connection和Message不用生成
-          if (paramTypeName.equals(CONNECTION) || paramTypeName.equals(MESSAGE)) {
-            continue;
-          }
-
-          methodBuilder.addParameter(paramTypeName, name.toString());
           switch (paramType.getKind()) {
             case BOOLEAN -> methodBuilder.addStatement("buf.writeBoolean($L)", name);
             case BYTE -> methodBuilder.addStatement("buf.writeByte($L)", name);
