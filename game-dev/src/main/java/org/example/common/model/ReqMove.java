@@ -19,8 +19,6 @@ public class ReqMove {
   /** Y 轴 */
   private float y;
 
-  private int text;
-
   public long getId() {
     return id;
   }
@@ -45,21 +43,12 @@ public class ReqMove {
     this.y = y;
   }
 
-  public int getText() {
-    return text;
-  }
-
-  public void setText(int text) {
-    this.text = text;
-  }
-
   @Override
   public String toString() {
     return "ReqMove{" +
         "id=" + id +
         ", x=" + x +
         ", y=" + y +
-        ", text=" + text +
         '}';
   }
 
@@ -73,11 +62,11 @@ public class ReqMove {
     }
     ReqMove reqMove = (ReqMove) o;
     return getId() == reqMove.getId() && Float.compare(getX(), reqMove.getX()) == 0
-        && Float.compare(getY(), reqMove.getY()) == 0 && getText() == reqMove.getText();
+        && Float.compare(getY(), reqMove.getY()) == 0;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getId(), getX(), getY(), getText());
+    return Objects.hash(getId(), getX(), getY());
   }
 }

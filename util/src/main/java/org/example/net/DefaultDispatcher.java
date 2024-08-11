@@ -1,6 +1,7 @@
 package org.example.net;
 
 import io.netty.channel.Channel;
+import org.apache.commons.lang3.ArrayUtils;
 import org.example.net.handler.Handler;
 import org.example.net.handler.HandlerRegistry;
 import org.slf4j.Logger;
@@ -103,8 +104,7 @@ public class DefaultDispatcher implements Dispatcher {
 
     try {
       byte[] result = handler.invoke(connection, msg);
-
-      if (0 < msg.proto() && result != null) {
+      if (0 < msg.proto() && ArrayUtils.isNotEmpty(result)) {
         Message response = Message.of(Math.negateExact(msg.proto()))
             //.target(msg.source())
             .msgId(msg.msgId())

@@ -70,4 +70,14 @@ public class ResMove {
   public int hashCode() {
     return Objects.hash(getId(), getX(), getY(), getDir());
   }
+
+  @Override
+  public String toString() {
+    return "ResMove{" +
+        "id=" + id +
+        ", x=" + x +
+        ", y=" + y +
+        ", dir=" + dir +
+        '}';
+  }
 }

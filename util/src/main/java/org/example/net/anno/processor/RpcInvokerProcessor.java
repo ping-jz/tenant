@@ -1,15 +1,15 @@
 package org.example.net.anno.processor;
 
-import static org.example.net.anno.processor.RpcProcessorConstant.BASE_REMOTING;
-import static org.example.net.anno.processor.RpcProcessorConstant.BYTEBUF_UTIL;
-import static org.example.net.anno.processor.RpcProcessorConstant.BYTE_BUF;
-import static org.example.net.anno.processor.RpcProcessorConstant.COMMON_SERIALIZER;
-import static org.example.net.anno.processor.RpcProcessorConstant.CONNECTION;
-import static org.example.net.anno.processor.RpcProcessorConstant.CONNECTION_GETTER;
-import static org.example.net.anno.processor.RpcProcessorConstant.LOGGER;
-import static org.example.net.anno.processor.RpcProcessorConstant.LOGGER_FACTOR;
-import static org.example.net.anno.processor.RpcProcessorConstant.MESSAGE;
-import static org.example.net.anno.processor.RpcProcessorConstant.POOLED_UTIL;
+import static org.example.net.anno.processor.Util.BASE_REMOTING;
+import static org.example.net.anno.processor.Util.BYTEBUF_UTIL;
+import static org.example.net.anno.processor.Util.BYTE_BUF;
+import static org.example.net.anno.processor.Util.COMMON_SERIALIZER;
+import static org.example.net.anno.processor.Util.CONNECTION;
+import static org.example.net.anno.processor.Util.CONNECTION_GETTER;
+import static org.example.net.anno.processor.Util.LOGGER;
+import static org.example.net.anno.processor.Util.LOGGER_FACTOR;
+import static org.example.net.anno.processor.Util.MESSAGE;
+import static org.example.net.anno.processor.Util.POOLED_UTIL;
 
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -82,7 +83,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
         TypeElement typeElement = (TypeElement) clazz;
         try {
 
-          List<Element> elements = getReqMethod(typeElement);
+          List<Element> elements = Util.getReqMethod(processingEnv, typeElement);
 
           TypeSpec inner = generateInner(typeElement, elements);
 
@@ -194,11 +195,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
           .addModifiers(Modifier.PUBLIC);
 
       //Handle ID
-      Req reqAnno = method.getAnnotation(Req.class);
-      int id = reqAnno.value();
-      if (id == 0) {
-        id = Math.abs((typeElement.getQualifiedName() + methodName).hashCode());
-      }
+      int id = Util.calcProtoId(typeElement, method);
       methodBuilder
           .addJavadoc("{@link $T#$L}", typeElement, methodName)
           .addStatement("final int id = $L", id)
@@ -259,40 +256,6 @@ public class RpcInvokerProcessor extends AbstractProcessor {
     return typeBuilder.build();
   }
 
-  public List<Element> getReqMethod(TypeElement typeElement) {
-    List<Element> res = new ArrayList<>();
 
-    for (Element element : typeElement.getEnclosedElements()) {
-      if (element.getKind() != ElementKind.METHOD) {
-        continue;
-      }
-
-      if (element.getAnnotation(Req.class) == null) {
-        continue;
-      }
-
-      if (element.getModifiers().contains(Modifier.ABSTRACT)) {
-        processingEnv.getMessager()
-            .printMessage(Kind.ERROR, "@Req can't not applied to abstract method", element);
-        continue;
-      }
-
-      if (element.getModifiers().contains(Modifier.STATIC)) {
-        processingEnv.getMessager()
-            .printMessage(Kind.ERROR, "@Req can't not applied to static method", element);
-        continue;
-      }
-
-      if (!element.getModifiers().contains(Modifier.PUBLIC)) {
-        processingEnv.getMessager()
-            .printMessage(Kind.ERROR, "@Req  mnust applied to public method", element);
-        continue;
-      }
-
-      res.add(element);
-    }
-
-    return res;
-  }
 
 }
