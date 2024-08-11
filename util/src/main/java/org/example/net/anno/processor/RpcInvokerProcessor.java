@@ -16,34 +16,30 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
-import org.example.net.anno.Req;
 
 /**
  * 负责RPC方法的调用类和代理类
@@ -57,7 +53,7 @@ import org.example.net.anno.Req;
 @AutoService(Processor.class)
 public class RpcInvokerProcessor extends AbstractProcessor {
 
-  private static final String INVOKER_PACKAGE = "org.example.common.net.proxy.invoker";
+  private static final String INVOKER_PACKAGE = "org.example.common.net.generated.invoker";
   private static final String INNER_SIMPLE_NAME = "Invoker";
 
   @Override
@@ -69,17 +65,6 @@ public class RpcInvokerProcessor extends AbstractProcessor {
         continue;
       }
       for (Element clazz : annotationElements) {
-        if (clazz.getKind() != ElementKind.CLASS) {
-          processingEnv.getMessager()
-              .printMessage(Kind.ERROR, "@RpcModule must be applied to a Class", clazz);
-          return false;
-        }
-
-        if (clazz.getModifiers().contains(Modifier.ABSTRACT)) {
-          processingEnv.getMessager()
-              .printMessage(Kind.ERROR, "@RpcModule can't not applied to abstract class", clazz);
-          return false;
-        }
         TypeElement typeElement = (TypeElement) clazz;
         try {
 
@@ -163,7 +148,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
         .beginControlFlow("if (!c.isActive())")
         .addStatement("logger.error(\"[RPC] $L, 因为链接【{}】失效：无法处理\", c.id());", simpleName)
         .endControlFlow()
-        .addStatement("return new $L($T.singletonList(c))", INNER_SIMPLE_NAME, Collections.class)
+        .addStatement("return new $L(c)", INNER_SIMPLE_NAME)
         .build();
 
     typeSpecBuilder.addMethod(constructor).addMethod(ofId).addMethod(ofConnection);
@@ -172,19 +157,20 @@ public class RpcInvokerProcessor extends AbstractProcessor {
   }
 
   public TypeSpec generateInner(TypeElement typeElement, List<Element> methods) {
+    final String CONNECTION_FIELD_NAME = "c";
+    final String MESSAGE_VAR_NAME = "m";
+    final String BUF_VAR_NAME = "buf";
 
     TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(INNER_SIMPLE_NAME)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
 
-    TypeName connectionsType = ParameterizedTypeName.get(ClassName.get(List.class),
-        CONNECTION);
     typeBuilder.addField(FieldSpec
-            .builder(connectionsType, "connections")
+            .builder(CONNECTION, CONNECTION_FIELD_NAME)
             .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
             .build())
         .addMethod(MethodSpec.constructorBuilder()
-            .addParameter(connectionsType, "cs")
-            .addStatement("connections = cs")
+            .addParameter(CONNECTION, CONNECTION_FIELD_NAME)
+            .addStatement("this.$L = $L", CONNECTION_FIELD_NAME, CONNECTION_FIELD_NAME)
             .build());
 
     for (Element e : methods) {
@@ -199,7 +185,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
       methodBuilder
           .addJavadoc("{@link $T#$L}", typeElement, methodName)
           .addStatement("final int id = $L", id)
-          .addStatement("$T message = $T.of(id)", MESSAGE, MESSAGE)
+          .addStatement("$T $L = $T.of(id)", MESSAGE, MESSAGE_VAR_NAME, MESSAGE)
       ;
 
       List<? extends VariableElement> pparameters = method.getParameters();
@@ -223,39 +209,62 @@ public class RpcInvokerProcessor extends AbstractProcessor {
 
           methodBuilder.addParameter(paramTypeName, name.toString());
           switch (paramType.getKind()) {
-            case BOOLEAN -> methodBuilder.addStatement("buf.writeBoolean($L)", name);
-            case BYTE -> methodBuilder.addStatement("buf.writeByte($L)", name);
-            case SHORT -> methodBuilder.addStatement("buf.writeShort($L)", name);
-            case CHAR -> methodBuilder.addStatement("buf.writeChar($L)", name);
-            case FLOAT -> methodBuilder.addStatement("buf.writeFloat($L)", name);
-            case DOUBLE -> methodBuilder.addStatement("buf.writeDouble($L)", name);
-            case INT -> methodBuilder.addStatement("$T.writeInt32(buf, $L)", BYTEBUF_UTIL, name);
-            case LONG -> methodBuilder.addStatement("$T.writeInt64(buf, $L)", BYTEBUF_UTIL, name);
+            case BOOLEAN -> methodBuilder.addStatement("$L.writeBoolean($L)", BUF_VAR_NAME, name);
+            case BYTE -> methodBuilder.addStatement("$L.writeByte($L)", BUF_VAR_NAME, name);
+            case SHORT -> methodBuilder.addStatement("$L.writeShort($L)", BUF_VAR_NAME, name);
+            case CHAR -> methodBuilder.addStatement("$L.writeChar($L)", BUF_VAR_NAME, name);
+            case FLOAT -> methodBuilder.addStatement("$L.writeFloat($L)", BUF_VAR_NAME, name);
+            case DOUBLE -> methodBuilder.addStatement("$L.writeDouble($L)", BUF_VAR_NAME, name);
+            case INT ->
+                methodBuilder.addStatement("$T.writeInt32($L, $L)", BYTEBUF_UTIL, BUF_VAR_NAME,
+                    name);
+            case LONG ->
+                methodBuilder.addStatement("$T.writeInt64($L, $L)", BYTEBUF_UTIL, BUF_VAR_NAME,
+                    name);
             default -> methodBuilder.addStatement("serializer.writeObject(buf, $L)", name);
           }
         }
 
         methodBuilder
-            .addStatement("message.packet($T.readBytes(buf))", BYTEBUF_UTIL)
+            .addStatement("$L.packet($T.readBytes($L))", MESSAGE_VAR_NAME, BYTEBUF_UTIL,
+                BUF_VAR_NAME)
             .endControlFlow()
             .beginControlFlow("finally")
             .addStatement("buf.release()")
             .endControlFlow()
             .addCode("\n")
         ;
-
       }
 
-      methodBuilder
-          .beginControlFlow("for ($T c : connections)", CONNECTION)
-          .addStatement("remoting.invoke(c, message)")
-          .endControlFlow();
+      TypeMirror typeMirror = method.getReturnType();
+      if (isCompleteAbleFuture(typeMirror)) {
+        methodBuilder
+            .returns(TypeName.get(typeMirror))
+            .addStatement("///TODO 先默认三秒吧，以后看需要改")
+            .addStatement("return remoting.invoke($L, $L, 3, $T.SECONDS)",
+                CONNECTION_FIELD_NAME,
+                MESSAGE_VAR_NAME, TimeUnit.class);
+
+      } else {
+        methodBuilder.addStatement("remoting.invoke($L, $L)", CONNECTION_FIELD_NAME,
+            MESSAGE_VAR_NAME);
+      }
+
       typeBuilder.addMethod(methodBuilder.build());
     }
 
     return typeBuilder.build();
   }
 
+  private static boolean isCompleteAbleFuture(TypeMirror mirror) {
+    if (mirror.getKind() != TypeKind.DECLARED) {
+      return false;
+    }
+    DeclaredType declaredType = (DeclaredType) mirror;
+    TypeElement returnTypeElement = (TypeElement) declaredType.asElement();
+    return returnTypeElement.getQualifiedName()
+        .contentEquals(Util.COMPLETE_ABLE_FUTURE_TYPE.toString());
+  }
 
 
 }

@@ -1,5 +1,6 @@
 package org.example.benchmark.serde;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -27,7 +28,7 @@ public class CodecObject {
 
   public CodecObject() {
     ThreadLocalRandom random = ThreadLocalRandom.current();
-    msg = List.of(String.valueOf(random.nextLong()), String.valueOf(random.nextLong()), String.valueOf(random.nextLong()));
+    msg = new ArrayList<>(List.of(String.valueOf(random.nextLong()), String.valueOf(random.nextLong()), String.valueOf(random.nextLong())));
     id = random.nextInt();
     age = random.nextLong();
     s = (short) random.nextInt();

@@ -8,6 +8,7 @@ import io.netty.channel.Channel;
  * @author ZJP
  * @since 2021年08月19日 12:08:39
  **/
+@FunctionalInterface
 public interface Dispatcher {
 
   /**

@@ -3,6 +3,7 @@ package org.example.benchmark.serde;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.example.serde.CollectionSerializer;
@@ -38,10 +39,12 @@ public class SerdeTest {
     codeSerde = new CommonSerializer();
     codeSerde.registerSerializer(CodecObject.class, new CodecObjectSerde(codeSerde));
     codeSerde.registerSerializer(List.class, new CollectionSerializer(codeSerde));
+    codeSerde.registerSerializer(ArrayList.class, new CollectionSerializer(codeSerde));
 
     refSerde = new CommonSerializer();
     refSerde.registerObject(CodecObject.class);
     refSerde.registerSerializer(List.class, new CollectionSerializer(refSerde));
+    refSerde.registerSerializer(ArrayList.class, new CollectionSerializer(refSerde));
   }
 
   @Setup(Level.Iteration)
@@ -53,7 +56,7 @@ public class SerdeTest {
   @Benchmark
   @Warmup
   @BenchmarkMode({Mode.AverageTime, Mode.Throughput})
-  @OutputTimeUnit(TimeUnit.MILLISECONDS)
+  @OutputTimeUnit(TimeUnit.SECONDS)
   public void codecSerdeTest(Blackhole bh) {
     ByteBuf buf2 = codeSerde.writeObject(object);
     CodecObject object2 = codeSerde.read(buf2);
@@ -69,7 +72,7 @@ public class SerdeTest {
   @Benchmark
   @Warmup
   @BenchmarkMode({Mode.AverageTime, Mode.Throughput})
-  @OutputTimeUnit(TimeUnit.MILLISECONDS)
+  @OutputTimeUnit(TimeUnit.SECONDS)
   public void codecRefTest(Blackhole bh) {
     ByteBuf buf2 = refSerde.writeObject(object);
     CodecObject object2 = refSerde.read(buf2);
@@ -83,43 +86,43 @@ public class SerdeTest {
   }
 
   public static void main(String[] args) throws RunnerException {
-    //Benchmark                                                   Mode  Cnt     Score    Error   Units
-    //SerdeTest.codecRefTest                                     thrpt    5   368.791 ±  4.650  ops/ms
-    //SerdeTest.codecRefTest:·gc.alloc.rate                      thrpt    5   481.324 ±  6.366  MB/sec
-    //SerdeTest.codecRefTest:·gc.alloc.rate.norm                 thrpt    5  1438.728 ±  0.163    B/op
-    //SerdeTest.codecRefTest:·gc.churn.G1_Eden_Space             thrpt    5   481.874 ± 24.860  MB/sec
-    //SerdeTest.codecRefTest:·gc.churn.G1_Eden_Space.norm        thrpt    5  1440.348 ± 63.070    B/op
-    //SerdeTest.codecRefTest:·gc.churn.G1_Survivor_Space         thrpt    5     0.003 ±  0.004  MB/sec
-    //SerdeTest.codecRefTest:·gc.churn.G1_Survivor_Space.norm    thrpt    5     0.009 ±  0.011    B/op
-    //SerdeTest.codecRefTest:·gc.count                           thrpt    5   169.000           counts
-    //SerdeTest.codecRefTest:·gc.time                            thrpt    5   156.000               ms
-    //SerdeTest.codecSerdeTest                                   thrpt    5   407.170 ± 17.733  ops/ms
-    //SerdeTest.codecSerdeTest:·gc.alloc.rate                    thrpt    5   490.034 ± 21.563  MB/sec
-    //SerdeTest.codecSerdeTest:·gc.alloc.rate.norm               thrpt    5  1326.756 ±  0.127    B/op
-    //SerdeTest.codecSerdeTest:·gc.churn.G1_Eden_Space           thrpt    5   490.455 ± 30.374  MB/sec
-    //SerdeTest.codecSerdeTest:·gc.churn.G1_Eden_Space.norm      thrpt    5  1327.894 ± 56.607    B/op
-    //SerdeTest.codecSerdeTest:·gc.churn.G1_Survivor_Space       thrpt    5     0.004 ±  0.004  MB/sec
-    //SerdeTest.codecSerdeTest:·gc.churn.G1_Survivor_Space.norm  thrpt    5     0.010 ±  0.010    B/op
-    //SerdeTest.codecSerdeTest:·gc.count                         thrpt    5   172.000           counts
-    //SerdeTest.codecSerdeTest:·gc.time                          thrpt    5   157.000               ms
-    //SerdeTest.codecRefTest                                      avgt    5     0.003 ±  0.001   ms/op
-    //SerdeTest.codecRefTest:·gc.alloc.rate                       avgt    5   492.937 ± 18.432  MB/sec
-    //SerdeTest.codecRefTest:·gc.alloc.rate.norm                  avgt    5  1438.760 ±  0.180    B/op
-    //SerdeTest.codecRefTest:·gc.churn.G1_Eden_Space              avgt    5   493.281 ± 29.257  MB/sec
-    //SerdeTest.codecRefTest:·gc.churn.G1_Eden_Space.norm         avgt    5  1439.809 ± 82.324    B/op
-    //SerdeTest.codecRefTest:·gc.churn.G1_Survivor_Space          avgt    5     0.004 ±  0.004  MB/sec
-    //SerdeTest.codecRefTest:·gc.churn.G1_Survivor_Space.norm     avgt    5     0.011 ±  0.011    B/op
-    //SerdeTest.codecRefTest:·gc.count                            avgt    5   173.000           counts
-    //SerdeTest.codecRefTest:·gc.time                             avgt    5   160.000               ms
-    //SerdeTest.codecSerdeTest                                    avgt    5     0.002 ±  0.001   ms/op
-    //SerdeTest.codecSerdeTest:·gc.alloc.rate                     avgt    5   491.346 ± 28.684  MB/sec
-    //SerdeTest.codecSerdeTest:·gc.alloc.rate.norm                avgt    5  1326.747 ±  0.127    B/op
-    //SerdeTest.codecSerdeTest:·gc.churn.G1_Eden_Space            avgt    5   493.001 ± 49.055  MB/sec
-    //SerdeTest.codecSerdeTest:·gc.churn.G1_Eden_Space.norm       avgt    5  1331.057 ± 58.893    B/op
-    //SerdeTest.codecSerdeTest:·gc.churn.G1_Survivor_Space        avgt    5     0.003 ±  0.003  MB/sec
-    //SerdeTest.codecSerdeTest:·gc.churn.G1_Survivor_Space.norm   avgt    5     0.008 ±  0.009    B/op
-    //SerdeTest.codecSerdeTest:·gc.count                          avgt    5   173.000           counts
-    //SerdeTest.codecSerdeTest:·gc.time                           avgt    5   161.000               ms
+//    Benchmark                                                   Mode  Cnt       Score       Error   Units
+//    SerdeTest.codecRefTest                                     thrpt    5  312301.663 ± 43310.793   ops/s
+//    SerdeTest.codecRefTest:·gc.alloc.rate                      thrpt    5     400.878 ±    55.653  MB/sec
+//    SerdeTest.codecRefTest:·gc.alloc.rate.norm                 thrpt    5    1414.787 ±     0.147    B/op
+//    SerdeTest.codecRefTest:·gc.churn.G1_Eden_Space             thrpt    5     402.048 ±    71.808  MB/sec
+//    SerdeTest.codecRefTest:·gc.churn.G1_Eden_Space.norm        thrpt    5    1418.573 ±    81.986    B/op
+//    SerdeTest.codecRefTest:·gc.churn.G1_Survivor_Space         thrpt    5       0.003 ±     0.002  MB/sec
+//    SerdeTest.codecRefTest:·gc.churn.G1_Survivor_Space.norm    thrpt    5       0.011 ±     0.007    B/op
+//    SerdeTest.codecRefTest:·gc.count                           thrpt    5     141.000              counts
+//    SerdeTest.codecRefTest:·gc.time                            thrpt    5     127.000                  ms
+//    SerdeTest.codecSerdeTest                                   thrpt    5  342376.390 ±  4012.424   ops/s
+//    SerdeTest.codecSerdeTest:·gc.alloc.rate                    thrpt    5     404.704 ±     4.662  MB/sec
+//    SerdeTest.codecSerdeTest:·gc.alloc.rate.norm               thrpt    5    1302.716 ±     0.183    B/op
+//    SerdeTest.codecSerdeTest:·gc.churn.G1_Eden_Space           thrpt    5     405.054 ±    30.793  MB/sec
+//    SerdeTest.codecSerdeTest:·gc.churn.G1_Eden_Space.norm      thrpt    5    1303.862 ±   102.128    B/op
+//    SerdeTest.codecSerdeTest:·gc.churn.G1_Survivor_Space       thrpt    5       0.003 ±     0.004  MB/sec
+//    SerdeTest.codecSerdeTest:·gc.churn.G1_Survivor_Space.norm  thrpt    5       0.008 ±     0.013    B/op
+//    SerdeTest.codecSerdeTest:·gc.count                         thrpt    5     142.000              counts
+//    SerdeTest.codecSerdeTest:·gc.time                          thrpt    5     137.000                  ms
+//    SerdeTest.codecRefTest                                      avgt    5      ≈ 10⁻⁵                s/op
+//    SerdeTest.codecRefTest:·gc.alloc.rate                       avgt    5     380.532 ±     6.200  MB/sec
+//    SerdeTest.codecRefTest:·gc.alloc.rate.norm                  avgt    5    1414.773 ±     0.141    B/op
+//    SerdeTest.codecRefTest:·gc.churn.G1_Eden_Space              avgt    5     382.226 ±    25.051  MB/sec
+//    SerdeTest.codecRefTest:·gc.churn.G1_Eden_Space.norm         avgt    5    1421.049 ±    83.740    B/op
+//    SerdeTest.codecRefTest:·gc.churn.G1_Survivor_Space          avgt    5       0.002 ±     0.002  MB/sec
+//    SerdeTest.codecRefTest:·gc.churn.G1_Survivor_Space.norm     avgt    5       0.009 ±     0.007    B/op
+//    SerdeTest.codecRefTest:·gc.count                            avgt    5     134.000              counts
+//    SerdeTest.codecRefTest:·gc.time                             avgt    5     127.000                  ms
+//    SerdeTest.codecSerdeTest                                    avgt    5      ≈ 10⁻⁶                s/op
+//    SerdeTest.codecSerdeTest:·gc.alloc.rate                     avgt    5     406.005 ±    14.311  MB/sec
+//    SerdeTest.codecSerdeTest:·gc.alloc.rate.norm                avgt    5    1302.780 ±     0.134    B/op
+//    SerdeTest.codecSerdeTest:·gc.churn.G1_Eden_Space            avgt    5     405.056 ±    30.423  MB/sec
+//    SerdeTest.codecSerdeTest:·gc.churn.G1_Eden_Space.norm       avgt    5    1299.735 ±    85.520    B/op
+//    SerdeTest.codecSerdeTest:·gc.churn.G1_Survivor_Space        avgt    5       0.003 ±     0.003  MB/sec
+//    SerdeTest.codecSerdeTest:·gc.churn.G1_Survivor_Space.norm   avgt    5       0.010 ±     0.011    B/op
+//    SerdeTest.codecSerdeTest:·gc.count                          avgt    5     142.000              counts
+//    SerdeTest.codecSerdeTest:·gc.time                           avgt    5     133.000                  ms
     //运行效率有约10%的提升
     //gc相差不多是因为主要消耗在序列的数据，而不是实现框架。新的解码有略微下降是因为少了反射的调用·
     Options opt = new OptionsBuilder()

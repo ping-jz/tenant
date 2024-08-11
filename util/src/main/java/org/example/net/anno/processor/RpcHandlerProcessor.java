@@ -12,7 +12,6 @@ import com.squareup.javapoet.TypeSpec;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
@@ -26,6 +25,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
@@ -58,7 +58,6 @@ public class RpcHandlerProcessor extends AbstractProcessor {
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-
     for (TypeElement annotation : annotations) {
       Set<? extends Element> annotationElements = roundEnv.getElementsAnnotatedWith(annotation);
       if (annotationElements.isEmpty()) {
@@ -133,7 +132,8 @@ public class RpcHandlerProcessor extends AbstractProcessor {
         .addModifiers(Modifier.PUBLIC)
         .returns(byte[].class)
         .addParameter(CONNECTION_PARAM_SPEC)
-        .addParameter(MESSAGE_PARAM_SPEC);
+        .addParameter(MESSAGE_PARAM_SPEC)
+        .addException(Exception.class);
 
     invoker.beginControlFlow("return switch(m.proto())");
     for (Element element : methods) {
@@ -146,7 +146,8 @@ public class RpcHandlerProcessor extends AbstractProcessor {
           .methodBuilder(handlerMethodName)
           .returns(byte[].class)
           .addParameter(CONNECTION_PARAM_SPEC)
-          .addParameter(MESSAGE_PARAM_SPEC);
+          .addParameter(MESSAGE_PARAM_SPEC)
+          .addException(Exception.class);
 
       invoker.addStatement("case $L -> $L($L, $L)", id, handlerMethodName, CONNECTION_PARAM_NAME,
           MESSAGE_PARAM_NAME);
@@ -186,7 +187,6 @@ public class RpcHandlerProcessor extends AbstractProcessor {
           .collect(Collectors.joining(", "));
       TypeMirror returnType = executableElement.getReturnType();
 
-
       if (returnType.getKind() == TypeKind.VOID) {
         handlerMethod.addStatement("$L.$L($L)", FACADE_FIELD_NAME, methodName, paramStr);
         handlerMethod.addStatement("return $T.EMPTY_BYTE_ARRAY", ArrayUtils.class);
@@ -219,6 +219,8 @@ public class RpcHandlerProcessor extends AbstractProcessor {
               handlerMethod.addStatement("$T $L = $L.$L($L)", TypeName.get(returnType), resVar,
                   FACADE_FIELD_NAME,
                   methodName, paramStr);
+
+
         }
 
         handlerMethod
@@ -236,6 +238,20 @@ public class RpcHandlerProcessor extends AbstractProcessor {
               handlerMethod.addStatement("$T.writeInt32($L, $L)", BYTEBUF_UTIL, resBuf, resVar);
           case LONG ->
               handlerMethod.addStatement("$T.writeInt64($L, $L)", BYTEBUF_UTIL, resBuf, resVar);
+          case DECLARED -> {
+            DeclaredType declaredType = (DeclaredType) returnType;
+            TypeElement typeElement = (TypeElement) declaredType.asElement();
+            if (typeElement.getQualifiedName()
+                .contentEquals(Util.COMPLETE_ABLE_FUTURE_TYPE.toString())) {
+              handlerMethod.addStatement("$L.writeObject($L, $L.get())", SERIALIZER_FIELD_NAME,
+                  resBuf,
+                  resVar
+              );
+            } else {
+              handlerMethod.addStatement("$L.writeObject($L, $L)", SERIALIZER_FIELD_NAME, resBuf,
+                  resVar);
+            }
+          }
           default ->
               handlerMethod.addStatement("$L.writeObject($L, $L)", SERIALIZER_FIELD_NAME, resBuf,
                   resVar);

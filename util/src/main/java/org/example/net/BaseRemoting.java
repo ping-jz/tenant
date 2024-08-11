@@ -1,5 +1,7 @@
 package org.example.net;
 
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
@@ -35,25 +37,10 @@ public class BaseRemoting {
    * @param timeout 超时时间
    * @since 2021年08月15日 15:45:03
    */
-  public <T> InvokeFuture<T> invoke(final Connection conn, final Message message,
-      final long timeout) {
-    final DefaultInvokeFuture<T> future = new DefaultInvokeFuture<>(message.msgId());
-    return invokeWithFuture(conn, message, future, timeout);
-  }
-
-
-  /**
-   * callBack Rpc invocation .<br>
-   *
-   * @param conn    目标链接
-   * @param message 请求消息
-   * @param timeout 超时时间
-   * @since 2021年08月15日 15:45:03
-   */
-  public <T> void invokeWithCallBack(final Connection conn, final Message message,
-      InvokeCallback<T> callback, final long timeout) {
-    final DefaultInvokeFuture<T> future = new DefaultInvokeFuture<>(message.msgId(), callback);
-    invokeWithFuture(conn, message, future, timeout);
+  public <T> CompletableFuture<T> invoke(final Connection conn, final Message message,
+      final long timeout, TimeUnit timeUnit) {
+    final CompletableFuture<T> future = new CompletableFuture<>();
+    return invokeWithFuture(conn, message, future, timeout, timeUnit);
   }
 
   /**
@@ -64,31 +51,27 @@ public class BaseRemoting {
    * @param timeout 超时时间
    * @since 2021年08月15日 15:45:03
    */
-  public <T> InvokeFuture<T> invokeWithFuture(final Connection conn, final Message message,
-      DefaultInvokeFuture<T> future, final long timeout) {
-    final int msgId = message.msgId();
-    conn.addInvokeFuture(future);
-    try {
-      Future<?> timeoutFuture = conn.channel().eventLoop().schedule(() -> {
-        DefaultInvokeFuture<T> f = conn.removeInvokeFuture(msgId);
-      }, timeout, TimeUnit.MILLISECONDS);
-      future.addTimeout(timeoutFuture);
+  public <T> CompletableFuture<T> invokeWithFuture(final Connection conn, final Message message,
+      CompletableFuture<T> future, final long timeout, TimeUnit timeUnit) {
+    Objects.requireNonNull(future);
 
+    final int msgId = message.msgId();
+    conn.addInvokeFuture(message.msgId(), future);
+    Future<?> timeoutFuture = conn.channel().eventLoop().schedule(() -> {
+      conn.removeInvokeFuture(msgId, future);
+    }, timeout, timeUnit);
+    try {
       conn.channel().writeAndFlush(message).addListener(cf -> {
         if (!cf.isSuccess()) {
-          DefaultInvokeFuture<T> f = conn.removeInvokeFuture(msgId);
-          if (f != null) {
-            f.cancelTimeout();
-          }
+          conn.removeInvokeFuture(msgId, future);
+          timeoutFuture.cancel(false);
           logger.error("Invoke send failed. The address is {}", conn.channel().remoteAddress(),
               cf.cause());
         }
       });
     } catch (Exception e) {
-      DefaultInvokeFuture<T> f = conn.removeInvokeFuture(msgId);
-      if (f != null) {
-        f.cancelTimeout();
-      }
+      conn.removeInvokeFuture(msgId, future);
+      timeoutFuture.cancel(false);
       logger.error("Exception caught when sending invocation. The address is {}",
           conn.channel().remoteAddress(), e);
     }

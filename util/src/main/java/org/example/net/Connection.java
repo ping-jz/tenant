@@ -2,6 +2,7 @@ package org.example.net;
 
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
@@ -30,21 +31,25 @@ public class Connection {
   /** a netty channel */
   private Channel channel;
   /** callBack future */
-  private final ConcurrentHashMap<Integer, DefaultInvokeFuture<?>> invokeFutures = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<Integer, CompletableFuture<?>> invokeFutures = new ConcurrentHashMap<>();
 
   @SuppressWarnings("unchecked")
-  public <T> DefaultInvokeFuture<T> addInvokeFuture(DefaultInvokeFuture<T> future) {
+  public <T> CompletableFuture<T> addInvokeFuture(Integer id, CompletableFuture<T> future) {
     if (isActive()) {
-      return (DefaultInvokeFuture<T>) invokeFutures.putIfAbsent(future.id(), future);
+      return (CompletableFuture<T>) invokeFutures.putIfAbsent(id, future);
     } else {
-      closeFuture(future);
+      closeFuture(future, stateException());
       return null;
     }
   }
 
   @SuppressWarnings("unchecked")
-  public <T> DefaultInvokeFuture<T> removeInvokeFuture(int msgId) {
-    return (DefaultInvokeFuture<T>) invokeFutures.remove(msgId);
+  public <T> CompletableFuture<T> removeInvokeFuture(int msgId) {
+    return (CompletableFuture<T>) invokeFutures.remove(msgId);
+  }
+
+  public <T> void removeInvokeFuture(int msgId, CompletableFuture<T> future) {
+    invokeFutures.remove(msgId, future);
   }
 
   public Connection(Channel channel, Integer id) {
@@ -70,15 +75,24 @@ public class Connection {
       channel.close();
     }
 
-    for (DefaultInvokeFuture<?> future : invokeFutures.values()) {
-      closeFuture(future);
+    Exception exception = stateException();
+    for (CompletableFuture<?> future : invokeFutures.values()) {
+      closeFuture(future, exception);
     }
     invokeFutures.clear();
   }
 
-  private void closeFuture(DefaultInvokeFuture<?> future) {
+  private static IllegalStateException stateException() {
+    return new IllegalStateException("Connection is close");
+  }
+
+  private void closeFuture(CompletableFuture<?> future, Exception exception) {
+    if (future.isDone()) {
+      return;
+    }
+
     try {
-      future.cancelTimeout();
+      future.completeExceptionally(exception);
     } catch (Exception e) {
       logger.error("Exception occurred in user defined InvokeCallback#onResponse() logic.", e);
     }

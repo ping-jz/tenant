@@ -11,7 +11,7 @@ import org.example.common.model.ReqMove;
 import org.example.common.model.ReqMoveSerde;
 import org.example.common.model.ResMove;
 import org.example.common.model.ResMoveSerde;
-import org.example.common.net.proxy.invoker.GameFacadeInvoker;
+import org.example.common.net.generated.invoker.GameFacadeInvoker;
 import org.example.game.facade.example.GameFacade;
 import org.example.game.facade.example.GameFacadeHandler;
 import org.example.net.Connection;
@@ -158,6 +158,57 @@ public class GameFacdeTest {
 
     invoker.of(embeddedChannel.attr(Connection.CONNECTION).get())
         .all(boolean1, byte1, short1, char1, int1, long1, float1, double1, reqMove, resMove);
+
+    //验证请求的信息
+    {
+      ByteBuf reqBuf = embeddedChannel.readOutbound();
+      embeddedChannel.writeInbound(reqBuf);
+    }
+
+    //验证返回的结果
+    {
+      ByteBuf resBuf = embeddedChannel.readOutbound();
+      resBuf.skipBytes(Integer.BYTES);
+      //511882096是自动生成的，自己看下代码里的值
+      Assertions.assertTrue(NettyByteBufUtil.readInt32(resBuf) < 0);
+      Assertions.assertEquals(0, NettyByteBufUtil.readInt32(resBuf));
+      Assertions.assertEquals(hashcode, NettyByteBufUtil.readInt32(resBuf));
+
+      Assertions.assertFalse(resBuf.isReadable());
+      Assertions.assertNull(embeddedChannel.readOutbound());
+    }
+  }
+
+ // @RepeatedTest(10)
+  public void callBack() {
+    ThreadLocalRandom random = ThreadLocalRandom.current();
+
+    boolean boolean1 = random.nextBoolean();
+    byte[] byte1 = new byte[random.nextInt(10)];
+    random.nextBytes(byte1);
+    short short1 = (short) random.nextInt(Short.MIN_VALUE, Short.MAX_VALUE);
+    char char1 = (char) random.nextInt();
+    int int1 = random.nextInt();
+    long long1 = random.nextLong();
+    float float1 = random.nextFloat();
+    double double1 = random.nextDouble();
+
+    ReqMove reqMove = new ReqMove();
+    reqMove.setId(random.nextInt());
+    reqMove.setX(random.nextFloat());
+    reqMove.setY(random.nextFloat());
+
+    ResMove resMove = new ResMove();
+    resMove.setId(random.nextInt());
+    resMove.setX(random.nextFloat());
+    resMove.setY(random.nextFloat());
+    resMove.setDir(random.nextInt());
+
+    int hashcode = Objects.hash(boolean1, Arrays.hashCode(byte1), short1, char1, int1, long1,
+        float1, double1, reqMove, resMove);
+
+    invoker.of(embeddedChannel.attr(Connection.CONNECTION).get())
+        .callback(boolean1, byte1, short1, char1, int1, long1, float1, double1, reqMove, resMove);
 
     //验证请求的信息
     {

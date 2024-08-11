@@ -12,5 +12,5 @@ import org.example.net.Message;
 @FunctionalInterface
 public interface Handler {
 
-  byte[] invoke(Connection connection, Message message);
+  byte[] invoke(Connection connection, Message message)  throws Exception;
 }

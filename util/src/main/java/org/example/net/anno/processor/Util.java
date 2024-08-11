@@ -40,6 +40,9 @@ class Util {
   public static final ClassName HANDLER_INTERFACE = ClassName.get("org.example.net.handler",
       "Handler");
 
+  public static final ClassName COMPLETE_ABLE_FUTURE_TYPE = ClassName.get("java.util.concurrent",
+      "CompletableFuture");
+
   public static List<Element> getReqMethod(ProcessingEnvironment processingEnv,
       TypeElement typeElement) {
     List<Element> res = new ArrayList<>();

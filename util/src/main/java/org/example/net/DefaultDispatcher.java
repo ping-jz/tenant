@@ -1,6 +1,8 @@
 package org.example.net;
 
 import io.netty.channel.Channel;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.ArrayUtils;
 import org.example.net.handler.Handler;
 import org.example.net.handler.HandlerRegistry;
@@ -55,11 +57,8 @@ public class DefaultDispatcher implements Dispatcher {
       return;
     }
 
-    if (0 < req.msgId() && req.proto() < 0) {
-      invokeFuture(channel, req);
-    } else {
-      invokeHandler(channel, req, handler);
-    }
+
+    invokeHandler(channel, req, handler);
   }
 
   /**
@@ -74,11 +73,10 @@ public class DefaultDispatcher implements Dispatcher {
       return;
     }
 
-    DefaultInvokeFuture<?> future = connection.removeInvokeFuture(msg.msgId());
+    CompletableFuture<Message> future = connection.removeInvokeFuture(msg.msgId());
     if (future != null) {
-      future.cancelTimeout();
       try {
-        future.executeCallBack(msg);
+        future.complete(msg);
       } catch (Exception e) {
         logger.error("Exception caught when executing invoke callback, id={}", msg.msgId(), e);
       }
