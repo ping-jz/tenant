@@ -50,7 +50,7 @@ public class GameFacade {
   }
 
   @Req
-  public byte b(byte a) {
+  public byte bytes(byte a) {
     return 1;
   }
 

@@ -5,12 +5,14 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import org.apache.commons.lang3.ArrayUtils;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ReqMoveSerde;
 import org.example.common.model.ResMove;
 import org.example.common.model.ResMoveSerde;
+import org.example.common.net.generated.callback.GameFacadeCallBack;
 import org.example.common.net.generated.invoker.GameFacadeInvoker;
 import org.example.game.facade.example.GameFacade;
 import org.example.game.facade.example.GameFacadeHandler;
@@ -39,14 +41,7 @@ public class GameFacdeTest {
     commonSerializer.registerSerializer(ReqMove.class, new ReqMoveSerde(commonSerializer));
     commonSerializer.registerSerializer(ResMove.class, new ResMoveSerde(commonSerializer));
 
-    GameFacade facade = new GameFacade();
-
-    HandlerRegistry handlerRegistry = new HandlerRegistry();
-    GameFacadeHandler handler = new GameFacadeHandler(facade, commonSerializer);
-    handlerRegistry.registeHandler(ECHO, handler);
-    handlerRegistry.registeHandler(OK, handler);
-    //这个值是自动生成的
-    handlerRegistry.registeHandler(511882096, handler);
+    HandlerRegistry handlerRegistry = handlerRegistry();
 
     embeddedChannel = new EmbeddedChannel();
     embeddedChannel.attr(Connection.CONNECTION).set(new Connection(embeddedChannel, 1));
@@ -55,6 +50,21 @@ public class GameFacdeTest {
         .addLast(new DispatcherHandler(new DefaultDispatcher(handlerRegistry)));
 
     invoker = new GameFacadeInvoker(new ConnectionManager()::connection, commonSerializer);
+  }
+
+  private static HandlerRegistry handlerRegistry() {
+    GameFacade facade = new GameFacade();
+
+    HandlerRegistry handlerRegistry = new HandlerRegistry();
+    GameFacadeHandler handler = new GameFacadeHandler(facade, commonSerializer);
+    handlerRegistry.registeHandler(ECHO, handler);
+    handlerRegistry.registeHandler(OK, handler);
+    handlerRegistry.registeHandler(1990291436, handler);
+    handlerRegistry.registeHandler(224008626, handler);
+
+    GameFacadeCallBack gameFacadeCallBack = new GameFacadeCallBack(commonSerializer);
+    handlerRegistry.registeHandler(-224008626, gameFacadeCallBack);
+    return handlerRegistry;
   }
 
   @RepeatedTest(10)
@@ -178,9 +188,8 @@ public class GameFacdeTest {
       Assertions.assertNull(embeddedChannel.readOutbound());
     }
   }
-
- // @RepeatedTest(10)
-  public void callBack() {
+  @RepeatedTest(10)
+  public void callBack() throws Exception {
     ThreadLocalRandom random = ThreadLocalRandom.current();
 
     boolean boolean1 = random.nextBoolean();
@@ -207,27 +216,20 @@ public class GameFacdeTest {
     int hashcode = Objects.hash(boolean1, Arrays.hashCode(byte1), short1, char1, int1, long1,
         float1, double1, reqMove, resMove);
 
-    invoker.of(embeddedChannel.attr(Connection.CONNECTION).get())
+    CompletableFuture<Integer> callback = invoker.of(embeddedChannel.attr(Connection.CONNECTION).get())
         .callback(boolean1, byte1, short1, char1, int1, long1, float1, double1, reqMove, resMove);
 
-    //验证请求的信息
     {
-      ByteBuf reqBuf = embeddedChannel.readOutbound();
-      embeddedChannel.writeInbound(reqBuf);
+      //第一次向callback发送消息，然后callback返回结果
+      ByteBuf reqBuf1 = embeddedChannel.readOutbound();
+      embeddedChannel.writeInbound(reqBuf1);
+
+      //然后在将结果发送一次
+      ByteBuf resBuf2 = embeddedChannel.readOutbound();
+      embeddedChannel.writeInbound(resBuf2);
     }
 
-    //验证返回的结果
-    {
-      ByteBuf resBuf = embeddedChannel.readOutbound();
-      resBuf.skipBytes(Integer.BYTES);
-      //511882096是自动生成的，自己看下代码里的值
-      Assertions.assertTrue(NettyByteBufUtil.readInt32(resBuf) < 0);
-      Assertions.assertEquals(0, NettyByteBufUtil.readInt32(resBuf));
-      Assertions.assertEquals(hashcode, NettyByteBufUtil.readInt32(resBuf));
-
-      Assertions.assertFalse(resBuf.isReadable());
-      Assertions.assertNull(embeddedChannel.readOutbound());
-    }
+    Assertions.assertEquals(hashcode, callback.get());
   }
 
 

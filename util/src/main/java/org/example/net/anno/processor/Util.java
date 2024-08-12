@@ -1,6 +1,7 @@
 package org.example.net.anno.processor;
 
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import java.util.ArrayList;
@@ -12,6 +13,9 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 import org.example.net.anno.Req;
 
@@ -26,6 +30,12 @@ class Util {
   public static final ClassName BASE_REMOTING = ClassName.get("org.example.net", "BaseRemoting");
   public static final ClassName COMMON_SERIALIZER = ClassName.get("org.example.serde",
       "CommonSerializer");
+
+  public static final String SERIALIZER_VAR_NAME = "serializer";
+  public static final FieldSpec COMMON_SERIALIZER_FIELD_SPEC = FieldSpec
+      .builder(COMMON_SERIALIZER, SERIALIZER_VAR_NAME)
+      .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
+            .build();
   public static final ClassName BYTE_BUF = ClassName.get("io.netty.buffer", "ByteBuf");
   public static final ClassName BYTEBUF_UTIL = ClassName.get("org.example.serde",
       "NettyByteBufUtil");
@@ -86,14 +96,26 @@ class Util {
     int id = reqAnno.value();
 
     if (id == 0) {
-      // 类名+方法名+参数类型的哈希的绝对值作为协议ID,
-      String paramStr = method.getParameters().stream().map(p -> p.asType().getKind().toString())
-          .collect(Collectors.joining(","));
-      id = Math.abs((facadeName.getQualifiedName() + method.getSimpleName().toString()
-          + paramStr).hashCode());
+      // 类名+方法名的哈希的绝对值作为协议ID,
+      id = Math.abs((facadeName.getQualifiedName() + "#" + method.getSimpleName().toString()).hashCode());
     }
 
     return id;
+  }
+
+
+  public static DeclaredType isCompleteAbleFuture(TypeMirror mirror) {
+    if (mirror.getKind() != TypeKind.DECLARED) {
+      return null;
+    }
+    DeclaredType declaredType = (DeclaredType) mirror;
+    TypeElement returnTypeElement = (TypeElement) declaredType.asElement();
+    if(returnTypeElement.getQualifiedName()
+        .contentEquals(Util.COMPLETE_ABLE_FUTURE_TYPE.toString())) {
+      return declaredType;
+    } else {
+      return null;
+    }
   }
 
   private Util() {

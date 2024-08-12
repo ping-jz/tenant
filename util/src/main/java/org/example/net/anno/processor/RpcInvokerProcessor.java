@@ -10,6 +10,7 @@ import static org.example.net.anno.processor.Util.LOGGER;
 import static org.example.net.anno.processor.Util.LOGGER_FACTOR;
 import static org.example.net.anno.processor.Util.MESSAGE;
 import static org.example.net.anno.processor.Util.POOLED_UTIL;
+import static org.example.net.anno.processor.Util.isCompleteAbleFuture;
 
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
@@ -54,7 +55,12 @@ import javax.tools.JavaFileObject;
 public class RpcInvokerProcessor extends AbstractProcessor {
 
   private static final String INVOKER_PACKAGE = "org.example.common.net.generated.invoker";
+
   private static final String INNER_SIMPLE_NAME = "Invoker";
+
+  private static final String CONNECTION_FIELD_NAME = "c";
+  private static final String MESSAGE_VAR_NAME = "m";
+  private static final String BUF_VAR_NAME = "buf";
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -67,21 +73,8 @@ public class RpcInvokerProcessor extends AbstractProcessor {
       for (Element clazz : annotationElements) {
         TypeElement typeElement = (TypeElement) clazz;
         try {
-
           List<Element> elements = Util.getReqMethod(processingEnv, typeElement);
-
-          TypeSpec inner = generateInner(typeElement, elements);
-
-          TypeSpec outer = generateOuter(typeElement)
-              .addType(inner).build();
-
-          JavaFile javaFile = JavaFile.builder(INVOKER_PACKAGE, outer).build();
-
-          String qualifiedName = "%s.%s".formatted(INVOKER_PACKAGE, outer.name);
-          JavaFileObject file = processingEnv.getFiler().createSourceFile(qualifiedName);
-          try (PrintWriter writer = new PrintWriter(file.openWriter())) {
-            javaFile.writeTo(writer);
-          }
+          generateOuter(typeElement, elements);
         } catch (Exception e) {
           processingEnv.getMessager()
               .printError(
@@ -95,12 +88,14 @@ public class RpcInvokerProcessor extends AbstractProcessor {
     return false;
   }
 
-  public TypeSpec.Builder generateOuter(TypeElement clazz) {
+  public void generateOuter(TypeElement typeElement, List<Element> elements)
+      throws Exception {
+    TypeSpec inner = generateInner(typeElement, elements);
 
-    String simpleName = clazz.getSimpleName() + "Invoker";
+    String simpleName = typeElement.getSimpleName() + "Invoker";
 
-    TypeSpec.Builder typeSpecBuilder = TypeSpec.classBuilder(simpleName)
-        .addJavadoc("{@link $T}\n", clazz)
+    TypeSpec.Builder outerBuilder = TypeSpec.classBuilder(simpleName)
+        .addJavadoc("{@link $T}\n", typeElement)
         .addJavadoc("@since $S", LocalDateTime.now())
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addField(FieldSpec
@@ -116,9 +111,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
             .builder(BASE_REMOTING, "remoting")
             .addModifiers(Modifier.PRIVATE)
             .build())
-        .addField(FieldSpec
-            .builder(COMMON_SERIALIZER, "serializer")
-            .addModifiers(Modifier.PRIVATE).build());
+        .addField(Util.COMMON_SERIALIZER_FIELD_SPEC);
 
     MethodSpec constructor = MethodSpec
         .constructorBuilder()
@@ -151,15 +144,19 @@ public class RpcInvokerProcessor extends AbstractProcessor {
         .addStatement("return new $L(c)", INNER_SIMPLE_NAME)
         .build();
 
-    typeSpecBuilder.addMethod(constructor).addMethod(ofId).addMethod(ofConnection);
+    outerBuilder.addMethod(constructor).addMethod(ofId).addMethod(ofConnection);
 
-    return typeSpecBuilder;
+    TypeSpec outer = outerBuilder.addType(inner).build();
+    JavaFile javaFile = JavaFile.builder(INVOKER_PACKAGE, outer).build();
+
+    String qualifiedName = "%s.%s".formatted(INVOKER_PACKAGE, outer.name);
+    JavaFileObject file = processingEnv.getFiler().createSourceFile(qualifiedName);
+    try (PrintWriter writer = new PrintWriter(file.openWriter())) {
+      javaFile.writeTo(writer);
+    }
   }
 
   public TypeSpec generateInner(TypeElement typeElement, List<Element> methods) {
-    final String CONNECTION_FIELD_NAME = "c";
-    final String MESSAGE_VAR_NAME = "m";
-    final String BUF_VAR_NAME = "buf";
 
     TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(INNER_SIMPLE_NAME)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
@@ -237,7 +234,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
       }
 
       TypeMirror typeMirror = method.getReturnType();
-      if (isCompleteAbleFuture(typeMirror)) {
+      if (isCompleteAbleFuture(typeMirror) != null) {
         methodBuilder
             .returns(TypeName.get(typeMirror))
             .addStatement("///TODO 先默认三秒吧，以后看需要改")
@@ -256,15 +253,10 @@ public class RpcInvokerProcessor extends AbstractProcessor {
     return typeBuilder.build();
   }
 
-  private static boolean isCompleteAbleFuture(TypeMirror mirror) {
-    if (mirror.getKind() != TypeKind.DECLARED) {
-      return false;
-    }
-    DeclaredType declaredType = (DeclaredType) mirror;
-    TypeElement returnTypeElement = (TypeElement) declaredType.asElement();
-    return returnTypeElement.getQualifiedName()
-        .contentEquals(Util.COMPLETE_ABLE_FUTURE_TYPE.toString());
-  }
+
+
+
+
 
 
 }

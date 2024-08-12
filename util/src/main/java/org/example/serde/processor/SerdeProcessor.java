@@ -57,19 +57,20 @@ public class SerdeProcessor extends AbstractProcessor {
               .printMessage(Kind.ERROR, "@Serde must be applied to a Class", clazz);
           return false;
         }
-        String className = clazz.toString();
-        String packageName = null;
-        int lastDot = className.lastIndexOf('.');
-        if (lastDot > 0) {
-          packageName = className.substring(0, lastDot);
-        }
-
-        String simpleClassName = className.substring(lastDot + 1);
-        TypeName typename = ClassName.get(packageName, simpleClassName);
-        String builderClassName = className + "Serde";
-        String builderSimpleClassName = builderClassName.substring(lastDot + 1);
 
         try {
+          String className = clazz.toString();
+          String packageName = null;
+          int lastDot = className.lastIndexOf('.');
+          if (lastDot > 0) {
+            packageName = className.substring(0, lastDot);
+          }
+
+          String simpleClassName = className.substring(lastDot + 1);
+          TypeName typename = ClassName.get(packageName, simpleClassName);
+          String builderClassName = className + "Serde";
+          String builderSimpleClassName = builderClassName.substring(lastDot + 1);
+
           TypeName genericInterface = ParameterizedTypeName.get(ClassName.get(Serializer.class),
               typename);
           Builder builder = TypeSpec.classBuilder(builderSimpleClassName)
