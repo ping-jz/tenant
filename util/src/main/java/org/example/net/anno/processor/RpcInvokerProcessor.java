@@ -49,7 +49,7 @@ import javax.tools.JavaFileObject;
  * @author zhongjianping
  * @since 2024/8/9 11:19
  */
-@SupportedAnnotationTypes("org.example.net.anno.RpcModule")
+@SupportedAnnotationTypes("org.example.common.net.annotation.RpcModule")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @AutoService(Processor.class)
 public class RpcInvokerProcessor extends AbstractProcessor {

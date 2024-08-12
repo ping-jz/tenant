@@ -23,6 +23,7 @@ class Util {
 
   /** 常用类型 */
   public static final ClassName CONNECTION = ClassName.get("org.example.net", "Connection");
+  public static final ClassName HANDLER_ANNOTATION = ClassName.get("org.example.common.generator.rpc", "Handler");
   public static final ParameterizedTypeName CONNECTION_GETTER = ParameterizedTypeName.get(
       ClassName.get("java.util.function", "Function"),
       TypeName.INT.box(), CONNECTION

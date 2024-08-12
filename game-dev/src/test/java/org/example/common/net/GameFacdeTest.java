@@ -20,7 +20,6 @@ import org.example.net.Connection;
 import org.example.net.DefaultDispatcher;
 import org.example.net.codec.MessageCodec;
 import org.example.net.handler.DispatcherHandler;
-import org.example.net.handler.HandlerRegistry;
 import org.example.serde.CommonSerializer;
 import org.example.serde.NettyByteBufUtil;
 import org.junit.jupiter.api.Assertions;
@@ -41,21 +40,21 @@ public class GameFacdeTest {
     commonSerializer.registerSerializer(ReqMove.class, new ReqMoveSerde(commonSerializer));
     commonSerializer.registerSerializer(ResMove.class, new ResMoveSerde(commonSerializer));
 
-    HandlerRegistry handlerRegistry = handlerRegistry();
+    DefaultDispatcher handlerRegistry = handlerRegistry();
 
     embeddedChannel = new EmbeddedChannel();
     embeddedChannel.attr(Connection.CONNECTION).set(new Connection(embeddedChannel, 1));
     embeddedChannel.pipeline()
         .addLast(new MessageCodec())
-        .addLast(new DispatcherHandler(new DefaultDispatcher(handlerRegistry)));
+        .addLast(new DispatcherHandler(handlerRegistry));
 
     invoker = new GameFacadeInvoker(new ConnectionManager()::connection, commonSerializer);
   }
 
-  private static HandlerRegistry handlerRegistry() {
+  private static DefaultDispatcher handlerRegistry() {
     GameFacade facade = new GameFacade();
 
-    HandlerRegistry handlerRegistry = new HandlerRegistry();
+    DefaultDispatcher handlerRegistry =  new DefaultDispatcher();
     GameFacadeHandler handler = new GameFacadeHandler(facade, commonSerializer);
     handlerRegistry.registeHandler(ECHO, handler);
     handlerRegistry.registeHandler(OK, handler);

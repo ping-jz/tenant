@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
 import org.example.net.anno.Req;
-import org.example.net.anno.RpcModule;
+import org.example.common.net.annotation.RpcModule;
 
 /**
  * 游戏门面(文档生产插件测试)
@@ -44,45 +44,6 @@ public class GameFacade {
     return "ok";
   }
 
-  @Req
-  public boolean b(boolean a) {
-    return false;
-  }
-
-  @Req
-  public byte bytes(byte a) {
-    return 1;
-  }
-
-  @Req(207)
-  public short s(short a) {
-    return 1;
-  }
-
-  @Req(208)
-  public char c(char a) {
-    return 1;
-  }
-
-  @Req(209)
-  public int i(int a) {
-    return 1;
-  }
-
-  @Req(210)
-  public long l(long a) {
-    return 1;
-  }
-
-  @Req(211)
-  public float f(float a) {
-    return 1;
-  }
-
-  @Req(212)
-  public double d(double a) {
-    return 1;
-  }
 
   @Req
   public int all(boolean boolean1, byte[] byte1, short short1, char char1, int int1, long long1,

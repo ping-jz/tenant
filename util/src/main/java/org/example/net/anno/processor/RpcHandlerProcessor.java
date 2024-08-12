@@ -13,6 +13,8 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
@@ -47,7 +49,7 @@ import org.apache.commons.lang3.ArrayUtils;
  * @author zhongjianping
  * @since 2024/8/9 11:19
  */
-@SupportedAnnotationTypes("org.example.net.anno.RpcModule")
+@SupportedAnnotationTypes("org.example.common.net.annotation.RpcModule")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @AutoService(Processor.class)
 public class RpcHandlerProcessor extends AbstractProcessor {
@@ -57,7 +59,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
   private static final String CONNECTION_VAR_NAME = "c";
   private static final String MESSAGE_VAR_NAME = "m";
   private static final String BUF_VAR_NAME = "buf";
-
+  private static final String PROTOS_VAR_NAME = "protos";
   private static final ParameterSpec CONNECTION_PARAM_SPEC = ParameterSpec.builder(Util.CONNECTION,
       CONNECTION_VAR_NAME).build();
   private static final ParameterSpec MESSAGE_PARAM_SPEC = ParameterSpec.builder(Util.MESSAGE,
@@ -90,6 +92,10 @@ public class RpcHandlerProcessor extends AbstractProcessor {
         TypeElement facade = (TypeElement) clazz;
 
         List<Element> methodElements = Util.getReqMethod(processingEnv, facade);
+        if (methodElements.isEmpty()) {
+          continue;
+        }
+
         try {
           generateHandler(facade, methodElements);
           generateCallBackHandler(facade, methodElements);
@@ -119,6 +125,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
     String simpleName = qualifiedName.substring(lastIdx + 1);
 
     TypeSpec.Builder typeSpecBuilder = TypeSpec.classBuilder(simpleName)
+        .addAnnotation(Util.HANDLER_ANNOTATION)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addSuperinterface(Util.HANDLER_INTERFACE)
         .addField(FieldSpec
@@ -156,25 +163,24 @@ public class RpcHandlerProcessor extends AbstractProcessor {
         .addException(Exception.class);
 
     invoker.beginControlFlow("return switch(m.proto())");
+    IntList intList = new IntArrayList();
     for (Element element : methods) {
       ExecutableElement executableElement = (ExecutableElement) element;
       final int id = Util.calcProtoId(facde, executableElement);
       String methodName = executableElement.getSimpleName().toString();
 
-      String handlerMethodName = methodName + '_' + id;
       MethodSpec.Builder handlerMethod = MethodSpec
-          .methodBuilder(handlerMethodName)
+          .methodBuilder(methodName)
           .returns(byte[].class)
           .addParameter(CONNECTION_PARAM_SPEC)
           .addParameter(MESSAGE_PARAM_SPEC)
           .addException(Exception.class);
 
-      invoker.addStatement("case $L -> $L($L, $L)", id, handlerMethodName, CONNECTION_VAR_NAME,
+      invoker.addStatement("case $L -> $L($L, $L)", id, methodName, CONNECTION_VAR_NAME,
           MESSAGE_VAR_NAME);
 
       List<? extends VariableElement> params = executableElement.getParameters();
       if (!params.isEmpty()) {
-
         handlerMethod.addStatement("$T $L = $T.wrappedBuffer($L.packet())",
             Util.BYTE_BUF, BUF_VAR_NAME, Util.UNNPOOLED_UTIL, MESSAGE_VAR_NAME);
         for (VariableElement p : params) {
@@ -237,8 +243,6 @@ public class RpcHandlerProcessor extends AbstractProcessor {
               handlerMethod.addStatement("$T $L = $L.$L($L)", TypeName.get(returnType), resVar,
                   FACADE_VAR_NAME,
                   methodName, paramStr);
-
-
         }
 
         handlerMethod
@@ -283,6 +287,8 @@ public class RpcHandlerProcessor extends AbstractProcessor {
       }
 
       handler.addMethod(handlerMethod.build());
+
+      intList.add(id);
     }
 
     invoker
@@ -291,7 +297,13 @@ public class RpcHandlerProcessor extends AbstractProcessor {
             facde.getSimpleName(), MESSAGE_VAR_NAME)
         .endControlFlow().addCode(";");
 
-    handler.addMethod(invoker.build());
+    handler
+        .addField(FieldSpec.builder(int[].class, PROTOS_VAR_NAME)
+            .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
+            .initializer("new int[]{$L}",
+                intList.intStream().mapToObj(String::valueOf).collect(Collectors.joining(",")))
+            .build())
+        .addMethod(invoker.build());
   }
 
 
@@ -300,6 +312,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
     final String loggerVarName = "logger";
     TypeSpec.Builder callBackHandleBuilder = TypeSpec
         .classBuilder(facde.getSimpleName() + CALL_BACK_SIMPLE_NAME)
+        .addAnnotation(Util.HANDLER_ANNOTATION)
         .addField(FieldSpec
             .builder(LOGGER, loggerVarName)
             .addModifiers(Modifier.FINAL, Modifier.STATIC)
@@ -319,6 +332,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
         .beginControlFlow("switch($L.proto())", MESSAGE_VAR_NAME);
 
     String futureVarName = "futureVar";
+    IntList intList = new IntArrayList();
     for (Element e : elements) {
       ExecutableElement method = (ExecutableElement) e;
       TypeMirror returnTypeMirror = method.getReturnType();
@@ -350,8 +364,8 @@ public class RpcHandlerProcessor extends AbstractProcessor {
           .addStatement("$L.complete($L.read($L))", futureVarName, SERIALIZER_VAR_NAME,
               BUF_VAR_NAME);
 
+      intList.add(id);
       callBackHandleBuilder.addMethod(methodBuilder.build());
-
       invokeBuilder.addStatement("case $L -> $L($L, $L)", id, methodName, CONNECTION_VAR_NAME,
           MESSAGE_VAR_NAME);
     }
@@ -370,6 +384,11 @@ public class RpcHandlerProcessor extends AbstractProcessor {
         .build();
 
     TypeSpec callBackHandler = callBackHandleBuilder
+        .addField(FieldSpec.builder(int[].class, PROTOS_VAR_NAME)
+            .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
+            .initializer("new int[]{$L}",
+                intList.intStream().mapToObj(String::valueOf).collect(Collectors.joining(",")))
+            .build())
         .addMethod(invoker)
         .addMethod(MethodSpec.constructorBuilder()
             .addModifiers(Modifier.PUBLIC)

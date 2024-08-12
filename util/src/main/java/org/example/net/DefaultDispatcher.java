@@ -1,11 +1,10 @@
 package org.example.net;
 
 import io.netty.channel.Channel;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.example.net.handler.Handler;
-import org.example.net.handler.HandlerRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,28 +17,35 @@ import org.slf4j.LoggerFactory;
 public class DefaultDispatcher implements Dispatcher {
 
   /**
-   * 消息处理器集合
-   */
-  private HandlerRegistry handlerRegistry;
-  /**
    * 日志
    */
-  private Logger logger;
-
-  public DefaultDispatcher(HandlerRegistry handlerRegistry) {
-    this.handlerRegistry = handlerRegistry;
-    logger = LoggerFactory.getLogger(getClass());
-  }
+  private static Logger logger = LoggerFactory.getLogger(DefaultDispatcher.class);
 
   /**
-   * 因为Logger隔离有点困难，但为了以后方便，Logger还是先有外部传进来
-   *
-   * @since 2021年07月24日 15:53:52
+   * 协议编号 -> 请求处理者
    */
-  public DefaultDispatcher(Logger logger, HandlerRegistry handlerRegistry) {
-    this.logger = logger;
-    this.handlerRegistry = handlerRegistry;
+  private final Map<Integer, Handler> handles;
+
+  public Handler registeHandler(int id, Handler handler) {
+    return handles.put(id, handler);
   }
+
+
+  /**
+   * 根据协议编号，获取处理者
+   *
+   * @param proto 协议编号
+   * @since 2021年07月22日 23:35:25
+   */
+  public Handler getHandler(int proto) {
+    return handles.get(proto);
+  }
+
+
+  public DefaultDispatcher() {
+    handles = new ConcurrentHashMap<>();
+  }
+
 
   /**
    * 根据{@link Message#proto()}进行消息分发
@@ -49,7 +55,7 @@ public class DefaultDispatcher implements Dispatcher {
    * @since 2021年07月24日 15:58:39
    */
   public void doDispatcher(Channel channel, Message req) {
-    Handler handler = handlerRegistry.getHandler(req.proto());
+    Handler handler = getHandler(req.proto());
     if (handler == null && req.msgId() == 0) {
       logger.error("地址:{}, 协议号:{}, 消息ID:{} 无对应处理器", channel.remoteAddress(),
           req.proto(),
@@ -57,33 +63,7 @@ public class DefaultDispatcher implements Dispatcher {
       return;
     }
 
-
     invokeHandler(channel, req, handler);
-  }
-
-  /**
-   * 执行回调
-   *
-   * @param msg 请求消息
-   * @since 2021年08月15日 20:22:04
-   */
-  private void invokeFuture(Channel channel, Message msg) {
-    Connection connection = channel.attr(Connection.CONNECTION).get();
-    if (connection == null) {
-      return;
-    }
-
-    CompletableFuture<Message> future = connection.removeInvokeFuture(msg.msgId());
-    if (future != null) {
-      try {
-        future.complete(msg);
-      } catch (Exception e) {
-        logger.error("Exception caught when executing invoke callback, id={}", msg.msgId(), e);
-      }
-    } else {
-      logger.warn("Cannot find InvokeFuture, maybe already timeout, id={}, from={} ", msg.msgId(),
-          channel.remoteAddress());
-    }
   }
 
   /**
@@ -96,7 +76,8 @@ public class DefaultDispatcher implements Dispatcher {
   private void invokeHandler(Channel channel, Message msg, Handler handler) {
     Connection connection = channel.attr(Connection.CONNECTION).get();
     if (connection == null) {
-      logger.error("channel:{}, 没有与绑定Connection。无法处理消息:{}", channel.remoteAddress(), msg.proto());
+      logger.error("channel:{}, 没有与绑定Connection。无法处理消息:{}", channel.remoteAddress(),
+          msg.proto());
       return;
     }
 

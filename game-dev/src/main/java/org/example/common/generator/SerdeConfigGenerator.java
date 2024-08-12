@@ -7,6 +7,7 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.MethodSpec.Builder;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
@@ -35,12 +36,20 @@ public final class SerdeConfigGenerator {
   private SerdeConfigGenerator() {
   }
 
-  public static void serdeConfig(Path outputDirs, ScanResult classGraph) {
-    new SerdeConfigGenerator().run(outputDirs, classGraph);
+  public static void serdeConfig(Path outputDirs) {
+    new SerdeConfigGenerator().run(outputDirs);
   }
 
-  public void run(Path outputDirs, ScanResult classGraph) {
-    final String packaget = "org.example.common.config";
+  public void run(Path outputDirs) {
+    final String projectPackage = "org.example.common";
+    ScanResult classGraph = new ClassGraph()
+        .enableAnnotationInfo()
+        .enableClassInfo()
+        .enableFieldInfo()
+        .enableMethodInfo()
+        .acceptPackages(projectPackage).scan();
+
+    final String packaget = "org.example.common.config.generated";
 
     TypeSpec.Builder typeSpecBuilder = TypeSpec
         .classBuilder("SerdeConfig")

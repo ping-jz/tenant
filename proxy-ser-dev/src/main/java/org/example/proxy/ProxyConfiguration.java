@@ -1,9 +1,6 @@
 package org.example.proxy;
 
-import java.util.Collection;
 import org.example.net.DefaultDispatcher;
-import org.example.net.anno.RpcModule;
-import org.example.net.handler.HandlerRegistry;
 import org.example.proxy.model.ServerRegister;
 import org.example.serde.CommonSerializer;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -26,10 +23,12 @@ public class ProxyConfiguration {
 
   @Bean
   public DefaultDispatcher dispatcher(AnnotationConfigApplicationContext context) {
-    HandlerRegistry registry = new HandlerRegistry();
-    Collection<Object> objects = context.getBeansWithAnnotation(RpcModule.class).values();
-    objects.forEach(registry::registerHandlers);
-    return new DefaultDispatcher(registry);
+//    DefaultDispatcher defaultDispatcher = new DefaultDispatcher(registry)
+//    Collection<Object> objects = context.getBeansWithAnnotation(RpcModule.class).values();
+//    objects.forEach(defaultDispatcher::registerHandlers);
+//    return defaultDispatcher;
+
+    throw new UnsupportedOperationException();
   }
 
 

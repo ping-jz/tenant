@@ -2,9 +2,8 @@ package org.example.world;
 
 
 import org.example.common.model.ReqMove;
-import org.example.common.model.ResMove;
 import org.example.net.anno.Req;
-import org.example.net.anno.RpcModule;
+import org.example.common.net.annotation.RpcModule;
 
 /**
  * 世界门面(文档生产插件测试)
