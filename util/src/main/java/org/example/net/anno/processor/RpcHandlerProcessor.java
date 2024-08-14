@@ -62,7 +62,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
   private static final String PROTOS_VAR_NAME = "protos";
   private static final ParameterSpec CONNECTION_PARAM_SPEC = ParameterSpec.builder(Util.CONNECTION,
       CONNECTION_VAR_NAME).build();
-  private static final ParameterSpec MESSAGE_PARAM_SPEC = ParameterSpec.builder(Util.MESSAGE,
+  private static final ParameterSpec MESSAGE_PARAM_SPEC = ParameterSpec.builder(Util.MESSAGE_CLASS_NAME,
       MESSAGE_VAR_NAME).build();
 
   private static final String CALL_BACK_HANDLER_PACKAGE = "org.example.common.net.generated.callback";

@@ -84,11 +84,7 @@ public class DefaultDispatcher implements Dispatcher {
     try {
       byte[] result = handler.invoke(connection, msg);
       if (0 < msg.proto() && ArrayUtils.isNotEmpty(result)) {
-        Message response = Message.of(Math.negateExact(msg.proto()))
-            //.target(msg.source())
-            .msgId(msg.msgId())
-            .packet(result);
-
+        Message response = Message.of(Math.negateExact(msg.proto()), msg.msgId(), result);
         channel.write(response);
       }
 

@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
-
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
 import org.example.net.Message;
@@ -22,10 +21,10 @@ public class MessageCodecTest {
     CommonSerializer serializer = new CommonSerializer();
     EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(serializer));
 
-    Message message = new Message();
-    message.proto(ThreadLocalRandom.current().nextInt());
-    message.msgId(ThreadLocalRandom.current().nextInt());
-    message.packet("Hello World".getBytes(StandardCharsets.UTF_8));
+    Message message = Message.of(
+        ThreadLocalRandom.current().nextInt(),
+        ThreadLocalRandom.current().nextInt(),
+        "Hello World".getBytes(StandardCharsets.UTF_8));
     channel.writeOutbound(message);
 
     ByteBuf out = channel.readOutbound();
@@ -70,7 +69,6 @@ public class MessageCodecTest {
 
     channel.finishAndReleaseAll();
   }
-
 
 
 }

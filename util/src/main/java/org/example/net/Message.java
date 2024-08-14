@@ -5,10 +5,7 @@ import java.util.Objects;
 import org.apache.commons.lang3.ArrayUtils;
 
 /**
- * 网络通信协议格式
- * //TODO packet可以使用Pooled吗?
- * //TODO 借助Netty的环境，实现自动释放
- * //TODO 改造下，只提供Getter和构造器
+ * 网络通信协议格式 //TODO packet可以使用Pooled吗? //TODO 借助Netty的环境，实现自动释放
  *
  * @author ZJP
  * @since 2021年07月24日 14:47:30
@@ -25,41 +22,27 @@ public class Message {
   public Message() {
   }
 
-  public static Message of() {
-    return new Message();
-  }
-
-  public static Message of(int proto) {
-    return new Message().proto(proto);
+  public static Message of(int proto, int msgId, byte[] packet) {
+    Message message = new Message();
+    message.proto = proto;
+    message.msgId = msgId;
+    message.packet = packet;
+    return message;
   }
 
   public int proto() {
     return proto;
   }
 
-  public Message proto(int proto) {
-    this.proto = proto;
-    return this;
-  }
 
   public int msgId() {
     return msgId;
-  }
-
-  public Message msgId(int optIdx) {
-    msgId = optIdx;
-    return this;
   }
 
   public byte[] packet() {
     return packet;
   }
 
-
-  public Message packet(byte[] packet) {
-    this.packet = packet;
-    return this;
-  }
 
   @Deprecated
   public boolean isSuc() {

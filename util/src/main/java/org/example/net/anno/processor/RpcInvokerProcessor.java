@@ -8,7 +8,7 @@ import static org.example.net.anno.processor.Util.CONNECTION;
 import static org.example.net.anno.processor.Util.CONNECTION_GETTER;
 import static org.example.net.anno.processor.Util.LOGGER;
 import static org.example.net.anno.processor.Util.LOGGER_FACTOR;
-import static org.example.net.anno.processor.Util.MESSAGE;
+import static org.example.net.anno.processor.Util.MESSAGE_CLASS_NAME;
 import static org.example.net.anno.processor.Util.POOLED_UTIL;
 import static org.example.net.anno.processor.Util.isCompleteAbleFuture;
 
@@ -41,6 +41,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * 负责RPC方法的调用类和代理类
@@ -60,6 +61,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
 
   private static final String CONNECTION_FIELD_NAME = "c";
   private static final String MESSAGE_VAR_NAME = "m";
+  private static final String PACKET_VAR_NAME = "p";
   private static final String BUF_VAR_NAME = "buf";
 
   @Override
@@ -159,6 +161,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
   }
 
   public TypeSpec generateInner(TypeElement typeElement, List<Element> methods) {
+    final String protoIdVarName = "id";
 
     TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(INNER_SIMPLE_NAME)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
@@ -183,16 +186,18 @@ public class RpcInvokerProcessor extends AbstractProcessor {
       int id = Util.calcProtoId(typeElement, method);
       methodBuilder
           .addJavadoc("{@link $T#$L}", typeElement, methodName)
-          .addStatement("final int id = $L", id)
-          .addStatement("$T $L = $T.of(id)", MESSAGE, MESSAGE_VAR_NAME, MESSAGE)
+          .addStatement("final int $L = $L", protoIdVarName, id)
       ;
 
+      methodBuilder
+          .addCode("\n")
+          .addStatement("byte[] $L = $T.EMPTY_BYTE_ARRAY", PACKET_VAR_NAME, ArrayUtils.class);
       List<? extends VariableElement> pparameters = method.getParameters();
       if (!pparameters.isEmpty()) {
         methodBuilder
-            .addCode("\n")
-            .addStatement("$T buf = $T.DEFAULT.buffer()", BYTE_BUF, POOLED_UTIL)
+            .addStatement("$T $L = null", BYTE_BUF, BUF_VAR_NAME)
             .beginControlFlow("try")
+            .addStatement("$L = $T.DEFAULT.buffer()", BUF_VAR_NAME, POOLED_UTIL)
         ;
 
         //Handle param
@@ -202,7 +207,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
           TypeName paramTypeName = TypeName.get(paramType);
 
           // Connection和Message不用生成
-          if (paramTypeName.equals(CONNECTION) || paramTypeName.equals(MESSAGE)) {
+          if (paramTypeName.equals(CONNECTION) || paramTypeName.equals(MESSAGE_CLASS_NAME)) {
             continue;
           }
 
@@ -225,7 +230,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
         }
 
         methodBuilder
-            .addStatement("$L.packet($T.readBytes($L))", MESSAGE_VAR_NAME, BYTEBUF_UTIL,
+            .addStatement("$L = $T.readBytes($L)", PACKET_VAR_NAME, BYTEBUF_UTIL,
                 BUF_VAR_NAME)
             .endControlFlow()
             .beginControlFlow("finally")
@@ -241,15 +246,22 @@ public class RpcInvokerProcessor extends AbstractProcessor {
         methodBuilder
             .returns(TypeName.get(typeMirror))
             .addStatement("///TODO 先默认三秒吧，以后看需要改")
-            .addStatement("$L.msgId($L.nextCallBackMsgId())", MESSAGE_VAR_NAME,
-                CONNECTION_FIELD_NAME)
-            .addStatement("return remoting.invoke($L, $L, 3, $T.SECONDS)",
+            .addStatement(
+                "return remoting.invoke($L, $T.of($L, $L.nextCallBackMsgId(), $L), 3, $T.SECONDS)",
                 CONNECTION_FIELD_NAME,
-                MESSAGE_VAR_NAME, TimeUnit.class);
+                MESSAGE_CLASS_NAME,
+                protoIdVarName,
+                CONNECTION_FIELD_NAME,
+                PACKET_VAR_NAME,
+                TimeUnit.class);
 
       } else {
-        methodBuilder.addStatement("remoting.invoke($L, $L)", CONNECTION_FIELD_NAME,
-            MESSAGE_VAR_NAME);
+        methodBuilder.addStatement(
+            "remoting.invoke($L, $T.of($L, 0, $L))",
+            CONNECTION_FIELD_NAME,
+            MESSAGE_CLASS_NAME,
+            protoIdVarName,
+            PACKET_VAR_NAME);
       }
 
       typeBuilder.addMethod(methodBuilder.build());

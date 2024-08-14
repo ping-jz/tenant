@@ -6,7 +6,6 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -45,7 +44,7 @@ class Util {
 
   public static final ClassName UNNPOOLED_UTIL = ClassName.get("io.netty.buffer",
       "Unpooled");
-  public static final ClassName MESSAGE = ClassName.get("org.example.net", "Message");
+  public static final ClassName MESSAGE_CLASS_NAME = ClassName.get("org.example.net", "Message");
   public static final ClassName LOGGER = ClassName.get("org.slf4j", "Logger");
   public static final ClassName LOGGER_FACTOR = ClassName.get("org.slf4j", "LoggerFactory");
   public static final ClassName HANDLER_INTERFACE = ClassName.get("org.example.net.handler",

@@ -61,7 +61,7 @@ public class CommonSerializer implements Serializer<Object> {
    * @param typeId 类型ID
    * @since 2021年07月18日 16:18:08
    */
-  public Class<?> getClazz(Integer typeId) {
+  public Class<?> getClazz(int typeId) {
     return id2Clazz.get(typeId);
   }
 
