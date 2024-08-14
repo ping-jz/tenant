@@ -8,6 +8,7 @@ import org.example.serde.CommonSerializer.SerializerPair;
 
 /**
  * JAVA数组序列化
+ * //TODO 参考下Kyro，团队处理更加出彩啊！！！！！！！！！！！！！！
  *
  *
  * <pre>

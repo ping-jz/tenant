@@ -169,6 +169,11 @@
 
   <dependencies>
 
+    <dependency>
+      <groupId>com.esotericsoftware</groupId>
+      <artifactId>kryo</artifactId>
+    </dependency>
+
     <!-- https://mvnrepository.com/artifact/io.github.classgraph/classgraph -->
     <dependency>
       <groupId>io.github.classgraph</groupId>

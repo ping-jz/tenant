@@ -1,7 +1,10 @@
 package org.example.serde;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.CompositeByteBuf;
 import org.apache.commons.lang3.ArrayUtils;
+import org.example.net.Message;
 
 /**
  * 编码，反编码工具类。代码部分从ProtoBuf那里复制过来。方便实现自己的需求
@@ -98,7 +101,7 @@ public class NettyByteBufUtil {
    * to be varint encoded, thus always taking 10 bytes on the wire.)
    *
    * @param n An unsigned 32-bit integer, stored in a signed int because Java has no explicit
-   * unsigned support.
+   *          unsigned support.
    * @return A signed 32-bit integer.
    */
   public static int decodeZigZag32(final int n) {
@@ -108,7 +111,7 @@ public class NettyByteBufUtil {
   /**
    * 写入long(使用ZigZag优化和varint64)
    *
-   * @param buf 目前buff
+   * @param buf   目前buff
    * @param value 写入的内容
    * @since 2021年07月17日 09:40:01
    */
@@ -146,7 +149,7 @@ public class NettyByteBufUtil {
    * to be varint encoded, thus always taking 10 bytes on the wire.)
    *
    * @param n An unsigned 64-bit integer, stored in a signed int because Java has no explicit
-   * unsigned support.
+   *          unsigned support.
    * @return A signed 64-bit integer.
    */
   public static long decodeZigZag64(final long n) {
@@ -260,6 +263,7 @@ public class NettyByteBufUtil {
 
   /**
    * 读取指定ByteBuf全部的全部数据
+   *
    * @since 2024/8/9 15:15
    */
   public static byte[] readBytes(ByteBuf buf) {
@@ -269,6 +273,30 @@ public class NettyByteBufUtil {
       return bytes;
     } else {
       return ArrayUtils.EMPTY_BYTE_ARRAY;
+    }
+  }
+
+  /**
+   * Add the given {@link ByteBuf} and increase the {@code writerIndex} if {@code increaseWriterIndex} is
+   * {@code true}.
+   *
+   * {@link ByteBuf#release()} ownership of {@code buffer} is not transferred.
+   * @param buffer the {@link ByteBuf} to add. {@link ByteBuf#release()} ownership is not transferred
+   * {@link CompositeByteBuf}.
+   */
+  public static ByteBuf encode(CommonSerializer commonSerializer, Message message, ByteBuf buffer) {
+    CompositeByteBuf composite = ByteBufAllocator.DEFAULT.compositeBuffer();
+    try {
+      int writerIndex = composite.writerIndex();
+      composite.writeInt(0);
+
+      commonSerializer.writeObject(composite, message);
+      composite.addComponent(true, buffer.retain());
+      composite.setInt(writerIndex, composite.writerIndex() - writerIndex);
+      return composite;
+    } catch (Throwable throwable) {
+      composite.release();
+      throw throwable;
     }
   }
 

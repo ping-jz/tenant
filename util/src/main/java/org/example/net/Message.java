@@ -6,6 +6,9 @@ import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * 网络通信协议格式
+ * //TODO packet可以使用Pooled吗?
+ * //TODO 借助Netty的环境，实现自动释放
+ * //TODO 改造下，只提供Getter和构造器
  *
  * @author ZJP
  * @since 2021年07月24日 14:47:30

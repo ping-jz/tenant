@@ -1,5 +1,7 @@
 package org.example.net;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -12,6 +14,24 @@ public class BaseRemoting {
   private Logger logger = LoggerFactory.getLogger(getClass());
 
   public void invoke(final Connection conn, final Message request) {
+    try {
+      conn.channel().writeAndFlush(request).addListener(f -> {
+        if (!f.isSuccess()) {
+          logger.error("Invoke send failed. The address is {}", conn.channel().remoteAddress(),
+              f.cause());
+        }
+      });
+    } catch (Exception e) {
+      if (null == conn) {
+        logger.error("Conn is null");
+      } else {
+        logger.error("Exception caught when sending invocation. The address is {}",
+            conn.channel().remoteAddress(), e);
+      }
+    }
+  }
+
+  public void invoke(final Connection conn, final Message request, ByteBuf buf) {
     try {
       conn.channel().writeAndFlush(request).addListener(f -> {
         if (!f.isSuccess()) {

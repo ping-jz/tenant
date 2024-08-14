@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * TODO 删除linkto, 基础类和包装类各自注册
  * TODO 删除findSerilaizer, 使用饱和式注册替代，这样更加清晰
  * TODO 各种神奇的集合注册
+ * TODO 全部类型都要显示注册
  *
  * @since 2021年07月17日 16:30:05
  **/

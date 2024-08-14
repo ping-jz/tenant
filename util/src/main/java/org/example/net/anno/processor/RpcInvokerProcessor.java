@@ -21,10 +21,12 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
@@ -37,8 +39,6 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 
@@ -78,9 +78,11 @@ public class RpcInvokerProcessor extends AbstractProcessor {
         } catch (Exception e) {
           processingEnv.getMessager()
               .printError(
-                  "[%S] %s build invoker error, %s".formatted(getClass(),
+                  "[%s] %s build invoker error, %s".formatted(getClass(),
                       typeElement.getQualifiedName(),
-                      e.toString()), typeElement);
+                      Arrays.stream(
+                              e.getStackTrace()).map(Objects::toString)
+                          .collect(Collectors.joining("\n"))), typeElement);
         }
       }
     }
@@ -235,9 +237,12 @@ public class RpcInvokerProcessor extends AbstractProcessor {
 
       TypeMirror typeMirror = method.getReturnType();
       if (isCompleteAbleFuture(typeMirror) != null) {
+        //TODO 这里有个BUG，你要生成消息ID啊！！！！！！！
         methodBuilder
             .returns(TypeName.get(typeMirror))
             .addStatement("///TODO 先默认三秒吧，以后看需要改")
+            .addStatement("$L.msgId($L.nextCallBackMsgId())", MESSAGE_VAR_NAME,
+                CONNECTION_FIELD_NAME)
             .addStatement("return remoting.invoke($L, $L, 3, $T.SECONDS)",
                 CONNECTION_FIELD_NAME,
                 MESSAGE_VAR_NAME, TimeUnit.class);
@@ -252,11 +257,6 @@ public class RpcInvokerProcessor extends AbstractProcessor {
 
     return typeBuilder.build();
   }
-
-
-
-
-
 
 
 }

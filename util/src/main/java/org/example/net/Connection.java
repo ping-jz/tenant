@@ -24,7 +24,7 @@ public class Connection {
   public static final AttributeKey<Connection> CONNECTION = AttributeKey.valueOf("connection");
 
   /** channelId 生产 */
-  public static final AtomicInteger IdGenerator = new AtomicInteger();
+  public static final AtomicInteger callBackMsgId = new AtomicInteger();
 
   /** channelId */
   private Integer id;
@@ -84,6 +84,10 @@ public class Connection {
 
   private static IllegalStateException stateException() {
     return new IllegalStateException("Connection is close");
+  }
+
+  public int nextCallBackMsgId() {
+    return callBackMsgId.incrementAndGet();
   }
 
   private void closeFuture(CompletableFuture<?> future, Exception exception) {

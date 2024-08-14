@@ -10,6 +10,8 @@ import org.example.serde.CommonSerializer.SerializerPair;
 /**
  * 通用集合序列化，默认实现为{@link ArrayList}
  *
+ * //TODO 参考下Kyro，团队处理更加出彩啊！！！！！！！！！！！！！！
+ *
  * <pre>
  *   一维数组:
  *

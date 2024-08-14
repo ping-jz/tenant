@@ -32,7 +32,6 @@ public class ConnectionManager extends ChannelInboundHandlerAdapter implements A
   private ConcurrentHashMap<Integer, Connection> connections;
 
 
-
   public ConnectionManager() {
     connections = new ConcurrentHashMap<>();
   }
