@@ -23,7 +23,6 @@ public class SerdeTest {
   @BeforeAll
   public static void prepare() {
     codeSerde = new CommonSerializer();
-    new SerdeProcessor();
     codeSerde.registerSerializer(ReqMove.class, new ReqMoveSerde(codeSerde));
     codeSerde.registerSerializer(ResMove.class, new ResMoveSerde(codeSerde));
     codeSerde.registerSerializer(List.class, new CollectionSerializer(codeSerde));

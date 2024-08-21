@@ -10,10 +10,11 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeSpec.Builder;
 import io.netty.buffer.ByteBuf;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
@@ -38,6 +39,10 @@ import org.example.serde.Serializer;
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @AutoService(Processor.class)
 public class SerdeProcessor extends AbstractProcessor {
+
+  private static final String BUF_VAR_NAME = "buf";
+  private static final String SERIALIZER_VAR_NAME = "serializer";
+  private static final String OBJECT_VAR_NAME = "object";
 
   public SerdeProcessor() {
   }
@@ -91,9 +96,15 @@ public class SerdeProcessor extends AbstractProcessor {
             JavaFile.builder(packageName, typeSpec).build().writeTo(writer);
           }
 
-        } catch (IOException e) {
+        } catch (Throwable e) {
           processingEnv.getMessager()
-              .printMessage(Kind.ERROR, "@Serde build error, %s".formatted(e.toString()), clazz);
+              .printError(
+                  "[%s] %s build Serde error, %s".formatted(getClass(),
+                      clazz,
+                      Arrays.stream(
+                              e.getStackTrace()).map(Objects::toString)
+                          .collect(Collectors.joining("\n"))), clazz);
+          throw new RuntimeException(e);
         }
       }
     }
@@ -129,15 +140,15 @@ public class SerdeProcessor extends AbstractProcessor {
   }
 
   private static TypeSpec.Builder consturctorAndFields(TypeSpec.Builder builder) {
-    final String serializer = "serializer";
+
     MethodSpec constructor = MethodSpec.constructorBuilder()
         .addModifiers(Modifier.PUBLIC)
-        .addParameter(CommonSerializer.class, serializer)
-        .addStatement("this.$N = $N", serializer, serializer)
+        .addParameter(CommonSerializer.class, SERIALIZER_VAR_NAME)
+        .addStatement("this.$N = $N", SERIALIZER_VAR_NAME, SERIALIZER_VAR_NAME)
         .build();
 
     FieldSpec fieldSpec = FieldSpec
-        .builder(CommonSerializer.class, serializer)
+        .builder(CommonSerializer.class, SERIALIZER_VAR_NAME)
         .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
         .build();
 
@@ -148,50 +159,50 @@ public class SerdeProcessor extends AbstractProcessor {
     MethodSpec.Builder builder = MethodSpec.methodBuilder("readObject")
         .addAnnotation(Override.class)
         .addModifiers(Modifier.PUBLIC)
-        .addParameter(ByteBuf.class, "buf")
-        .addStatement("$T object = new $T()", typeName, typeName).returns(typeName);
+        .addParameter(ByteBuf.class, BUF_VAR_NAME)
+        .addStatement("$T $L = new $T()", typeName, OBJECT_VAR_NAME, typeName).returns(typeName);
 
     fieldElements.forEach(e -> {
       String fieldName = StringUtils.capitalize(e.getSimpleName().toString());
       switch (e.asType().getKind()) {
-        case BOOLEAN: {
-          builder.addStatement("object.set$L($L)", fieldName, "buf.readBoolean()");
-          break;
-        }
-        case BYTE: {
-          builder.addStatement("object.set$L($L)", fieldName, "buf.readByte()");
-          break;
-        }
-        case SHORT: {
-          builder.addStatement("object.set$L($L)", fieldName, "buf.readShort()");
-          break;
-        }
-        case INT: {
-          builder.addStatement("object.set$L($T.$L)", fieldName, NettyByteBufUtil.class,
-              "readInt32(buf)");
-          break;
-        }
-        case LONG: {
-          builder.addStatement("object.set$L($T.$L)", fieldName, NettyByteBufUtil.class,
-              "readInt64(buf)");
-          break;
-        }
-        case CHAR: {
-          builder.addStatement("object.set$L($L)", fieldName, "buf.readChar()");
-          break;
-        }
-        case FLOAT: {
-          builder.addStatement("object.set$L($L)", fieldName, "buf.readFloat()");
-          break;
-        }
-        case DOUBLE: {
-          builder.addStatement("object.set$L($L)", fieldName, "buf.readDouble()");
-          break;
-        }
-        default: {
-          builder.addStatement("object.set$L($L)", fieldName, "serializer.read(buf)");
-          break;
-        }
+        case BOOLEAN -> builder.addStatement("$L.set$L($L.readBoolean())",
+            OBJECT_VAR_NAME,
+            fieldName,
+            BUF_VAR_NAME);
+        case BYTE -> builder.addStatement("$L.set$L($L.readByte())",
+            OBJECT_VAR_NAME,
+            fieldName,
+            BUF_VAR_NAME);
+        case SHORT -> builder.addStatement("$L.set$L($L.readShort())",
+            OBJECT_VAR_NAME,
+            fieldName,
+            BUF_VAR_NAME);
+        case CHAR -> builder.addStatement("$L.set$L($L.readChar())",
+            OBJECT_VAR_NAME,
+            fieldName,
+            BUF_VAR_NAME);
+        case FLOAT -> builder.addStatement("$L.set$L($L.readFloat())",
+            OBJECT_VAR_NAME,
+            fieldName,
+            BUF_VAR_NAME);
+        case DOUBLE -> builder.addStatement("$L.set$L($L.readDouble())",
+            OBJECT_VAR_NAME,
+            fieldName,
+            BUF_VAR_NAME);
+        case INT -> builder.addStatement("$L.set$L($T.readInt32($L))",
+            OBJECT_VAR_NAME,
+            fieldName,
+            NettyByteBufUtil.class,
+            BUF_VAR_NAME);
+        case LONG -> builder.addStatement("$L.set$L($T.readInt64($L))",
+            OBJECT_VAR_NAME,
+            fieldName,
+            NettyByteBufUtil.class,
+            BUF_VAR_NAME);
+        default -> builder.addStatement("$L.set$L($L.read(buf))",
+            OBJECT_VAR_NAME,
+            fieldName,
+            SERIALIZER_VAR_NAME);
       }
     });
 
@@ -203,52 +214,51 @@ public class SerdeProcessor extends AbstractProcessor {
     MethodSpec.Builder builder = MethodSpec.methodBuilder("writeObject")
         .addAnnotation(Override.class)
         .addModifiers(Modifier.PUBLIC)
-        .addParameter(ByteBuf.class, "buf").addParameter(typeName, "object")
+        .addParameter(ByteBuf.class, BUF_VAR_NAME).addParameter(typeName, OBJECT_VAR_NAME)
         .returns(TypeName.VOID);
 
     fieldElements.forEach(e -> {
       String fieldName = StringUtils.capitalize(e.getSimpleName().toString());
       switch (e.asType().getKind()) {
-        case BOOLEAN: {
-          builder.addStatement("buf.writeBoolean(object.is$L())", fieldName);
-          break;
-        }
-        case BYTE: {
-          builder.addStatement("buf.writeByte(object.get$L())", fieldName);
-          break;
-        }
-
-        case SHORT: {
-          builder.addStatement("buf.writeShort(object.get$L())", fieldName);
-          break;
-        }
-
-        case INT: {
-          builder.addStatement("$T.writeInt32(buf, object.get$L())", NettyByteBufUtil.class,
-              fieldName);
-          break;
-        }
-        case LONG: {
-          builder.addStatement("$T.writeInt64(buf, object.get$L())", NettyByteBufUtil.class,
-              fieldName);
-          break;
-        }
-        case CHAR: {
-          builder.addStatement("buf.writeChar(object.get$L())", fieldName);
-          break;
-        }
-        case FLOAT: {
-          builder.addStatement("buf.writeFloat(object.get$L())", fieldName);
-          break;
-        }
-        case DOUBLE: {
-          builder.addStatement("buf.writeDouble(object.get$L())", fieldName);
-          break;
-        }
-        default: {
-          builder.addStatement("serializer.writeObject(buf, object.get$L())", fieldName);
-          break;
-        }
+        case BOOLEAN -> builder.addStatement("$L.writeBoolean($L.is$L())",
+            BUF_VAR_NAME,
+            OBJECT_VAR_NAME,
+            fieldName);
+        case BYTE -> builder.addStatement("$L.writeByte($L.get$L())",
+            BUF_VAR_NAME,
+            OBJECT_VAR_NAME,
+            fieldName);
+        case SHORT -> builder.addStatement("$L.writeShort($L.get$L())",
+            BUF_VAR_NAME,
+            OBJECT_VAR_NAME,
+            fieldName);
+        case CHAR -> builder.addStatement("$L.writeChar($L.get$L())",
+            BUF_VAR_NAME,
+            OBJECT_VAR_NAME,
+            fieldName);
+        case FLOAT -> builder.addStatement("$L.writeFloat($L.get$L())",
+            BUF_VAR_NAME,
+            OBJECT_VAR_NAME,
+            fieldName);
+        case DOUBLE -> builder.addStatement("$L.writeDouble($L.get$L())",
+            BUF_VAR_NAME,
+            OBJECT_VAR_NAME,
+            fieldName);
+        case INT -> builder.addStatement("$T.writeInt32($L, $L.get$L())",
+            NettyByteBufUtil.class,
+            BUF_VAR_NAME,
+            OBJECT_VAR_NAME,
+            fieldName);
+        case LONG -> builder.addStatement("$T.writeInt64($L, $L.get$L())",
+            NettyByteBufUtil.class,
+            BUF_VAR_NAME,
+            OBJECT_VAR_NAME,
+            fieldName);
+        default -> builder.addStatement("$L.writeObject($L, $L.get$L())",
+            SERIALIZER_VAR_NAME,
+            BUF_VAR_NAME,
+            OBJECT_VAR_NAME,
+            fieldName);
       }
     });
 
