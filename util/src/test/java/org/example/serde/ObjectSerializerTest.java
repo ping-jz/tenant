@@ -82,7 +82,7 @@ public class ObjectSerializerTest {
     serializer.registerObject(PrimitiveObj.class);
     serializer.registerObject(WrapperObj.class);
     serializer.registerObject(ComposeObj.class);
-    serializer.registerRecord(AAA.class);
+    serializer.registerObject(AAA.class);
 
     PrimitiveObj pri = new PrimitiveObj();
     pri.l = Long.MIN_VALUE;

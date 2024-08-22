@@ -13,7 +13,7 @@ public class RecordSerializerTest {
   @Test
   public void emptyTest() {
     CommonSerializer commonSerializer = new CommonSerializer();
-    commonSerializer.registerRecord(Empty.class);
+    commonSerializer.registerObject(Empty.class);
 
     Empty empty = new Empty();
     ByteBuf buf = Unpooled.buffer();
@@ -26,8 +26,8 @@ public class RecordSerializerTest {
   @Test
   public void primityTest() {
     CommonSerializer commonSerializer = new CommonSerializer();
-    commonSerializer.registerRecord(Empty.class);
-    commonSerializer.registerRecord(Compose.class);
+    commonSerializer.registerObject(Empty.class);
+    commonSerializer.registerObject(Compose.class);
 
     Compose abc = new Compose(1, 2L, 3F, "EEEEEE", new Empty());
     ByteBuf buf = Unpooled.buffer();

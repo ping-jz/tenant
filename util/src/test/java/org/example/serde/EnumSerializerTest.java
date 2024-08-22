@@ -41,11 +41,11 @@ public class EnumSerializerTest {
   @Test
   public void intergateTest() {
     CommonSerializer serializer = new CommonSerializer();
-    serializer.registerSerializer( EnumOne.class, new EnumSerializer<>(EnumOne.class));
-    serializer.registerSerializer(EnumTwo.class, new EnumSerializer<>(EnumTwo.class));
+    serializer.registerObject(EnumOne.class);
+    serializer.registerObject(EnumTwo.class);
     serializer.registerSerializer(List.class, new CollectionSerializer(serializer));
     serializer.registerSerializer(ArrayList.class, new CollectionSerializer(serializer));
-    serializer.registerSerializer(EnumOne[].class, new ArraySerializer(serializer));
+    serializer.registerObject(EnumOne[].class);
     serializer.registerObject(TestCaseOne.class);
 
     ByteBuf buf = Unpooled.buffer();

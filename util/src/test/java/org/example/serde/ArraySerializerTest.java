@@ -21,20 +21,18 @@ public class ArraySerializerTest {
   @BeforeEach
   public void beforeEach() {
     serializer = new CommonSerializer();
-    serializer.registerSerializer(Object.class.getName().hashCode(), Object.class, new MarkSerializer());
     serializer.registerObject(ArrayWrapper.class);
-    serializer.registerSerializer(int[][].class, new ArraySerializer(serializer));
-    serializer.registerSerializer(double[][].class, new ArraySerializer(serializer));
-    serializer.registerSerializer(double[][][].class, new ArraySerializer(serializer));
-    serializer.registerSerializer(String[].class, new ArraySerializer(serializer));
-    serializer.registerSerializer(String[][].class, new ArraySerializer(serializer));
-    serializer.registerSerializer(String[][][].class, new ArraySerializer(serializer));
-    serializer.registerSerializer(String[][][][].class, new ArraySerializer(serializer));
-    serializer.registerSerializer(ArrayWrapper[].class, new ArraySerializer(serializer));
-    serializer.registerSerializer(ArrayWrapper[][].class, new ArraySerializer(serializer));
-    serializer.registerSerializer(ArrayWrapper[][][].class, new ArraySerializer(serializer));
-    serializer.registerSerializer(ArrayWrapper[][][][].class, new ArraySerializer(serializer));
-    serializer.registerSerializer(Object[].class, new ArraySerializer(serializer));
+    serializer.registerObject(int[][].class);
+    serializer.registerObject(double[][].class);
+    serializer.registerObject(double[][][].class);
+    serializer.registerObject(String[][].class);
+    serializer.registerObject(String[][][].class);
+    serializer.registerObject(String[][][][].class);
+    serializer.registerObject(ArrayWrapper[].class);
+    serializer.registerObject(ArrayWrapper[][].class);
+    serializer.registerObject(ArrayWrapper[][][].class);
+    serializer.registerObject(ArrayWrapper[][][][].class);
+    serializer.registerObject(Object[].class);
     buf = Unpooled.buffer();
   }
 

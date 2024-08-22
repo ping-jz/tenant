@@ -19,13 +19,13 @@ import org.example.serde.Serializer;
  *
  *  二维数组(都压缩成一维数组)
  *
- *    长度=N|类型ID|元素1|......|元素N
+ *    长度=N|元素1|......|元素N
  *
- *    维度总数:1-5字节, 使用varint32和ZigZag编码
- *    维度1长:1-5字节, 使用varint32和ZigZag编码
- *    类型ID:1-5字节, 使用varint32和ZigZag编码
+ *
+ *    长度:1-5字节, 使用varint32和ZigZag编码
  *    元素:实现决定
  * </pre>
+ * <p>1.数组长宽必须一致</p>
  * <p>2.暂时不支持PrimitiveWrapper数组，序列化时会全部转化为对应的基础类型</p>
  * <p>
  * 与{@link CommonSerializer} 组合使用
@@ -34,13 +34,8 @@ import org.example.serde.Serializer;
  **/
 public class IntArraySerializer implements Serializer<int[]> {
 
-  /**
-   * 序列化集合
-   */
-  private CommonSerializer serializer;
 
-  public IntArraySerializer(CommonSerializer serializer) {
-    this.serializer = serializer;
+  public IntArraySerializer() {
   }
 
 
@@ -50,11 +45,6 @@ public class IntArraySerializer implements Serializer<int[]> {
     if (length == -1) {
       return null;
     } else {
-      final int typeId = NettyByteBufUtil.readInt32(buf);
-      Class<?> componentType = serializer.getClazz(typeId);
-      if (componentType == null) {
-        throw new RuntimeException("类型ID:" + typeId + ",未注册");
-      }
       int[] array = new int[length];
       for (int i = 0; i < length; i++) {
         array[i] = NettyByteBufUtil.readInt32(buf);
@@ -66,13 +56,8 @@ public class IntArraySerializer implements Serializer<int[]> {
 
   @Override
   public void writeObject(ByteBuf buf, int[] object) {
-    SerializerPair pair = serializer.getSerializerPair(Integer.TYPE);
-    if (pair == null) {
-      throw new RuntimeException("类型:" + Integer.TYPE + ",未注册");
-    }
-    final int length = Array.getLength(object);
+    final int length = object.length;
     NettyByteBufUtil.writeInt32(buf, length);
-    NettyByteBufUtil.writeInt32(buf, pair.typeId());
     for (int o : object) {
       NettyByteBufUtil.writeInt32(buf, o);
     }
