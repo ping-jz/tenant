@@ -22,9 +22,7 @@ public class StringSerializer implements Serializer<String> {
     if (length < 0) {
       return null;
     }
-    String str = buf.toString(buf.readerIndex(), length, StandardCharsets.UTF_8);
-    buf.skipBytes(length);
-    return str;
+    return buf.readCharSequence(length, StandardCharsets.UTF_8).toString();
   }
 
   @Override

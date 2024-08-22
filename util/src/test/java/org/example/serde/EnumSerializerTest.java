@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import org.example.serde.array.ArraySerializer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +45,7 @@ public class EnumSerializerTest {
     serializer.registerSerializer(EnumTwo.class, new EnumSerializer<>(EnumTwo.class));
     serializer.registerSerializer(List.class, new CollectionSerializer(serializer));
     serializer.registerSerializer(ArrayList.class, new CollectionSerializer(serializer));
+    serializer.registerSerializer(EnumOne[].class, new ArraySerializer(serializer));
     serializer.registerObject(TestCaseOne.class);
 
     ByteBuf buf = Unpooled.buffer();

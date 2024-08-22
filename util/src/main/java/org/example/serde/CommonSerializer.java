@@ -4,10 +4,17 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectRBTreeMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import org.example.serde.array.BooleanArraySerializer;
+import org.example.serde.array.ByteArraySerializer;
+import org.example.serde.array.CharArraySerializer;
+import org.example.serde.array.DoubleArraySerializer;
+import org.example.serde.array.FloatArraySerializer;
+import org.example.serde.array.IntArraySerializer;
+import org.example.serde.array.LongArraySerializer;
+import org.example.serde.array.ShortArraySerializer;
 
 /**
  * 序列化组合实现,业务主要入口
@@ -20,8 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 2021年07月17日 16:30:05
  **/
 public class CommonSerializer implements Serializer<Object> {
-
-  public static final int ARRAY_ID = 10;
 
   /**
    * [类型ID, 具体类型]
@@ -47,12 +52,7 @@ public class CommonSerializer implements Serializer<Object> {
    * @since 2021年07月18日 16:18:08
    */
   public SerializerPair getSerializerPair(Class<?> cls) {
-    SerializerPair pair = serializers.get(cls);
-    if (pair == null && cls.isArray()) {
-      cls = id2Clazz.get(ARRAY_ID);
-      pair = serializers.get(cls);
-    }
-    return pair;
+    return serializers.get(cls);
   }
 
   /**
@@ -130,8 +130,15 @@ public class CommonSerializer implements Serializer<Object> {
       registerSerializer(19, Character.class, serializer);
     }
 
-    registerSerializer(ARRAY_ID, ArraySerializer.class, new ArraySerializer(this));
-    registerSerializer(21, String.class, new StringSerializer());
+    registerSerializer(20, byte[].class, new ByteArraySerializer(this));
+    registerSerializer(21, boolean[].class, new BooleanArraySerializer(this));
+    registerSerializer(22, short[].class, new ShortArraySerializer(this));
+    registerSerializer(23, char[].class, new CharArraySerializer(this));
+    registerSerializer(24, float[].class, new FloatArraySerializer(this));
+    registerSerializer(25, double[].class, new DoubleArraySerializer(this));
+    registerSerializer(26, int[].class, new IntArraySerializer(this));
+    registerSerializer(27, long[].class, new LongArraySerializer(this));
+    registerSerializer(50, String.class, new StringSerializer());
   }
 
 

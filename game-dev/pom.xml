@@ -172,6 +172,7 @@
     <dependency>
       <groupId>com.esotericsoftware</groupId>
       <artifactId>kryo</artifactId>
+      <scope>compile</scope>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/io.github.classgraph/classgraph -->

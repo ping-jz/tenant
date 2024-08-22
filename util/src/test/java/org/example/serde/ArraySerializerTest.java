@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+import org.example.serde.array.ArraySerializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,28 +23,19 @@ public class ArraySerializerTest {
     serializer = new CommonSerializer();
     serializer.registerSerializer(Object.class.getName().hashCode(), Object.class, new MarkSerializer());
     serializer.registerObject(ArrayWrapper.class);
+    serializer.registerSerializer(int[][].class, new ArraySerializer(serializer));
+    serializer.registerSerializer(double[][].class, new ArraySerializer(serializer));
+    serializer.registerSerializer(double[][][].class, new ArraySerializer(serializer));
+    serializer.registerSerializer(String[].class, new ArraySerializer(serializer));
+    serializer.registerSerializer(String[][].class, new ArraySerializer(serializer));
+    serializer.registerSerializer(String[][][].class, new ArraySerializer(serializer));
+    serializer.registerSerializer(String[][][][].class, new ArraySerializer(serializer));
+    serializer.registerSerializer(ArrayWrapper[].class, new ArraySerializer(serializer));
+    serializer.registerSerializer(ArrayWrapper[][].class, new ArraySerializer(serializer));
+    serializer.registerSerializer(ArrayWrapper[][][].class, new ArraySerializer(serializer));
+    serializer.registerSerializer(ArrayWrapper[][][][].class, new ArraySerializer(serializer));
+    serializer.registerSerializer(Object[].class, new ArraySerializer(serializer));
     buf = Unpooled.buffer();
-  }
-
-  @Test
-  public void oneDimensionsCheckTest() {
-    int[] array = {};
-    assertArrayEquals(new int[]{0}, ArraySerializer.getDimensions(array));
-    int[] arrayTwo = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-    assertArrayEquals(new int[]{10}, ArraySerializer.getDimensions(arrayTwo));
-  }
-
-  @Test
-  public void fourDimensionsCheckTest() {
-    int[][][][] array = new int[3][2][4][6];
-    assertArrayEquals(new int[]{3, 2, 4, 6}, ArraySerializer.getDimensions(array));
-  }
-
-  @Test
-  public void diffLengthDimensionCheckTest() {
-    int[][][][] array = new int[2][2][4][6];
-    array[0] = new int[10][11][12];
-    assertThrows(RuntimeException.class, () -> ArraySerializer.getDimensions(array));
   }
 
   @Test
