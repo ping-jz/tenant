@@ -3,6 +3,7 @@ package org.example.serde.array;
 import io.netty.buffer.ByteBuf;
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
+import java.util.Objects;
 import org.example.serde.CommonSerializer;
 import org.example.serde.CommonSerializer.SerializerPair;
 import org.example.serde.NettyByteBufUtil;
@@ -22,7 +23,7 @@ import org.example.serde.Serializer;
  *
  *    长度=N|元素1|......|元素N
  *
-
+ *
  *    长度:1-5字节, 使用varint32和ZigZag编码
  *    元素:实现决定
  * </pre>
@@ -58,10 +59,8 @@ public class ArraySerializer implements Serializer<Object> {
     Object array = Array.newInstance(componentType, length);
     Serializer<Object> serializer = this.serializer;
     if (Modifier.isFinal(componentType.getModifiers())) {
-      SerializerPair pair = this.serializer.getSerializerPair(componentType);
-      if (pair == null) {
-        throw new RuntimeException("类型:" + componentType + ",未注册");
-      }
+      SerializerPair pair = Objects
+          .requireNonNull(this.serializer.getSerializerPair(componentType), "类型:" + componentType + ",未注册");
       serializer = (Serializer<Object>) pair.serializer();
     }
 
@@ -83,11 +82,8 @@ public class ArraySerializer implements Serializer<Object> {
 
     Serializer<Object> serializer = this.serializer;
     if (Modifier.isFinal(componentType.getModifiers())) {
-      SerializerPair pair = this.serializer.getSerializerPair(componentType);
-      if (pair == null) {
-        throw new RuntimeException("类型:" + componentType + ",未注册");
-      }
-
+      SerializerPair pair = Objects.requireNonNull(this.serializer.getSerializerPair(componentType),
+          "类型:" + componentType + ",未注册");
       serializer = (Serializer<Object>) pair.serializer();
     }
 

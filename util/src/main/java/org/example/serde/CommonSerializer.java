@@ -85,7 +85,7 @@ public class CommonSerializer implements Serializer<Object> {
    * @since 2021年07月19日 23:00:35
    */
   private void commonType() {
-    registerSerializer(-1, NullSerializer.class, NullSerializer.INSTANCE);
+    registerSerializer(Integer.MIN_VALUE, NullSerializer.class, NullSerializer.INSTANCE);
     {
       ByteSerializer serializer = new ByteSerializer();
       registerSerializer(1, Byte.TYPE, serializer);
@@ -143,7 +143,7 @@ public class CommonSerializer implements Serializer<Object> {
     registerSerializer(27, double[].class, new DoubleArraySerializer());
     registerSerializer(28, int[].class, new IntArraySerializer());
     registerSerializer(29, long[].class, new LongArraySerializer());
-    registerSerializer(30, String[].class, new StringArraySerializer(this));
+    registerSerializer(30, String[].class, new StringArraySerializer());
   }
 
 

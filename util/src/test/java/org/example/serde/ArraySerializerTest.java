@@ -1,7 +1,6 @@
 package org.example.serde;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -9,7 +8,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
-import org.example.serde.array.ArraySerializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -48,7 +46,7 @@ public class ArraySerializerTest {
   @Test
   public void simpleArrayTest() {
     int[] test = new int[1000];
-    for(int i = 0; i < test.length; i++) {
+    for (int i = 0; i < test.length; i++) {
       test[i] = ThreadLocalRandom.current().nextInt();
     }
     serializer.writeObject(buf, test);
@@ -88,12 +86,12 @@ public class ArraySerializerTest {
     for (int f = 0; f < 1; f++) {
       for (int o = 0; o < 2; o++) {
         for (int t = 0; t < 3; t++) {
-          //故意不设值
-          if (t == 1) {
-            continue;
-          }
           for (int th = 0; th < 4; th++) {
-            test[f][o][t][th] = "a" + random.nextInt();
+            if (random.nextBoolean()) {
+              test[f][o][t][th] = "a" + random.nextInt();
+            } else if (random.nextBoolean()) {
+              test[f][o][t][th] = "";
+            }
           }
         }
       }
