@@ -22,7 +22,8 @@ class Util {
 
   /** 常用类型 */
   public static final ClassName CONNECTION = ClassName.get("org.example.net", "Connection");
-  public static final ClassName HANDLER_ANNOTATION = ClassName.get("org.example.common.generator.rpc", "Handler");
+  public static final ClassName HANDLER_ANNOTATION = ClassName.get(
+      "org.example.common.generator.rpc", "Handler");
   public static final ParameterizedTypeName CONNECTION_GETTER = ParameterizedTypeName.get(
       ClassName.get("java.util.function", "Function"),
       TypeName.INT.box(), CONNECTION
@@ -35,7 +36,7 @@ class Util {
   public static final FieldSpec COMMON_SERIALIZER_FIELD_SPEC = FieldSpec
       .builder(COMMON_SERIALIZER, SERIALIZER_VAR_NAME)
       .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
-            .build();
+      .build();
   public static final ClassName BYTE_BUF = ClassName.get("io.netty.buffer", "ByteBuf");
   public static final ClassName BYTEBUF_UTIL = ClassName.get("org.example.serde",
       "NettyByteBufUtil");
@@ -96,8 +97,10 @@ class Util {
     int id = reqAnno.value();
 
     if (id == 0) {
-      // 类名+方法名的哈希的绝对值作为协议ID,
-      id = Math.abs((facadeName.getQualifiedName() + "#" + method.getSimpleName().toString()).hashCode());
+      // 类名哈希+方法名哈希的绝对值作为协议ID,
+      id = Math.abs(
+          facadeName.getQualifiedName().toString().hashCode()
+              + method.getSimpleName().toString().hashCode());
     }
 
     return id;
@@ -110,7 +113,7 @@ class Util {
     }
     DeclaredType declaredType = (DeclaredType) mirror;
     TypeElement returnTypeElement = (TypeElement) declaredType.asElement();
-    if(returnTypeElement.getQualifiedName()
+    if (returnTypeElement.getQualifiedName()
         .contentEquals(Util.COMPLETE_ABLE_FUTURE_TYPE.toString())) {
       return declaredType;
     } else {

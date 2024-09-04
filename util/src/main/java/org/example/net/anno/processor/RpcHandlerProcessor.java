@@ -351,8 +351,6 @@ public class RpcHandlerProcessor extends AbstractProcessor {
           .addParameter(CONNECTION_PARAM_SPEC)
           .addParameter(MESSAGE_PARAM_SPEC)
           .addException(Exception.class)
-          .addStatement("final int id = $L", id)
-          .addStatement("final int msgId = $L.msgId()", MESSAGE_VAR_NAME)
           .addStatement("final $T $L = $L.removeInvokeFuture($L.msgId())", returnType,
               futureVarName, CONNECTION_VAR_NAME, MESSAGE_VAR_NAME)
           .beginControlFlow("if ($L == null)", futureVarName)

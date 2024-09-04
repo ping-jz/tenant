@@ -56,13 +56,15 @@ public class GameFacdeTest {
 
     DefaultDispatcher handlerRegistry =  new DefaultDispatcher();
     GameFacadeHandler handler = new GameFacadeHandler(facade, commonSerializer);
-    handlerRegistry.registeHandler(ECHO, handler);
-    handlerRegistry.registeHandler(OK, handler);
-    handlerRegistry.registeHandler(1990291436, handler);
-    handlerRegistry.registeHandler(224008626, handler);
+    for (int id : GameFacadeHandler.protos) {
+      handlerRegistry.registeHandler(id, handler);
+    }
+
 
     GameFacadeCallBack gameFacadeCallBack = new GameFacadeCallBack(commonSerializer);
-    handlerRegistry.registeHandler(-224008626, gameFacadeCallBack);
+    for (int id : GameFacadeCallBack.protos) {
+      handlerRegistry.registeHandler(id, gameFacadeCallBack);
+    }
     return handlerRegistry;
   }
 
