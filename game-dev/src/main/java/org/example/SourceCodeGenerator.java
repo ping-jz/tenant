@@ -18,15 +18,6 @@ public final class SourceCodeGenerator {
     return List.of(SerdeConfigGenerator::serdeConfig, GameRpcConfigGenerator::rpcConfig);
   }
 
-  /**
-   * @param outputDir  所有生成的代码，请放在这个目录
-   * @since 2024/8/8 20:37
-   */
-  private static void generateJavaSourceFile(Path outputDir) {
-    codeGenerators().forEach(c -> c.accept(outputDir));
-  }
-
-
   public static void main(String[] args) {
     if (args.length < 1) {
       System.err.println("Usage: SourceCodeGenerator <output-directory>");
@@ -40,7 +31,7 @@ public final class SourceCodeGenerator {
         executors.execute(() -> consumer.accept(outputDir));
       }
     } finally {
-      executors.shutdown();
+      executors.close();
     }
   }
 

@@ -15,7 +15,8 @@
   <packaging>jar</packaging>
 
   <properties>
-    <game.generated.directory>${project.build.directory}/generated-sources/game-java</game.generated.directory>
+    <game.generated.directory>${project.build.directory}/generated-sources/game
+    </game.generated.directory>
   </properties>
 
   <build>
@@ -121,13 +122,14 @@
         <version>3.0.0</version>
         <executions>
           <execution>
-            <phase>generate-sources</phase>
+            <phase>compile</phase>
             <goals>
               <goal>add-source</goal>
             </goals>
             <configuration>
               <sources>
-                <source>${game.generated.directory}</source><!-- adjust folder name to your needs -->
+                <source>${game.generated.directory}
+                </source><!-- adjust folder name to your needs -->
               </sources>
             </configuration>
           </execution>
@@ -141,27 +143,18 @@
           <source>${maven.compiler.source}</source>
           <target>${maven.compiler.target}</target>
           <encoding>${project.build.sourceEncoding}</encoding>
-
         </configuration>
 
         <executions>
           <execution>
-            <id>compile</id>
+            <id>game-generated-compile</id>
             <phase>compile</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>process-classes</id>
-            <phase>process-classes</phase>
             <goals>
               <goal>compile</goal>
             </goals>
           </execution>
         </executions>
       </plugin>
-
 
 
     </plugins>
@@ -238,8 +231,6 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-
 
 
 </project>
