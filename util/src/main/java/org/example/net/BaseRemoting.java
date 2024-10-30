@@ -2,6 +2,8 @@ package org.example.net;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -21,7 +23,8 @@ public class BaseRemoting {
               f.cause());
         }
       });
-    } catch (Exception e) {
+    } catch (Throwable e) {
+      assert ReferenceCountUtil.release(request);
       if (null == conn) {
         logger.error("Conn is null");
       } else {
@@ -72,6 +75,7 @@ public class BaseRemoting {
         }
       });
     } catch (Exception e) {
+      assert ReferenceCountUtil.release(message);
       conn.removeInvokeFuture(msgId, future);
       timeoutFuture.cancel(false);
       logger.error("Exception caught when sending invocation. The address is {}",

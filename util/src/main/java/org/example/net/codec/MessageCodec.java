@@ -60,10 +60,10 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
     in.skipBytes(length);
     ByteBuf buf = in.slice(readIdx, length).skipBytes(lengthFieldLength);
 
-    out.add(Message.of(
+    out.add(Message.retain(
         NettyByteBufUtil.readInt32(buf),
         NettyByteBufUtil.readInt32(buf),
-        NettyByteBufUtil.readBytes(buf)));
+        buf));
   }
 
   @Override

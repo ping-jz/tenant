@@ -1,6 +1,5 @@
 package org.example.net.codec;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -21,22 +20,29 @@ public class MessageCodecTest {
     CommonSerializer serializer = new CommonSerializer();
     EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(serializer));
 
+    int protoId = ThreadLocalRandom.current().nextInt();
+    int msgId = ThreadLocalRandom.current().nextInt();
     Message message = Message.of(
-        ThreadLocalRandom.current().nextInt(),
-        ThreadLocalRandom.current().nextInt(),
-        "Hello World".getBytes(StandardCharsets.UTF_8));
+        protoId,
+        msgId,
+        "Hello World".getBytes(StandardCharsets.UTF_8)
+    );
     channel.writeOutbound(message);
+    assertEquals(message.proto(), 0);
+    assertEquals(message.msgId(), 0);
+    assertEquals(message.refCnt(), 0);
 
     ByteBuf out = channel.readOutbound();
 
     int length = out.readInt();
     assertTrue(0 < length);
 
-    assertEquals(message.proto(), NettyByteBufUtil.readInt32(out));
-    assertEquals(message.msgId(), NettyByteBufUtil.readInt32(out));
+    assertEquals(protoId, NettyByteBufUtil.readInt32(out));
+    assertEquals(msgId, NettyByteBufUtil.readInt32(out));
     byte[] bytes = new byte[out.readableBytes()];
     out.readBytes(bytes);
-    assertArrayEquals(message.packet(), bytes);
+    assertEquals(Unpooled.wrappedBuffer("Hello World".getBytes(StandardCharsets.UTF_8)),
+        Unpooled.wrappedBuffer(bytes));
     assertEquals(0, out.readableBytes());
 
     channel.finishAndReleaseAll();
@@ -64,7 +70,7 @@ public class MessageCodecTest {
     Message out = channel.readInbound();
     assertEquals(proto, out.proto());
     assertEquals(optIdx, out.msgId());
-    assertArrayEquals(helloWorld, out.packet());
+    assertEquals(Unpooled.wrappedBuffer(helloWorld), out.packet());
     assertEquals(0, inBuf.readableBytes());
 
     channel.finishAndReleaseAll();

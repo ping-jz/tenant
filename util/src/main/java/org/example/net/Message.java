@@ -1,23 +1,24 @@
 package org.example.net;
 
-import java.util.Arrays;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCounted;
 import java.util.Objects;
-import org.apache.commons.lang3.ArrayUtils;
 
 /**
- * 网络通信协议格式 //TODO packet可以使用Pooled吗? //TODO 借助Netty的环境，实现自动释放
+ * 网络通信协议格式
  *
  * @author ZJP
  * @since 2021年07月24日 14:47:30
  **/
-public class Message {
+public class Message implements ReferenceCounted {
 
   /** 协议编号 (0 < [接收/发送]请求,  [接收/发送]结果 < 0) */
   private int proto;
   /** 序列号(客户端发什么，服务端就返回什么) */
   private int msgId;
   /** 内容 */
-  private byte[] packet = ArrayUtils.EMPTY_BYTE_ARRAY;
+  private ByteBuf packet = Unpooled.EMPTY_BUFFER;
 
   public Message() {
   }
@@ -26,9 +27,18 @@ public class Message {
     Message message = new Message();
     message.proto = proto;
     message.msgId = msgId;
-    message.packet = packet;
+    message.packet = Unpooled.wrappedBuffer(packet);
     return message;
   }
+
+  public static Message retain(int proto, int msgId, ByteBuf packet) {
+    Message message = new Message();
+    message.proto = proto;
+    message.msgId = msgId;
+    message.packet = packet.retain();
+    return message;
+  }
+
 
   public int proto() {
     return proto;
@@ -39,7 +49,7 @@ public class Message {
     return msgId;
   }
 
-  public byte[] packet() {
+  public ByteBuf packet() {
     return packet;
   }
 
@@ -69,6 +79,47 @@ public class Message {
 
   @Override
   public int hashCode() {
-    return Objects.hash(proto, msgId, Arrays.hashCode(packet));
+    return Objects.hash(proto, msgId, packet);
+  }
+
+  @Override
+  public int refCnt() {
+    return packet.refCnt();
+  }
+
+  @Override
+  public ReferenceCounted retain() {
+     packet.retain();
+     return this;
+  }
+
+  @Override
+  public ReferenceCounted retain(int increment) {
+    packet.retain(increment);
+    return this;
+  }
+
+  @Override
+  public ReferenceCounted touch() {
+    packet.touch();
+    return this;
+  }
+
+  @Override
+  public ReferenceCounted touch(Object hint) {
+    packet.touch();
+    return this;
+  }
+
+  @Override
+  public boolean release() {
+    msgId = 0;
+    proto = 0;
+    return packet.release();
+  }
+
+  @Override
+  public boolean release(int decrement) {
+    return packet.release(decrement);
   }
 }
