@@ -31,14 +31,13 @@ public class Message implements ReferenceCounted {
     return message;
   }
 
-  public static Message retain(int proto, int msgId, ByteBuf packet) {
+  public static Message of(int proto, int msgId, ByteBuf packet) {
     Message message = new Message();
     message.proto = proto;
     message.msgId = msgId;
-    message.packet = packet.retain();
+    message.packet = packet;
     return message;
   }
-
 
   public int proto() {
     return proto;

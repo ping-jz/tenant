@@ -19,6 +19,8 @@ import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -41,7 +43,6 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
-import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * 负责RPC方法的调用类和代理类
@@ -191,15 +192,16 @@ public class RpcInvokerProcessor extends AbstractProcessor {
       ;
 
       methodBuilder
-          .addCode("\n")
-          .addStatement("byte[] $L = $T.EMPTY_BYTE_ARRAY", PACKET_VAR_NAME, ArrayUtils.class);
+          .addCode("\n");
       List<? extends VariableElement> pparameters = method.getParameters();
-      if (!pparameters.isEmpty()) {
+      if (pparameters.isEmpty()) {
         methodBuilder
-            .addStatement("$T $L = null", BYTE_BUF, BUF_VAR_NAME)
-            .beginControlFlow("try")
-            .addStatement("$L = $T.DEFAULT.buffer()", BUF_VAR_NAME, POOLED_UTIL)
-        ;
+            .addStatement("$T $L = $T.EMPTY_BUFFER", BYTE_BUF, BUF_VAR_NAME, Unpooled.class);
+      } else {
+
+        methodBuilder
+            .addStatement("$T $L = $T.DEFAULT.buffer()", BYTE_BUF, BUF_VAR_NAME, POOLED_UTIL)
+            .beginControlFlow("try");
 
         //Handle param
         for (VariableElement variableElement : method.getParameters()) {
@@ -231,11 +233,10 @@ public class RpcInvokerProcessor extends AbstractProcessor {
         }
 
         methodBuilder
-            .addStatement("$L = $T.readBytes($L)", PACKET_VAR_NAME, BYTEBUF_UTIL,
-                BUF_VAR_NAME)
             .endControlFlow()
-            .beginControlFlow("finally")
-            .addStatement("buf.release()")
+            .beginControlFlow("catch(Throwable t)")
+            .addStatement("$T.release($L)", ReferenceCountUtil.class, BUF_VAR_NAME)
+            .addStatement("throw new RuntimeException(t)")
             .endControlFlow()
             .addCode("\n")
         ;
@@ -243,7 +244,6 @@ public class RpcInvokerProcessor extends AbstractProcessor {
 
       TypeMirror typeMirror = method.getReturnType();
       if (isCompleteAbleFuture(typeMirror) != null) {
-        //TODO 这里有个BUG，你要生成消息ID啊！！！！！！！
         methodBuilder
             .returns(TypeName.get(typeMirror))
             .addStatement("///TODO 先默认三秒吧，以后看需要改")
@@ -253,7 +253,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
                 MESSAGE_CLASS_NAME,
                 protoIdVarName,
                 CONNECTION_FIELD_NAME,
-                PACKET_VAR_NAME,
+                BUF_VAR_NAME,
                 TimeUnit.class);
 
       } else {
@@ -262,7 +262,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
             CONNECTION_FIELD_NAME,
             MESSAGE_CLASS_NAME,
             protoIdVarName,
-            PACKET_VAR_NAME);
+            BUF_VAR_NAME);
       }
 
       typeBuilder.addMethod(methodBuilder.build());
