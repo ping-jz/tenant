@@ -1,6 +1,7 @@
 package org.example.net.anno.processor;
 
 import static org.example.net.anno.processor.Util.BYTEBUF_UTIL;
+import static org.example.net.anno.processor.Util.BYTE_BUF;
 import static org.example.net.anno.processor.Util.LOGGER;
 import static org.example.net.anno.processor.Util.LOGGER_FACTOR;
 import static org.example.net.anno.processor.Util.SERIALIZER_VAR_NAME;
@@ -13,6 +14,9 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.TypeSpec.Builder;
+import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
@@ -159,12 +163,31 @@ public class RpcHandlerProcessor extends AbstractProcessor {
     MethodSpec.Builder invoker = MethodSpec.methodBuilder("invoke")
         .addAnnotation(Override.class)
         .addModifiers(Modifier.PUBLIC)
-        .returns(byte[].class)
+        .returns(BYTE_BUF)
         .addParameter(CONNECTION_PARAM_SPEC)
         .addParameter(MESSAGE_PARAM_SPEC)
         .addException(Exception.class);
 
     invoker.beginControlFlow("return switch(m.proto())");
+    IntList intList = generateMethod0(facde, handler, methods, invoker);
+
+    invoker
+        .addStatement(
+            "default -> throw new UnsupportedOperationException(\"【$L】无法处理消息，原因:【缺少对应方法】，消息ID:【%s】\".formatted($L.proto()))",
+            facde.getSimpleName(), MESSAGE_VAR_NAME)
+        .endControlFlow().addCode(";");
+
+    handler
+        .addField(FieldSpec.builder(int[].class, PROTOS_VAR_NAME)
+            .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
+            .initializer("new int[]{$L}",
+                intList.intStream().mapToObj(String::valueOf).collect(Collectors.joining(",")))
+            .build())
+        .addMethod(invoker.build());
+  }
+
+  private static IntList generateMethod0(TypeElement facde, Builder handler, List<Element> methods,
+      MethodSpec.Builder invoker) {
     IntList intList = new IntArrayList();
     for (Element element : methods) {
       ExecutableElement executableElement = (ExecutableElement) element;
@@ -173,9 +196,10 @@ public class RpcHandlerProcessor extends AbstractProcessor {
 
       MethodSpec.Builder handlerMethod = MethodSpec
           .methodBuilder(methodName)
-          .returns(byte[].class)
+          .returns(BYTE_BUF)
           .addParameter(CONNECTION_PARAM_SPEC)
           .addParameter(MESSAGE_PARAM_SPEC)
+          .addModifiers(Modifier.FINAL, Modifier.PRIVATE)
           .addException(Exception.class);
 
       invoker.addStatement("case $L -> $L($L, $L)", id, methodName, CONNECTION_VAR_NAME,
@@ -184,7 +208,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
       List<? extends VariableElement> params = executableElement.getParameters();
       if (!params.isEmpty()) {
         handlerMethod.addStatement("$T $L = $T.wrappedBuffer($L.packet())",
-            Util.BYTE_BUF, BUF_VAR_NAME, Util.UNNPOOLED_UTIL, MESSAGE_VAR_NAME);
+            BYTE_BUF, BUF_VAR_NAME, Util.UNNPOOLED_UTIL, MESSAGE_VAR_NAME);
         for (VariableElement p : params) {
           final String pname = p.getSimpleName().toString();
           TypeMirror ptype = p.asType();
@@ -217,7 +241,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
 
       if (returnType.getKind() == TypeKind.VOID) {
         handlerMethod.addStatement("$L.$L($L)", FACADE_VAR_NAME, methodName, paramStr);
-        handlerMethod.addStatement("return $T.EMPTY_BYTE_ARRAY", ArrayUtils.class);
+        handlerMethod.addStatement("return $T.EMPTY_BUFFER", Unpooled.class);
       } else {
         String resVar = "res";
         String resBuf = "resBuf";
@@ -249,7 +273,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
 
         handlerMethod
             .addCode("\n")
-            .addStatement("$T $L = $T.DEFAULT.buffer()", Util.BYTE_BUF, resBuf, Util.POOLED_UTIL)
+            .addStatement("$T $L = $T.DEFAULT.buffer()", BYTE_BUF, resBuf, Util.POOLED_UTIL)
             .beginControlFlow("try");
         switch (returnType.getKind()) {
           case BOOLEAN -> handlerMethod.addStatement("$L.writeBoolean($L)", resBuf, resVar);
@@ -281,10 +305,11 @@ public class RpcHandlerProcessor extends AbstractProcessor {
                   resVar);
         }
         handlerMethod
-            .addStatement("return $T.readBytes($L)", BYTEBUF_UTIL, resBuf)
+            .addStatement("return $L", resBuf)
             .endControlFlow()
-            .beginControlFlow("finally")
-            .addStatement("$L.release()", resBuf)
+            .beginControlFlow("catch (Throwable t)")
+            .addStatement("$T.release($L)", ReferenceCountUtil.class, resBuf)
+            .addStatement("throw t")
             .endControlFlow();
       }
 
@@ -292,20 +317,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
 
       intList.add(id);
     }
-
-    invoker
-        .addStatement(
-            "default -> throw new UnsupportedOperationException(\"【$L】无法处理消息，原因:【缺少对应方法】，消息ID:【%s】\".formatted($L.proto()))",
-            facde.getSimpleName(), MESSAGE_VAR_NAME)
-        .endControlFlow().addCode(";");
-
-    handler
-        .addField(FieldSpec.builder(int[].class, PROTOS_VAR_NAME)
-            .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
-            .initializer("new int[]{$L}",
-                intList.intStream().mapToObj(String::valueOf).collect(Collectors.joining(",")))
-            .build())
-        .addMethod(invoker.build());
+    return intList;
   }
 
 
@@ -327,7 +339,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
     MethodSpec.Builder invokeBuilder = MethodSpec.methodBuilder("invoke")
         .addAnnotation(Override.class)
         .addModifiers(Modifier.PUBLIC)
-        .returns(byte[].class)
+        .returns(BYTE_BUF)
         .addParameter(CONNECTION_PARAM_SPEC)
         .addParameter(MESSAGE_PARAM_SPEC)
         .addException(Exception.class)
@@ -360,7 +372,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
           .addStatement("return")
           .endControlFlow()
           .addStatement("$T $L = $T.wrappedBuffer($L.packet())",
-              Util.BYTE_BUF, BUF_VAR_NAME, Util.UNNPOOLED_UTIL, MESSAGE_VAR_NAME)
+              BYTE_BUF, BUF_VAR_NAME, Util.UNNPOOLED_UTIL, MESSAGE_VAR_NAME)
           .addStatement("$L.complete($L.read($L))", futureVarName, SERIALIZER_VAR_NAME,
               BUF_VAR_NAME);
 
@@ -379,8 +391,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
             "default -> throw new UnsupportedOperationException(\"【$L】无法回调处理消息，原因:【缺少对应方法】，消息ID:【%s】\".formatted($L.proto()))",
             facde.getSimpleName(), MESSAGE_VAR_NAME)
         .endControlFlow()
-        .addCode(";")
-        .addStatement("return $T.EMPTY_BYTE_ARRAY", ArrayUtils.class)
+        .addStatement("return $T.EMPTY_BUFFER", Unpooled.class)
         .build();
 
     TypeSpec callBackHandler = callBackHandleBuilder

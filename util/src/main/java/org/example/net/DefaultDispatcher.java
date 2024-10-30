@@ -1,5 +1,6 @@
 package org.example.net;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,8 +83,8 @@ public class DefaultDispatcher implements Dispatcher {
     }
 
     try {
-      byte[] result = handler.invoke(connection, msg);
-      if (0 < msg.proto() && ArrayUtils.isNotEmpty(result)) {
+      ByteBuf result = handler.invoke(connection, msg);
+      if (0 < msg.proto() && result != null && result.isReadable()) {
         Message response = Message.of(Math.negateExact(msg.proto()), msg.msgId(), result);
         channel.write(response);
       }

@@ -1,5 +1,6 @@
 package org.example.net.handler;
 
+import io.netty.buffer.ByteBuf;
 import org.example.net.Connection;
 import org.example.net.Message;
 
@@ -12,5 +13,5 @@ import org.example.net.Message;
 @FunctionalInterface
 public interface Handler {
 
-  byte[] invoke(Connection connection, Message message)  throws Exception;
+  ByteBuf invoke(Connection connection, Message message)  throws Exception;
 }
