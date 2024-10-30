@@ -15,37 +15,28 @@ public class Message implements ReferenceCounted {
 
   /** 协议编号 (0 < [接收/发送]请求,  [接收/发送]结果 < 0) */
   private int proto;
-  /** 序列号(客户端发什么，服务端就返回什么) */
-  private int msgId;
   /** 内容 */
   private ByteBuf packet = Unpooled.EMPTY_BUFFER;
 
   public Message() {
   }
 
-  public static Message of(int proto, int msgId, byte[] packet) {
+  public static Message of(int proto, byte[] packet) {
     Message message = new Message();
     message.proto = proto;
-    message.msgId = msgId;
     message.packet = Unpooled.wrappedBuffer(packet);
     return message;
   }
 
-  public static Message of(int proto, int msgId, ByteBuf packet) {
+  public static Message of(int proto, ByteBuf packet) {
     Message message = new Message();
     message.proto = proto;
-    message.msgId = msgId;
     message.packet = packet;
     return message;
   }
 
   public int proto() {
     return proto;
-  }
-
-
-  public int msgId() {
-    return msgId;
   }
 
   public ByteBuf packet() {
@@ -72,13 +63,13 @@ public class Message implements ReferenceCounted {
       return false;
     }
     Message message = (Message) o;
-    return proto == message.proto && msgId == message.msgId && Objects.deepEquals(packet,
+    return proto == message.proto && Objects.deepEquals(packet,
         message.packet);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(proto, msgId, packet);
+    return Objects.hash(proto, packet);
   }
 
   @Override
@@ -112,8 +103,6 @@ public class Message implements ReferenceCounted {
 
   @Override
   public boolean release() {
-    msgId = 0;
-    proto = 0;
     return packet.release();
   }
 

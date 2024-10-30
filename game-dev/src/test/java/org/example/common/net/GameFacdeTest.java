@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.ArrayUtils;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ReqMoveSerde;
@@ -54,12 +55,11 @@ public class GameFacdeTest {
   private static DefaultDispatcher handlerRegistry() {
     GameFacade facade = new GameFacade();
 
-    DefaultDispatcher handlerRegistry =  new DefaultDispatcher();
+    DefaultDispatcher handlerRegistry = new DefaultDispatcher();
     GameFacadeHandler handler = new GameFacadeHandler(facade, commonSerializer);
     for (int id : GameFacadeHandler.protos) {
       handlerRegistry.registeHandler(id, handler);
     }
-
 
     GameFacadeCallBack gameFacadeCallBack = new GameFacadeCallBack(commonSerializer);
     for (int id : GameFacadeCallBack.protos) {
@@ -81,7 +81,6 @@ public class GameFacdeTest {
 
       reqBuf.skipBytes(Integer.BYTES);
       Assertions.assertEquals(ECHO, NettyByteBufUtil.readInt32(reqBuf));
-      Assertions.assertEquals(0, NettyByteBufUtil.readInt32(reqBuf));
       ByteBuf buf = Unpooled.buffer();
       commonSerializer.writeObject(buf, str);
       Assertions.assertArrayEquals(NettyByteBufUtil.readBytes(buf),
@@ -98,7 +97,6 @@ public class GameFacdeTest {
       ByteBuf resBuf = embeddedChannel.readOutbound();
       resBuf.skipBytes(Integer.BYTES);
       Assertions.assertEquals(-ECHO, NettyByteBufUtil.readInt32(resBuf));
-      Assertions.assertEquals(0, NettyByteBufUtil.readInt32(resBuf));
       Assertions.assertEquals(str, commonSerializer.read(resBuf));
 
       Assertions.assertFalse(resBuf.isReadable());
@@ -117,7 +115,6 @@ public class GameFacdeTest {
       reqBuf.markReaderIndex();
       reqBuf.skipBytes(Integer.BYTES);
       Assertions.assertEquals(OK, NettyByteBufUtil.readInt32(reqBuf));
-      Assertions.assertEquals(0, NettyByteBufUtil.readInt32(reqBuf));
       Assertions.assertArrayEquals(ArrayUtils.EMPTY_BYTE_ARRAY, NettyByteBufUtil.readBytes(reqBuf));
       Assertions.assertFalse(reqBuf.isReadable());
       Assertions.assertNull(embeddedChannel.readOutbound());
@@ -131,7 +128,6 @@ public class GameFacdeTest {
       ByteBuf resBuf = embeddedChannel.readOutbound();
       resBuf.skipBytes(Integer.BYTES);
       Assertions.assertEquals(-OK, NettyByteBufUtil.readInt32(resBuf));
-      Assertions.assertEquals(0, NettyByteBufUtil.readInt32(resBuf));
       Assertions.assertEquals("ok", commonSerializer.read(resBuf));
 
       Assertions.assertFalse(resBuf.isReadable());
@@ -182,13 +178,13 @@ public class GameFacdeTest {
       resBuf.skipBytes(Integer.BYTES);
       //511882096是自动生成的，自己看下代码里的值
       Assertions.assertTrue(NettyByteBufUtil.readInt32(resBuf) < 0);
-      Assertions.assertEquals(0, NettyByteBufUtil.readInt32(resBuf));
       Assertions.assertEquals(hashcode, NettyByteBufUtil.readInt32(resBuf));
 
       Assertions.assertFalse(resBuf.isReadable());
       Assertions.assertNull(embeddedChannel.readOutbound());
     }
   }
+
   @RepeatedTest(10)
   public void callBack() throws Exception {
     ThreadLocalRandom random = ThreadLocalRandom.current();
@@ -217,7 +213,8 @@ public class GameFacdeTest {
     int hashcode = Objects.hash(boolean1, Arrays.hashCode(byte1), short1, char1, int1, long1,
         float1, double1, reqMove, resMove);
 
-    CompletableFuture<Integer> callback = invoker.of(embeddedChannel.attr(Connection.CONNECTION).get())
+    CompletableFuture<Integer> callback = invoker.of(
+            embeddedChannel.attr(Connection.CONNECTION).get())
         .callback(boolean1, byte1, short1, char1, int1, long1, float1, double1, reqMove, resMove);
 
     {
@@ -230,7 +227,7 @@ public class GameFacdeTest {
       embeddedChannel.writeInbound(resBuf2);
     }
 
-    Assertions.assertEquals(hashcode, callback.get());
+    Assertions.assertEquals(hashcode, callback.get(1, TimeUnit.SECONDS));
   }
 
 

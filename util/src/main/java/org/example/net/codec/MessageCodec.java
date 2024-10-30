@@ -30,7 +30,6 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
     //serializing
     out.writerIndex(start + lengthFieldLength);
     NettyByteBufUtil.writeInt32(out, msg.proto());
-    NettyByteBufUtil.writeInt32(out, msg.msgId());
     out.writeBytes(msg.packet());
 
     //set the length
@@ -61,7 +60,6 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
     ByteBuf buf = in.retainedSlice(readIdx, length).skipBytes(lengthFieldLength);
 
     out.add(Message.of(
-        NettyByteBufUtil.readInt32(buf),
         NettyByteBufUtil.readInt32(buf),
         buf));
   }

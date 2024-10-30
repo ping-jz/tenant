@@ -4,7 +4,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.lang3.ArrayUtils;
 import org.example.net.handler.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,10 +56,9 @@ public class DefaultDispatcher implements Dispatcher {
    */
   public void doDispatcher(Channel channel, Message req) {
     Handler handler = getHandler(req.proto());
-    if (handler == null && req.msgId() == 0) {
-      logger.error("地址:{}, 协议号:{}, 消息ID:{} 无对应处理器", channel.remoteAddress(),
-          req.proto(),
-          req.msgId());
+    if (handler == null) {
+      logger.error("地址:{}, 协议号:{} 无对应处理器", channel.remoteAddress(),
+          req.proto());
       return;
     }
 
@@ -85,7 +83,7 @@ public class DefaultDispatcher implements Dispatcher {
     try {
       ByteBuf result = handler.invoke(connection, msg);
       if (0 < msg.proto() && result != null && result.isReadable()) {
-        Message response = Message.of(Math.negateExact(msg.proto()), msg.msgId(), result);
+        Message response = Message.of(Math.negateExact(msg.proto()), result);
         channel.write(response);
       }
 

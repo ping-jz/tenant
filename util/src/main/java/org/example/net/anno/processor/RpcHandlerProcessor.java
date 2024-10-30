@@ -4,6 +4,7 @@ import static org.example.net.anno.processor.Util.BYTEBUF_UTIL;
 import static org.example.net.anno.processor.Util.BYTE_BUF;
 import static org.example.net.anno.processor.Util.LOGGER;
 import static org.example.net.anno.processor.Util.LOGGER_FACTOR;
+import static org.example.net.anno.processor.Util.MSG_ID_VAR_NAME;
 import static org.example.net.anno.processor.Util.SERIALIZER_VAR_NAME;
 import static org.example.net.anno.processor.Util.isCompleteAbleFuture;
 
@@ -15,7 +16,6 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeSpec.Builder;
-import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -43,7 +43,6 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
-import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * 负责RPC方法的调用类和代理类
@@ -205,10 +204,17 @@ public class RpcHandlerProcessor extends AbstractProcessor {
       invoker.addStatement("case $L -> $L($L, $L)", id, methodName, CONNECTION_VAR_NAME,
           MESSAGE_VAR_NAME);
 
+      handlerMethod.addStatement("$T $L = $L.packet()", BYTE_BUF, BUF_VAR_NAME, MESSAGE_VAR_NAME);
+
+      TypeMirror returnTypeMirror = executableElement.getReturnType();
+      boolean callback = isCompleteAbleFuture(returnTypeMirror) != null;
+      if (callback) {
+        handlerMethod.addStatement("int $L = $T.readInt32($L)", MSG_ID_VAR_NAME, BYTEBUF_UTIL,
+            BUF_VAR_NAME);
+      }
+
       List<? extends VariableElement> params = executableElement.getParameters();
       if (!params.isEmpty()) {
-        handlerMethod.addStatement("$T $L = $T.wrappedBuffer($L.packet())",
-            BYTE_BUF, BUF_VAR_NAME, Util.UNNPOOLED_UTIL, MESSAGE_VAR_NAME);
         for (VariableElement p : params) {
           final String pname = p.getSimpleName().toString();
           TypeMirror ptype = p.asType();
@@ -237,16 +243,15 @@ public class RpcHandlerProcessor extends AbstractProcessor {
 
       String paramStr = params.stream().map(p -> p.getSimpleName().toString())
           .collect(Collectors.joining(", "));
-      TypeMirror returnType = executableElement.getReturnType();
 
-      if (returnType.getKind() == TypeKind.VOID) {
+      if (returnTypeMirror.getKind() == TypeKind.VOID) {
         handlerMethod.addStatement("$L.$L($L)", FACADE_VAR_NAME, methodName, paramStr);
-        handlerMethod.addStatement("return $T.EMPTY_BUFFER", Unpooled.class);
+        handlerMethod.addStatement("return $T.EMPTY_BUFFER", Util.UNNPOOLED_UTIL);
       } else {
         String resVar = "res";
         String resBuf = "resBuf";
 
-        switch (returnType.getKind()) {
+        switch (returnTypeMirror.getKind()) {
           case BOOLEAN ->
               handlerMethod.addStatement("boolean $L = $L.$L($L)", resVar, FACADE_VAR_NAME,
                   methodName, paramStr);
@@ -265,17 +270,17 @@ public class RpcHandlerProcessor extends AbstractProcessor {
               methodName, paramStr);
           case LONG -> handlerMethod.addStatement("long $L = $L.$L($L)", resVar, FACADE_VAR_NAME,
               methodName, paramStr);
-          default ->
-              handlerMethod.addStatement("$T $L = $L.$L($L)", TypeName.get(returnType), resVar,
-                  FACADE_VAR_NAME,
-                  methodName, paramStr);
+          default -> handlerMethod.addStatement("$T $L = $L.$L($L)", TypeName.get(returnTypeMirror),
+              resVar,
+              FACADE_VAR_NAME,
+              methodName, paramStr);
         }
 
         handlerMethod
             .addCode("\n")
             .addStatement("$T $L = $T.DEFAULT.buffer()", BYTE_BUF, resBuf, Util.POOLED_UTIL)
             .beginControlFlow("try");
-        switch (returnType.getKind()) {
+        switch (returnTypeMirror.getKind()) {
           case BOOLEAN -> handlerMethod.addStatement("$L.writeBoolean($L)", resBuf, resVar);
           case BYTE -> handlerMethod.addStatement("$L.writeByte($L)", resBuf, resVar);
           case SHORT -> handlerMethod.addStatement("$L.writeShort($L)", resBuf, resVar);
@@ -287,14 +292,13 @@ public class RpcHandlerProcessor extends AbstractProcessor {
           case LONG ->
               handlerMethod.addStatement("$T.writeInt64($L, $L)", BYTEBUF_UTIL, resBuf, resVar);
           case DECLARED -> {
-            DeclaredType declaredType = (DeclaredType) returnType;
-            TypeElement typeElement = (TypeElement) declaredType.asElement();
-            if (typeElement.getQualifiedName()
-                .contentEquals(Util.COMPLETE_ABLE_FUTURE_TYPE.toString())) {
-              handlerMethod.addStatement("$L.writeObject($L, $L.get())", SERIALIZER_VAR_NAME,
-                  resBuf,
-                  resVar
-              );
+            if (callback) {
+              handlerMethod
+                  .addStatement("$T.writeInt32($L, $L)", BYTEBUF_UTIL, resBuf, MSG_ID_VAR_NAME)
+                  .addStatement("$L.writeObject($L, $L.get())", SERIALIZER_VAR_NAME,
+                      resBuf,
+                      resVar
+                  );
             } else {
               handlerMethod.addStatement("$L.writeObject($L, $L)", SERIALIZER_VAR_NAME, resBuf,
                   resVar);
@@ -345,7 +349,8 @@ public class RpcHandlerProcessor extends AbstractProcessor {
         .addException(Exception.class)
         .beginControlFlow("switch($L.proto())", MESSAGE_VAR_NAME);
 
-    String futureVarName = "futureVar";
+    final String futureVarName = "futureVar";
+    final String msgIdVarName = "msgId";
     IntList intList = new IntArrayList();
     for (Element e : elements) {
       ExecutableElement method = (ExecutableElement) e;
@@ -363,12 +368,14 @@ public class RpcHandlerProcessor extends AbstractProcessor {
           .addParameter(CONNECTION_PARAM_SPEC)
           .addParameter(MESSAGE_PARAM_SPEC)
           .addException(Exception.class)
-          .addStatement("final $T $L = $L.removeInvokeFuture($L.msgId())", returnType,
-              futureVarName, CONNECTION_VAR_NAME, MESSAGE_VAR_NAME)
+          .addStatement("final int $L = $T.readInt32($L.packet())", msgIdVarName, BYTEBUF_UTIL,
+              MESSAGE_VAR_NAME)
+          .addStatement("final $T $L = $L.removeInvokeFuture($L)", returnType,
+              futureVarName, CONNECTION_VAR_NAME, msgIdVarName)
           .beginControlFlow("if ($L == null)", futureVarName)
           .addStatement(
-              "$L.error(\"寻找回调函数失败, 可能原因：【回调函数过期，回调函数不存在】, 协议ID:$L, 消息ID:{}, 链接地址:{} \", $L.msgId(),\n$L.channel().remoteAddress())",
-              loggerVarName, id, MESSAGE_VAR_NAME, CONNECTION_VAR_NAME)
+              "$L.error(\"寻找回调函数失败, 可能原因：【回调函数过期，回调函数不存在】, 协议ID:$L, 消息ID:{}, 链接地址:{} \", $L,\n$L.channel().remoteAddress())",
+              loggerVarName, id, msgIdVarName, CONNECTION_VAR_NAME)
           .addStatement("return")
           .endControlFlow()
           .addStatement("$T $L = $T.wrappedBuffer($L.packet())",
@@ -391,7 +398,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
             "default -> throw new UnsupportedOperationException(\"【$L】无法回调处理消息，原因:【缺少对应方法】，消息ID:【%s】\".formatted($L.proto()))",
             facde.getSimpleName(), MESSAGE_VAR_NAME)
         .endControlFlow()
-        .addStatement("return $T.EMPTY_BUFFER", Unpooled.class)
+        .addStatement("return $T.EMPTY_BUFFER", Util.UNNPOOLED_UTIL)
         .build();
 
     TypeSpec callBackHandler = callBackHandleBuilder

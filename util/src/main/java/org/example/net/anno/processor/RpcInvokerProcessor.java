@@ -9,6 +9,7 @@ import static org.example.net.anno.processor.Util.CONNECTION_GETTER;
 import static org.example.net.anno.processor.Util.LOGGER;
 import static org.example.net.anno.processor.Util.LOGGER_FACTOR;
 import static org.example.net.anno.processor.Util.MESSAGE_CLASS_NAME;
+import static org.example.net.anno.processor.Util.MSG_ID_VAR_NAME;
 import static org.example.net.anno.processor.Util.POOLED_UTIL;
 import static org.example.net.anno.processor.Util.isCompleteAbleFuture;
 
@@ -19,7 +20,6 @@ import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
-import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
@@ -64,6 +64,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
   private static final String MESSAGE_VAR_NAME = "m";
   private static final String PACKET_VAR_NAME = "p";
   private static final String BUF_VAR_NAME = "buf";
+
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -180,6 +181,9 @@ public class RpcInvokerProcessor extends AbstractProcessor {
     for (Element e : methods) {
       String methodName = e.getSimpleName().toString();
       ExecutableElement method = (ExecutableElement) e;
+      TypeMirror typeMirror = method.getReturnType();
+      boolean callback = isCompleteAbleFuture(typeMirror) != null;
+
       MethodSpec.Builder methodBuilder = MethodSpec
           .methodBuilder(e.getSimpleName().toString())
           .addModifiers(Modifier.PUBLIC);
@@ -194,16 +198,26 @@ public class RpcInvokerProcessor extends AbstractProcessor {
       methodBuilder
           .addCode("\n");
       List<? extends VariableElement> pparameters = method.getParameters();
-      if (pparameters.isEmpty()) {
+      boolean noParam = pparameters.isEmpty() && !callback;
+      if (noParam) {
         methodBuilder
-            .addStatement("$T $L = $T.EMPTY_BUFFER", BYTE_BUF, BUF_VAR_NAME, Unpooled.class);
+            .addStatement("$T $L = $T.EMPTY_BUFFER", BYTE_BUF, BUF_VAR_NAME, Util.UNNPOOLED_UTIL);
       } else {
 
         methodBuilder
-            .addStatement("$T $L = $T.DEFAULT.buffer()", BYTE_BUF, BUF_VAR_NAME, POOLED_UTIL)
-            .beginControlFlow("try");
+            .addStatement("$T $L = $T.DEFAULT.buffer()", BYTE_BUF, BUF_VAR_NAME, POOLED_UTIL);
+        if (callback) {
+          methodBuilder.addStatement("int $L = $L.nextCallBackMsgId()", MSG_ID_VAR_NAME,
+              CONNECTION_FIELD_NAME);
+        }
+
+        methodBuilder.beginControlFlow("try");
 
         //Handle param
+        if (callback) {
+          methodBuilder.addStatement("$T.writeInt32($L, $L)", BYTEBUF_UTIL, BUF_VAR_NAME,
+              MSG_ID_VAR_NAME);
+        }
         for (VariableElement variableElement : method.getParameters()) {
           Name name = variableElement.getSimpleName();
           TypeMirror paramType = variableElement.asType();
@@ -242,23 +256,22 @@ public class RpcInvokerProcessor extends AbstractProcessor {
         ;
       }
 
-      TypeMirror typeMirror = method.getReturnType();
-      if (isCompleteAbleFuture(typeMirror) != null) {
+      if (callback) {
         methodBuilder
             .returns(TypeName.get(typeMirror))
             .addStatement("///TODO 先默认三秒吧，以后看需要改")
             .addStatement(
-                "return remoting.invoke($L, $T.of($L, $L.nextCallBackMsgId(), $L), 3, $T.SECONDS)",
+                "return remoting.invoke($L, $T.of($L, $L), $L, 3, $T.SECONDS)",
                 CONNECTION_FIELD_NAME,
                 MESSAGE_CLASS_NAME,
                 protoIdVarName,
-                CONNECTION_FIELD_NAME,
                 BUF_VAR_NAME,
+                MSG_ID_VAR_NAME,
                 TimeUnit.class);
 
       } else {
         methodBuilder.addStatement(
-            "remoting.invoke($L, $T.of($L, 0, $L))",
+            "remoting.invoke($L, $T.of($L, $L))",
             CONNECTION_FIELD_NAME,
             MESSAGE_CLASS_NAME,
             protoIdVarName,

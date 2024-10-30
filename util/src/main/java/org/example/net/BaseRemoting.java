@@ -1,9 +1,6 @@
 package org.example.net;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.ReferenceCounted;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -42,10 +39,10 @@ public class BaseRemoting {
    * @param timeout 超时时间
    * @since 2021年08月15日 15:45:03
    */
-  public <T> CompletableFuture<T> invoke(final Connection conn, final Message message,
+  public <T> CompletableFuture<T> invoke(final Connection conn, final Message message, int msgId,
       final long timeout, TimeUnit timeUnit) {
     final CompletableFuture<T> future = new CompletableFuture<>();
-    return invokeWithFuture(conn, message, future, timeout, timeUnit);
+    return invokeWithFuture(conn, message, msgId, future, timeout, timeUnit);
   }
 
   /**
@@ -57,11 +54,10 @@ public class BaseRemoting {
    * @since 2021年08月15日 15:45:03
    */
   public <T> CompletableFuture<T> invokeWithFuture(final Connection conn, final Message message,
-      CompletableFuture<T> future, final long timeout, TimeUnit timeUnit) {
+      int msgId, CompletableFuture<T> future, final long timeout, TimeUnit timeUnit) {
     Objects.requireNonNull(future);
 
-    final int msgId = message.msgId();
-    conn.addInvokeFuture(message.msgId(), future);
+    conn.addInvokeFuture(msgId, future);
     Future<?> timeoutFuture = conn.channel().eventLoop().schedule(() -> {
       conn.removeInvokeFuture(msgId, future);
     }, timeout, timeUnit);

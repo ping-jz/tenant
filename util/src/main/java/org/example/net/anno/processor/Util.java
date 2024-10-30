@@ -54,6 +54,8 @@ class Util {
   public static final ClassName COMPLETE_ABLE_FUTURE_TYPE = ClassName.get("java.util.concurrent",
       "CompletableFuture");
 
+  public static final String MSG_ID_VAR_NAME = "msgId";
+
   public static List<Element> getReqMethod(ProcessingEnvironment processingEnv,
       TypeElement typeElement) {
     List<Element> res = new ArrayList<>();
