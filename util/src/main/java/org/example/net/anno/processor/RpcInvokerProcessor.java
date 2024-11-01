@@ -87,7 +87,6 @@ public class RpcInvokerProcessor extends AbstractProcessor {
                       Arrays.stream(
                               e.getStackTrace()).map(Objects::toString)
                           .collect(Collectors.joining("\n"))), typeElement);
-          throw new RuntimeException(e);
         }
       }
     }

@@ -114,7 +114,6 @@ public class RpcHandlerProcessor extends AbstractProcessor {
                           .collect(Collectors.joining("\n"))
                   ),
                   facade);
-          throw new RuntimeException(e);
         }
       }
     }

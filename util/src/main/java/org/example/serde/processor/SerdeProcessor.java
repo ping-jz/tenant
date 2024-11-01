@@ -104,7 +104,6 @@ public class SerdeProcessor extends AbstractProcessor {
                       Arrays.stream(
                               e.getStackTrace()).map(Objects::toString)
                           .collect(Collectors.joining("\n"))), clazz);
-          throw new RuntimeException(e);
         }
       }
     }
