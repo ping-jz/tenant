@@ -14,12 +14,12 @@ import static org.example.net.anno.processor.Util.POOLED_UTIL;
 import static org.example.net.anno.processor.Util.isCompleteAbleFuture;
 
 import com.google.auto.service.AutoService;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeSpec;
+import com.palantir.javapoet.ClassName;
+import com.palantir.javapoet.FieldSpec;
+import com.palantir.javapoet.JavaFile;
+import com.palantir.javapoet.MethodSpec;
+import com.palantir.javapoet.TypeName;
+import com.palantir.javapoet.TypeSpec;
 import io.netty.util.ReferenceCountUtil;
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
@@ -155,7 +155,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
     TypeSpec outer = outerBuilder.addType(inner).build();
     JavaFile javaFile = JavaFile.builder(INVOKER_PACKAGE, outer).build();
 
-    String qualifiedName = "%s.%s".formatted(INVOKER_PACKAGE, outer.name);
+    String qualifiedName = "%s.%s".formatted(INVOKER_PACKAGE, outer.name());
     JavaFileObject file = processingEnv.getFiler().createSourceFile(qualifiedName);
     try (PrintWriter writer = new PrintWriter(file.openWriter())) {
       javaFile.writeTo(writer);

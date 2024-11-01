@@ -9,13 +9,13 @@ import static org.example.net.anno.processor.Util.SERIALIZER_VAR_NAME;
 import static org.example.net.anno.processor.Util.isCompleteAbleFuture;
 
 import com.google.auto.service.AutoService;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterSpec;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeSpec;
-import com.squareup.javapoet.TypeSpec.Builder;
+import com.palantir.javapoet.FieldSpec;
+import com.palantir.javapoet.JavaFile;
+import com.palantir.javapoet.MethodSpec;
+import com.palantir.javapoet.ParameterSpec;
+import com.palantir.javapoet.TypeName;
+import com.palantir.javapoet.TypeSpec;
+import com.palantir.javapoet.TypeSpec.Builder;
 import io.netty.util.ReferenceCountUtil;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -388,7 +388,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
           MESSAGE_VAR_NAME);
     }
 
-    if (callBackHandleBuilder.methodSpecs.isEmpty()) {
+    if (intList.isEmpty()) {
       return;
     }
 
@@ -416,7 +416,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
     JavaFile javaFile = JavaFile.builder(CALL_BACK_HANDLER_PACKAGE, callBackHandleBuilder.build())
         .build();
 
-    String qualifiedName = "%s.%s".formatted(CALL_BACK_HANDLER_PACKAGE, callBackHandler.name);
+    String qualifiedName = "%s.%s".formatted(CALL_BACK_HANDLER_PACKAGE, callBackHandler.name());
     JavaFileObject file = processingEnv.getFiler().createSourceFile(qualifiedName);
     try (PrintWriter writer = new PrintWriter(file.openWriter())) {
       javaFile.writeTo(writer);
