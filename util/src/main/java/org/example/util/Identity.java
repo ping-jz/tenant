@@ -1,13 +1,19 @@
 package org.example.util;
 
 /**
- * 获取唯一ID接口
+ * ID标记接口
  *
  * @author ZJP
  * @since 2021年09月29日 16:31:02
  **/
 @FunctionalInterface
-public interface Identity<PK> {
+public interface Identity<T> extends Comparable<T> {
 
-  PK id();
+
+  @Override
+  boolean equals(Object o);
+
+  @Override
+  int hashCode();
+
 }

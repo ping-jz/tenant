@@ -4,12 +4,12 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import java.io.Serializable;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import org.example.common.persistence.accessor.Accessor;
-import org.example.util.Identity;
 
 /**
  * MongoDb缓存实现
@@ -28,7 +28,7 @@ import org.example.util.Identity;
  * @author ZJP
  * @since 2021年09月29日 16:34:55
  **/
-public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Identity<PK>> {
+public class EntityCache<K extends Serializable & Comparable<K>, T> {
 
   /**
    * spring mongo template
@@ -37,7 +37,7 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Ide
   /**
    * caffeine cache
    */
-  private LoadingCache<PK, ValueWrapper<T>> cache;
+  private LoadingCache<K, ValueWrapper<T>> cache;
   /**
    * entity类型信息
    */
@@ -49,7 +49,7 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Ide
 
   public EntityCache(long expireMill, int cacheSize, Class<T> entityClass, Accessor accessor,
       Executor executor) {
-    Caffeine<PK, ValueWrapper<T>> caffeine = Caffeine.newBuilder().maximumSize(cacheSize)
+    Caffeine<K, ValueWrapper<T>> caffeine = Caffeine.newBuilder().maximumSize(cacheSize)
         .expireAfterAccess(expireMill, TimeUnit.MILLISECONDS)
         .removalListener((key, value, cause) -> {
           if (value != null && cause != RemovalCause.EXPLICIT) {
@@ -72,7 +72,7 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Ide
     });
   }
 
-  public T get(PK key) {
+  public T get(K key) {
     ValueWrapper<T> v = cache.get(key);
     T res = null;
     if (v != null) {
@@ -83,36 +83,36 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Ide
   }
 
 
-  public T getIfPresent(PK key) {
+  public T getIfPresent(K key) {
     ValueWrapper<T> v = cache.getIfPresent(key);
     return v != null ? v.getValue() : null;
   }
 
 
-  public T getOrCreate(PK key, Function<PK, T> provider) {
+  public T getOrCreate(K key, Function<K, T> provider) {
     return cache.asMap().computeIfAbsent(key, pk -> {
       T t = provider.apply(pk);
       ValueWrapper<T> tWrapper = null;
       if (t != null) {
-        tWrapper = ValueWrapper.of(provider.apply(pk));
-        writeBack(tWrapper.getValue());
+        tWrapper = ValueWrapper.of(t);
+        writeBack(key, tWrapper.getValue());
       }
       return tWrapper;
     }).getValue();
   }
 
 
-  public T put(T newObj) {
+  public T put(K pk, T newObj) {
     Objects.requireNonNull(newObj);
     ValueWrapper<T> newWrapper = ValueWrapper.of(newObj);
-    cache.asMap().put(newObj.id(), newWrapper);
+    cache.asMap().put(pk, newWrapper);
     return newWrapper.getValue();
   }
 
 
-  public T putIfAbsent(T newObj) {
+  public T putIfAbsent(K key, T newObj) {
     Objects.requireNonNull(newObj);
-    return cache.asMap().computeIfAbsent(newObj.id(), pk -> ValueWrapper.of(newObj)).getValue();
+    return cache.asMap().computeIfAbsent(key, pk -> ValueWrapper.of(newObj)).getValue();
   }
 
 
@@ -122,23 +122,24 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Ide
 
 
   public void flushAll() {
-    for (ValueWrapper<T> obj : cache.asMap().values()) {
+    for (Entry<K, ValueWrapper<T>> entry : cache.asMap().entrySet()) {
+      ValueWrapper<T> obj = entry.getValue();
       obj.incWrites();
-      writeBack(obj.getValue());
+      writeBack(entry.getKey(), obj.getValue());
     }
   }
 
 
-  public void flush(PK pk) {
+  public void flush(K pk) {
     ValueWrapper<T> obj = cache.getIfPresent(pk);
     if (obj != null) {
       obj.incWrites();
-      writeBack(obj.getValue());
+      writeBack(pk, obj.getValue());
     }
   }
 
 
-  public T delete(PK pk) {
+  public T delete(K pk) {
     ValueWrapper<T> remove = cache.asMap().remove(pk);
     T res = null;
     if (remove != null) {
@@ -154,20 +155,14 @@ public class EntityCache<PK extends Serializable & Comparable<PK>, T extends Ide
   }
 
 
-  public void writeBack(T obj) {
-    doWriteBack(obj.id(), obj);
+  public void writeBack(K key, T obj) {
+    doWriteBack(key, obj);
   }
 
-  private void doWriteBack(PK key, T obj) {
+  private void doWriteBack(K key, T obj) {
     if (obj == null) {
       return;
     }
-
-    try {
-      accessor.save(obj);
-    } catch (Exception e) {
-      //持久化失败，放入缓存等待下次
-      cache.asMap().computeIfAbsent(obj.id(), k -> ValueWrapper.of(obj));
-    }
+    accessor.save(obj);
   }
 }
