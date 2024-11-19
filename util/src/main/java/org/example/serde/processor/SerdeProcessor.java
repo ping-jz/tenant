@@ -13,10 +13,10 @@ import io.netty.buffer.ByteBuf;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
@@ -27,7 +27,6 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -70,7 +69,8 @@ public class SerdeProcessor extends AbstractProcessor {
 
         try {
           ClassName typename = ClassName.get(clazz);
-          ClassName serderTypeName = ClassName.get(typename.packageName(), typename.simpleName() + "Serde");
+          ClassName serderTypeName = ClassName.get(typename.packageName(),
+              typename.simpleName() + "Serde");
 
           TypeName genericInterface = ParameterizedTypeName.get(ClassName.get(Serializer.class),
               typename);
@@ -169,61 +169,35 @@ public class SerdeProcessor extends AbstractProcessor {
           .returns(typeName)
           .addParameter(ByteBuf.class, BUF_VAR_NAME);
 
-      StringJoiner varNames = new StringJoiner(", ");
-      for (Element e : fieldElements) {
-        String fieldName = e.getSimpleName().toString();
-        varNames.add(fieldName);
-        TypeMirror mirror = e.asType();
-        TypeName varTypeName = TypeName.get(mirror);
-
-        //TODO 类型变量 先这样处理吧
-        if(mirror.getKind() == TypeKind.TYPEVAR) {
-          varTypeName = ClassName.get(Object.class);
-        }
+      builder.addCode("return new $T(\n", typeName);
+      Iterator<Element> elementIterator = fieldElements.iterator();
+      while (elementIterator.hasNext()) {
+        Element e = elementIterator.next();
         switch (e.asType().getKind()) {
-          case BOOLEAN -> builder.addStatement("$T $L = $L.readBoolean()",
-              varTypeName,
-              fieldName,
-              BUF_VAR_NAME);
-          case BYTE -> builder.addStatement("$T $L = $L.readByte()",
-              varTypeName,
-              fieldName,
-              BUF_VAR_NAME);
-          case SHORT -> builder.addStatement("$T $L = $L.readShort()",
-              varTypeName,
-              fieldName,
-              BUF_VAR_NAME);
-          case CHAR -> builder.addStatement("$T $L = $L.readChar()",
-              varTypeName,
-              fieldName,
-              BUF_VAR_NAME);
-          case FLOAT -> builder.addStatement("$T $L = $L.readFloat()",
-              varTypeName,
-              fieldName,
-              BUF_VAR_NAME);
-          case DOUBLE -> builder.addStatement("$T $L = $L.readDouble()",
-              varTypeName,
-              fieldName,
-              BUF_VAR_NAME);
-          case INT -> builder.addStatement("$T $L = $T.readInt32($L)",
-              varTypeName,
-              fieldName,
+          case BOOLEAN -> builder.addCode("$L.readBoolean()", BUF_VAR_NAME);
+          case BYTE -> builder.addCode("$L.readByte()", BUF_VAR_NAME);
+          case SHORT -> builder.addCode("$L.readShort()", BUF_VAR_NAME);
+          case CHAR -> builder.addCode("$L.readChar()", BUF_VAR_NAME);
+          case FLOAT -> builder.addCode("$L.readFloat()", BUF_VAR_NAME);
+          case DOUBLE -> builder.addCode("$T $L = $L.readDouble()", BUF_VAR_NAME);
+          case INT -> builder.addCode("$T.readInt32($L)",
               NettyByteBufUtil.class,
               BUF_VAR_NAME);
-          case LONG -> builder.addStatement("$T $L = $T.readInt64($L)",
-              varTypeName,
-              fieldName,
+          case LONG -> builder.addCode("$T.readInt64($L)",
               NettyByteBufUtil.class,
               BUF_VAR_NAME);
-          default -> builder.addStatement("$T $L = $L.read($L)",
-              varTypeName,
-              fieldName,
+          default -> builder.addCode("$L.read($L)",
               SERIALIZER_VAR_NAME,
               BUF_VAR_NAME
           );
         }
+
+        if (elementIterator.hasNext()) {
+          builder.addCode(",");
+        }
+        builder.addCode("\n");
       }
-      builder.addStatement("return new $T($L)", typeName, varNames);
+      builder.addCode(");");
       return builder.build();
     }
 
