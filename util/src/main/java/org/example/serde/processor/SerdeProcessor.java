@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
@@ -26,8 +27,10 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 import org.apache.commons.lang3.StringUtils;
@@ -56,45 +59,64 @@ public class SerdeProcessor extends AbstractProcessor {
         continue;
       }
 
-      for (Element clazz : annotationElements) {
-        if (clazz.getKind() != ElementKind.CLASS) {
+      for (Element clz : annotationElements) {
+        if (clz.getKind() != ElementKind.CLASS && clz.getKind() != ElementKind.RECORD) {
           processingEnv.getMessager()
-              .printMessage(Kind.ERROR, "@Serde must be applied to a Class", clazz);
+              .printMessage(Kind.ERROR, "@Serde must be applied to a Class", clz);
           return false;
         }
 
-        try {
-          String className = clazz.toString();
-          String packageName = null;
-          int lastDot = className.lastIndexOf('.');
-          if (lastDot > 0) {
-            packageName = className.substring(0, lastDot);
-          }
+        TypeElement clazz = (TypeElement) clz;
 
-          String simpleClassName = className.substring(lastDot + 1);
-          TypeName typename = ClassName.get(packageName, simpleClassName);
-          String builderClassName = className + "Serde";
-          String builderSimpleClassName = builderClassName.substring(lastDot + 1);
+        try {
+          ClassName typename = ClassName.get(clazz);
+          ClassName serderTypeName = ClassName.get(typename.packageName(), typename.simpleName() + "Serde");
 
           TypeName genericInterface = ParameterizedTypeName.get(ClassName.get(Serializer.class),
               typename);
-          Builder builder = TypeSpec.classBuilder(builderSimpleClassName)
+          Builder builder = TypeSpec.classBuilder(serderTypeName.simpleName())
               .addSuperinterface(genericInterface)
               .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
 
-          List<Element> fieldElements = getAllFieldElements((TypeElement) clazz);
+          switch (clazz.getKind()) {
+            case CLASS -> {
+              List<Element> fieldElements = BeanSerde.getAllFieldElements(this,
+                  clazz);
+              MethodSpec deSer = BeanSerde.deSerializerCode(typename, fieldElements);
+              MethodSpec serde = BeanSerde.serializerCode(typename, fieldElements);
+              TypeSpec typeSpec = consturctorAndFields(builder)
+                  .addMethod(deSer)
+                  .addMethod(serde)
+                  .build();
 
-          MethodSpec deSer = deSerializerCode(typename, fieldElements);
-          MethodSpec serde = serializerCode(typename, fieldElements);
-          TypeSpec typeSpec = consturctorAndFields(builder)
-              .addMethod(deSer)
-              .addMethod(serde)
-              .build();
+              JavaFileObject builderFile = processingEnv.getFiler()
+                  .createSourceFile(serderTypeName.canonicalName());
+              try (PrintWriter writer = new PrintWriter(builderFile.openWriter())) {
+                JavaFile.builder(typename.packageName(), typeSpec).build().writeTo(writer);
+              }
+            }
+            case RECORD -> {
+              List<Element> fieldElements = RecordSerde.getAllFieldElements((TypeElement) clazz);
+              MethodSpec deSer = RecordSerde.deSerializerCode(typename, fieldElements);
+              MethodSpec serde = RecordSerde.serializerCode(typename, fieldElements);
+              TypeSpec typeSpec = consturctorAndFields(builder)
+                  .addMethod(deSer)
+                  .addMethod(serde)
+                  .build();
 
-          JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(builderClassName);
-          try (PrintWriter writer = new PrintWriter(builderFile.openWriter())) {
-            JavaFile.builder(packageName, typeSpec).build().writeTo(writer);
+              JavaFileObject builderFile = processingEnv.getFiler()
+                  .createSourceFile(serderTypeName.canonicalName());
+              try (PrintWriter writer = new PrintWriter(builderFile.openWriter())) {
+                JavaFile.builder(typename.packageName(), typeSpec).build().writeTo(writer);
+              }
+            }
+            default -> {
+              processingEnv.getMessager()
+                  .printMessage(Kind.ERROR, "@Serde must be applied to a Class", clazz);
+              return false;
+            }
           }
+
 
         } catch (Throwable e) {
           processingEnv.getMessager()
@@ -110,36 +132,7 @@ public class SerdeProcessor extends AbstractProcessor {
     return false;
   }
 
-  public List<Element> getAllFieldElements(TypeElement element) {
-    List<TypeElement> clazzs = new ArrayList<>();
-    clazzs.add(element);
-
-    TypeElement parent = element;
-    while (true) {
-      parent = getSuperclass(parent);
-      if (parent == null) {
-        break;
-      }
-
-      clazzs.addFirst(parent);
-    }
-
-    List<Element> fields = new ArrayList<>();
-    for (TypeElement typeElement : clazzs) {
-      List<Element> fieldElements = typeElement.getEnclosedElements().stream()
-          .filter(e -> e.getKind() == ElementKind.FIELD).filter(
-              e -> !(e.getModifiers().contains(Modifier.FINAL) || e.getModifiers()
-                  .contains(Modifier.STATIC) || e.getModifiers().contains(Modifier.TRANSIENT)))
-          .collect(Collectors.toUnmodifiableList());
-
-      fields.addAll(fieldElements);
-    }
-
-    return fields;
-  }
-
-  private static TypeSpec.Builder consturctorAndFields(TypeSpec.Builder builder) {
-
+  public static TypeSpec.Builder consturctorAndFields(TypeSpec.Builder builder) {
     MethodSpec constructor = MethodSpec.constructorBuilder()
         .addModifiers(Modifier.PUBLIC)
         .addParameter(CommonSerializer.class, SERIALIZER_VAR_NAME)
@@ -154,130 +147,309 @@ public class SerdeProcessor extends AbstractProcessor {
     return builder.addMethod(constructor).addField(fieldSpec);
   }
 
-  private static MethodSpec deSerializerCode(TypeName typeName, List<Element> fieldElements) {
-    MethodSpec.Builder builder = MethodSpec.methodBuilder("readObject")
-        .addAnnotation(Override.class)
-        .addModifiers(Modifier.PUBLIC)
-        .addParameter(ByteBuf.class, BUF_VAR_NAME)
-        .addStatement("$T $L = new $T()", typeName, OBJECT_VAR_NAME, typeName).returns(typeName);
 
-    fieldElements.forEach(e -> {
-      String fieldName = StringUtils.capitalize(e.getSimpleName().toString());
-      switch (e.asType().getKind()) {
-        case BOOLEAN -> builder.addStatement("$L.set$L($L.readBoolean())",
-            OBJECT_VAR_NAME,
-            fieldName,
-            BUF_VAR_NAME);
-        case BYTE -> builder.addStatement("$L.set$L($L.readByte())",
-            OBJECT_VAR_NAME,
-            fieldName,
-            BUF_VAR_NAME);
-        case SHORT -> builder.addStatement("$L.set$L($L.readShort())",
-            OBJECT_VAR_NAME,
-            fieldName,
-            BUF_VAR_NAME);
-        case CHAR -> builder.addStatement("$L.set$L($L.readChar())",
-            OBJECT_VAR_NAME,
-            fieldName,
-            BUF_VAR_NAME);
-        case FLOAT -> builder.addStatement("$L.set$L($L.readFloat())",
-            OBJECT_VAR_NAME,
-            fieldName,
-            BUF_VAR_NAME);
-        case DOUBLE -> builder.addStatement("$L.set$L($L.readDouble())",
-            OBJECT_VAR_NAME,
-            fieldName,
-            BUF_VAR_NAME);
-        case INT -> builder.addStatement("$L.set$L($T.readInt32($L))",
-            OBJECT_VAR_NAME,
-            fieldName,
-            NettyByteBufUtil.class,
-            BUF_VAR_NAME);
-        case LONG -> builder.addStatement("$L.set$L($T.readInt64($L))",
-            OBJECT_VAR_NAME,
-            fieldName,
-            NettyByteBufUtil.class,
-            BUF_VAR_NAME);
-        default -> builder.addStatement("$L.set$L($L.read(buf))",
-            OBJECT_VAR_NAME,
-            fieldName,
-            SERIALIZER_VAR_NAME);
-      }
-    });
+  /**
+   * class代码生成
+   *
+   * @author zhongjianping
+   * @since 2024/11/19 15:08
+   */
+  private static final class RecordSerde {
 
-    builder.addStatement("return object");
-    return builder.build();
-  }
-
-  private static MethodSpec serializerCode(TypeName typeName, List<Element> fieldElements) {
-    MethodSpec.Builder builder = MethodSpec.methodBuilder("writeObject")
-        .addAnnotation(Override.class)
-        .addModifiers(Modifier.PUBLIC)
-        .addParameter(ByteBuf.class, BUF_VAR_NAME).addParameter(typeName, OBJECT_VAR_NAME)
-        .returns(TypeName.VOID);
-
-    fieldElements.forEach(e -> {
-      String fieldName = StringUtils.capitalize(e.getSimpleName().toString());
-      switch (e.asType().getKind()) {
-        case BOOLEAN -> builder.addStatement("$L.writeBoolean($L.is$L())",
-            BUF_VAR_NAME,
-            OBJECT_VAR_NAME,
-            fieldName);
-        case BYTE -> builder.addStatement("$L.writeByte($L.get$L())",
-            BUF_VAR_NAME,
-            OBJECT_VAR_NAME,
-            fieldName);
-        case SHORT -> builder.addStatement("$L.writeShort($L.get$L())",
-            BUF_VAR_NAME,
-            OBJECT_VAR_NAME,
-            fieldName);
-        case CHAR -> builder.addStatement("$L.writeChar($L.get$L())",
-            BUF_VAR_NAME,
-            OBJECT_VAR_NAME,
-            fieldName);
-        case FLOAT -> builder.addStatement("$L.writeFloat($L.get$L())",
-            BUF_VAR_NAME,
-            OBJECT_VAR_NAME,
-            fieldName);
-        case DOUBLE -> builder.addStatement("$L.writeDouble($L.get$L())",
-            BUF_VAR_NAME,
-            OBJECT_VAR_NAME,
-            fieldName);
-        case INT -> builder.addStatement("$T.writeInt32($L, $L.get$L())",
-            NettyByteBufUtil.class,
-            BUF_VAR_NAME,
-            OBJECT_VAR_NAME,
-            fieldName);
-        case LONG -> builder.addStatement("$T.writeInt64($L, $L.get$L())",
-            NettyByteBufUtil.class,
-            BUF_VAR_NAME,
-            OBJECT_VAR_NAME,
-            fieldName);
-        default -> builder.addStatement("$L.writeObject($L, $L.get$L())",
-            SERIALIZER_VAR_NAME,
-            BUF_VAR_NAME,
-            OBJECT_VAR_NAME,
-            fieldName);
-      }
-    });
-
-    return builder.build();
-  }
-
-  private TypeElement getSuperclass(TypeElement type) {
-    if (type.getSuperclass().getKind() == TypeKind.DECLARED) {
-      TypeElement superclass = (TypeElement) processingEnv.getTypeUtils()
-          .asElement(type.getSuperclass());
-      String name = superclass.getQualifiedName().toString();
-      if (name.startsWith("java.") || name.startsWith("javax.") || name.startsWith("android.")) {
-        // Skip system classes, this just degrades performance
-        return null;
-      } else {
-        return superclass;
-      }
-    } else {
-      return null;
+    public static List<Element> getAllFieldElements(TypeElement element) {
+      return element.getEnclosedElements().stream()
+          .filter(e -> e.getKind() == ElementKind.RECORD_COMPONENT)
+          .collect(Collectors.toUnmodifiableList());
     }
+
+    public static MethodSpec deSerializerCode(TypeName typeName, List<Element> fieldElements) {
+      MethodSpec.Builder builder = MethodSpec.methodBuilder("readObject")
+          .addAnnotation(Override.class)
+          .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+          .returns(typeName)
+          .addParameter(ByteBuf.class, BUF_VAR_NAME);
+
+      StringJoiner varNames = new StringJoiner(", ");
+      for (Element e : fieldElements) {
+        String fieldName = e.getSimpleName().toString();
+        varNames.add(fieldName);
+        TypeMirror mirror = e.asType();
+        TypeName varTypeName = TypeName.get(mirror);
+
+        //TODO 类型变量 先这样处理吧
+        if(mirror.getKind() == TypeKind.TYPEVAR) {
+          varTypeName = ClassName.get(Object.class);
+        }
+        switch (e.asType().getKind()) {
+          case BOOLEAN -> builder.addStatement("$T $L = $L.readBoolean()",
+              varTypeName,
+              fieldName,
+              BUF_VAR_NAME);
+          case BYTE -> builder.addStatement("$T $L = $L.readByte()",
+              varTypeName,
+              fieldName,
+              BUF_VAR_NAME);
+          case SHORT -> builder.addStatement("$T $L = $L.readShort()",
+              varTypeName,
+              fieldName,
+              BUF_VAR_NAME);
+          case CHAR -> builder.addStatement("$T $L = $L.readChar()",
+              varTypeName,
+              fieldName,
+              BUF_VAR_NAME);
+          case FLOAT -> builder.addStatement("$T $L = $L.readFloat()",
+              varTypeName,
+              fieldName,
+              BUF_VAR_NAME);
+          case DOUBLE -> builder.addStatement("$T $L = $L.readDouble()",
+              varTypeName,
+              fieldName,
+              BUF_VAR_NAME);
+          case INT -> builder.addStatement("$T $L = $T.readInt32($L)",
+              varTypeName,
+              fieldName,
+              NettyByteBufUtil.class,
+              BUF_VAR_NAME);
+          case LONG -> builder.addStatement("$T $L = $T.readInt64($L)",
+              varTypeName,
+              fieldName,
+              NettyByteBufUtil.class,
+              BUF_VAR_NAME);
+          default -> builder.addStatement("$T $L = $L.read($L)",
+              varTypeName,
+              fieldName,
+              SERIALIZER_VAR_NAME,
+              BUF_VAR_NAME
+          );
+        }
+      }
+      builder.addStatement("return new $T($L)", typeName, varNames);
+      return builder.build();
+    }
+
+    public static MethodSpec serializerCode(TypeName typeName, List<Element> fieldElements) {
+      MethodSpec.Builder builder = MethodSpec.methodBuilder("writeObject")
+          .addAnnotation(Override.class)
+          .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+          .addParameter(ByteBuf.class, BUF_VAR_NAME, Modifier.FINAL)
+          .addParameter(typeName, OBJECT_VAR_NAME, Modifier.FINAL)
+          .returns(TypeName.VOID);
+
+      fieldElements.forEach(e -> {
+        String fieldName = e.getSimpleName().toString();
+        switch (e.asType().getKind()) {
+          case BOOLEAN -> builder.addStatement("$L.writeBoolean($L.$L())",
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          case BYTE -> builder.addStatement("$L.writeByte($L.$L())",
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          case SHORT -> builder.addStatement("$L.writeShort($L.$L())",
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          case CHAR -> builder.addStatement("$L.writeChar($L.$L())",
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          case FLOAT -> builder.addStatement("$L.writeFloat($L.$L())",
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          case DOUBLE -> builder.addStatement("$L.writeDouble($L.$L())",
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          case INT -> builder.addStatement("$T.writeInt32($L, $L.$L())",
+              NettyByteBufUtil.class,
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          case LONG -> builder.addStatement("$T.writeInt64($L, $L.$L())",
+              NettyByteBufUtil.class,
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          default -> builder.addStatement("$L.writeObject($L, $L.$L())",
+              SERIALIZER_VAR_NAME,
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+        }
+      });
+
+      return builder.build();
+    }
+
+  }
+
+
+  /**
+   * class代码生成
+   *
+   * @author zhongjianping
+   * @since 2024/11/19 15:08
+   */
+  private static final class BeanSerde {
+
+    private static TypeElement getSuperclass(SerdeProcessor processor, TypeElement type) {
+      if (type.getSuperclass().getKind() == TypeKind.DECLARED) {
+        TypeElement superclass = (TypeElement) processor.processingEnv.getTypeUtils()
+            .asElement(type.getSuperclass());
+        String name = superclass.getQualifiedName().toString();
+        if (name.startsWith("java.") || name.startsWith("javax.") || name.startsWith("android.")) {
+          // Skip system classes, this just degrades performance
+          return null;
+        } else {
+          return superclass;
+        }
+      } else {
+        return null;
+      }
+    }
+
+
+    public static List<Element> getAllFieldElements(SerdeProcessor processor, TypeElement element) {
+      List<TypeElement> clazzs = new ArrayList<>();
+      clazzs.add(element);
+
+      TypeElement parent = element;
+      while (true) {
+        parent = getSuperclass(processor, parent);
+        if (parent == null) {
+          break;
+        }
+
+        clazzs.addFirst(parent);
+      }
+
+      List<Element> fields = new ArrayList<>();
+      for (TypeElement typeElement : clazzs) {
+        List<Element> fieldElements = typeElement.getEnclosedElements().stream()
+            .filter(e -> e.getKind() == ElementKind.FIELD).filter(
+                e -> !(e.getModifiers().contains(Modifier.FINAL) || e.getModifiers()
+                    .contains(Modifier.STATIC) || e.getModifiers().contains(Modifier.TRANSIENT)))
+            .collect(Collectors.toUnmodifiableList());
+
+        fields.addAll(fieldElements);
+      }
+
+      return fields;
+    }
+
+    public static MethodSpec deSerializerCode(TypeName typeName, List<Element> fieldElements) {
+      MethodSpec.Builder builder = MethodSpec.methodBuilder("readObject")
+          .addAnnotation(Override.class)
+          .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+          .addParameter(ByteBuf.class, BUF_VAR_NAME, Modifier.FINAL)
+          .addStatement("$T $L = new $T()", typeName, OBJECT_VAR_NAME, typeName).returns(typeName);
+
+      fieldElements.forEach(e -> {
+        String fieldName = StringUtils.capitalize(e.getSimpleName().toString());
+        switch (e.asType().getKind()) {
+          case BOOLEAN -> builder.addStatement("$L.set$L($L.readBoolean())",
+              OBJECT_VAR_NAME,
+              fieldName,
+              BUF_VAR_NAME);
+          case BYTE -> builder.addStatement("$L.set$L($L.readByte())",
+              OBJECT_VAR_NAME,
+              fieldName,
+              BUF_VAR_NAME);
+          case SHORT -> builder.addStatement("$L.set$L($L.readShort())",
+              OBJECT_VAR_NAME,
+              fieldName,
+              BUF_VAR_NAME);
+          case CHAR -> builder.addStatement("$L.set$L($L.readChar())",
+              OBJECT_VAR_NAME,
+              fieldName,
+              BUF_VAR_NAME);
+          case FLOAT -> builder.addStatement("$L.set$L($L.readFloat())",
+              OBJECT_VAR_NAME,
+              fieldName,
+              BUF_VAR_NAME);
+          case DOUBLE -> builder.addStatement("$L.set$L($L.readDouble())",
+              OBJECT_VAR_NAME,
+              fieldName,
+              BUF_VAR_NAME);
+          case INT -> builder.addStatement("$L.set$L($T.readInt32($L))",
+              OBJECT_VAR_NAME,
+              fieldName,
+              NettyByteBufUtil.class,
+              BUF_VAR_NAME);
+          case LONG -> builder.addStatement("$L.set$L($T.readInt64($L))",
+              OBJECT_VAR_NAME,
+              fieldName,
+              NettyByteBufUtil.class,
+              BUF_VAR_NAME);
+          default -> builder.addStatement("$L.set$L($L.read(buf))",
+              OBJECT_VAR_NAME,
+              fieldName,
+              SERIALIZER_VAR_NAME);
+        }
+      });
+
+      builder.addStatement("return object");
+      return builder.build();
+    }
+
+    public static MethodSpec serializerCode(TypeName typeName, List<Element> fieldElements) {
+      MethodSpec.Builder builder = MethodSpec.methodBuilder("writeObject")
+          .addAnnotation(Override.class)
+          .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+          .addParameter(ByteBuf.class, BUF_VAR_NAME, Modifier.FINAL)
+          .addParameter(typeName, OBJECT_VAR_NAME, Modifier.FINAL)
+          .returns(TypeName.VOID);
+
+      fieldElements.forEach(e -> {
+        String fieldName = StringUtils.capitalize(e.getSimpleName().toString());
+        switch (e.asType().getKind()) {
+          case BOOLEAN -> builder.addStatement("$L.writeBoolean($L.is$L())",
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          case BYTE -> builder.addStatement("$L.writeByte($L.get$L())",
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          case SHORT -> builder.addStatement("$L.writeShort($L.get$L())",
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          case CHAR -> builder.addStatement("$L.writeChar($L.get$L())",
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          case FLOAT -> builder.addStatement("$L.writeFloat($L.get$L())",
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          case DOUBLE -> builder.addStatement("$L.writeDouble($L.get$L())",
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          case INT -> builder.addStatement("$T.writeInt32($L, $L.get$L())",
+              NettyByteBufUtil.class,
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          case LONG -> builder.addStatement("$T.writeInt64($L, $L.get$L())",
+              NettyByteBufUtil.class,
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+          default -> builder.addStatement("$L.writeObject($L, $L.get$L())",
+              SERIALIZER_VAR_NAME,
+              BUF_VAR_NAME,
+              OBJECT_VAR_NAME,
+              fieldName);
+        }
+      });
+
+      return builder.build();
+    }
+
   }
 
 

@@ -98,7 +98,10 @@ public class RecordSerializer implements Serializer<Object> {
       types[i] = component.getType();
 
       try {
-        fieldInfos[i] = new FieldInfo(serializer.getSerializer(component.getType()),
+        Serializer<Object> ser = component.getType() == Object.class ?
+            serializer :
+            serializer.getSerializer(component.getType());
+        fieldInfos[i] = new FieldInfo(ser,
             lookup.unreflect(component.getAccessor()), component.getName());
       } catch (Exception e) {
         throw new RuntimeException(

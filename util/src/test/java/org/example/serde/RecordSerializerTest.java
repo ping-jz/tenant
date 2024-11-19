@@ -1,13 +1,13 @@
 package org.example.serde;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
 
 public class RecordSerializerTest {
-
 
 
   @Test
@@ -29,21 +29,49 @@ public class RecordSerializerTest {
     commonSerializer.registerObject(Empty.class);
     commonSerializer.registerObject(Compose.class);
 
-    Compose abc = new Compose(1, 2L, 3F, "EEEEEE", new Empty());
+    Compose<Double> abc = new Compose<Double>((byte) 0, 'c', (short) 1, 1, 2L, 3F, 3.0,false, "EEEEEE", new Empty());
     ByteBuf buf = Unpooled.buffer();
     commonSerializer.writeObject(buf, abc);
 
-    Compose res = commonSerializer.read(buf);
+    Compose<Double> res = commonSerializer.read(buf);
     assertEquals(abc, res);
   }
 
+  @Test
+  public void composeTest() {
+    CommonSerializer commonSerializer = new CommonSerializer();
+    commonSerializer.registerSerializer(Empty.class, new EmptySerde(commonSerializer));
+    commonSerializer.registerSerializer(Compose.class, new ComposeSerde(commonSerializer));
 
-  private record Empty() {
+    {
+      ByteBuf buf = Unpooled.buffer();
+      Empty empty = new Empty();
+      commonSerializer.writeObject(buf, empty);
+      Empty res = commonSerializer.read(buf);
+      assertEquals(empty, res);
+      assertFalse(buf.isReadable());
+    }
+
+    {
+      ByteBuf buf = Unpooled.buffer();
+      Compose<Double> abc = new Compose<Double>((byte) 0, 'c', (short) 1, 1, 2L, 3F, 3.0,false, "EEEEEE", new Empty());
+      commonSerializer.writeObject(buf, abc);
+      Compose<Double> res = commonSerializer.read(buf);
+      assertEquals(abc, res);
+      assertFalse(buf.isReadable());
+    }
 
   }
 
-  private record Compose(int a, long b, float c, String d, Empty e) {
 
+  @Serde
+  public record Empty() {
+
+  }
+
+  @Serde
+  public record Compose<T>(byte b, char c, short s, int a, long l, float f, T t, boolean bool, String d,
+                        Empty e) {
   }
 
 }
