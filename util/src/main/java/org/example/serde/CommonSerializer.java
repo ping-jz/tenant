@@ -164,7 +164,8 @@ public class CommonSerializer implements Serializer<Object> {
    * @param clazz 类型
    * @since 2021年07月18日 11:37:14
    */
-  public void registerObject(Integer id, Class<?> clazz) {
+  @SuppressWarnings({"unchecked","rawtypes"})
+  public void registerObject(Integer id, Class clazz) {
     Objects.requireNonNull(id);
     Objects.requireNonNull(clazz);
 

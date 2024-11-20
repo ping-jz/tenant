@@ -30,15 +30,6 @@ public class EnumSerializerTest {
   }
 
   @Test
-  public void errorTest() {
-    @SuppressWarnings("all") EnumSerializer<Object> serializer = new EnumSerializer(EnumOne.class);
-    ByteBuf byteBuf = Unpooled.buffer();
-
-    Assertions.assertThrows(IllegalArgumentException.class,
-        () -> serializer.writeObject(byteBuf, EnumTwo.One));
-  }
-
-  @Test
   public void intergateTest() {
     CommonSerializer serializer = new CommonSerializer();
     serializer.registerObject(EnumOne.class);

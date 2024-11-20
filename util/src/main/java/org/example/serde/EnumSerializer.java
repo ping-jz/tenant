@@ -9,12 +9,12 @@ import io.netty.buffer.ByteBuf;
  *
  * @since 2022年03月13日 16:16:14
  */
-public class EnumSerializer<E> implements Serializer<E> {
+public class EnumSerializer<E extends Enum<E>> implements Serializer<E> {
 
   /**
    * -1表示NULL
    */
-  public static final int NULL_IDX = -1;
+  private static final int NULL_IDX = -1;
 
   /**
    * Enum的Class和内容
@@ -32,10 +32,9 @@ public class EnumSerializer<E> implements Serializer<E> {
   }
 
 
-  public static <E> EnumSerializer<E> of(Class<E> enumuClass) {
+  public static <E extends Enum<E>> EnumSerializer<E> of(Class<E> enumuClass) {
     return new EnumSerializer<>(enumuClass);
   }
-
 
   @Override
   public E readObject(ByteBuf buf) {
@@ -56,11 +55,6 @@ public class EnumSerializer<E> implements Serializer<E> {
   public void writeObject(ByteBuf buf, E object) {
     int idx = NULL_IDX;
     if (object != null) {
-      if (object.getClass() != enumClass) {
-        throw new IllegalArgumentException(
-            String.format("枚举序列化错误， %s 不属于 %s", object.getClass(), enumClass.getName()));
-      }
-
       idx = indexOf(object);
     }
 
@@ -74,13 +68,6 @@ public class EnumSerializer<E> implements Serializer<E> {
     if (values == null) {
       return -1;
     }
-
-    for (int i = 0; i < values.length; i++) {
-      if (values[i] == object) {
-        return i;
-      }
-    }
-
-    return -1;
+    return object.ordinal();
   }
 }
