@@ -55,19 +55,9 @@ public class EnumSerializer<E extends Enum<E>> implements Serializer<E> {
   public void writeObject(ByteBuf buf, E object) {
     int idx = NULL_IDX;
     if (object != null) {
-      idx = indexOf(object);
+      idx = object.ordinal();
     }
 
     NettyByteBufUtil.writeInt32(buf, idx);
-  }
-
-  /**
-   * 返回object在这个枚举中的下标，如果不存在则返回-1
-   */
-  private int indexOf(E object) {
-    if (values == null) {
-      return -1;
-    }
-    return object.ordinal();
   }
 }
