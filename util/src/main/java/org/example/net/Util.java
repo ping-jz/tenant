@@ -1,9 +1,7 @@
-package org.example.net.anno.processor;
+package org.example.net;
 
 import com.palantir.javapoet.ClassName;
 import com.palantir.javapoet.FieldSpec;
-import com.palantir.javapoet.ParameterizedTypeName;
-import com.palantir.javapoet.TypeName;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -18,16 +16,18 @@ import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 import org.example.net.anno.Req;
 
-class Util {
+public final class Util {
+
+  /** 回调请求ID */
+  public static final int CALL_BACK_ID = 1;
 
   /** 常用类型 */
-  public static final ClassName CONNECTION = ClassName.get("org.example.net", "Connection");
+  public static final ClassName CONNECTION_CLASS_NAME = ClassName.get("org.example.net",
+      "Connection");
   public static final ClassName HANDLER_ANNOTATION = ClassName.get(
       "org.example.common.generator.rpc", "Handler");
-  public static final ParameterizedTypeName CONNECTION_GETTER = ParameterizedTypeName.get(
-      ClassName.get("java.util.function", "Function"),
-      TypeName.INT.box(), CONNECTION
-  );
+  public static final ClassName CONNECTION_GETTER =
+      ClassName.get("org.example.net", "ConnectionManager");
   public static final ClassName BASE_REMOTING = ClassName.get("org.example.net", "BaseRemoting");
   public static final ClassName COMMON_SERIALIZER = ClassName.get("org.example.serde",
       "CommonSerializer");
@@ -51,7 +51,8 @@ class Util {
   public static final ClassName HANDLER_INTERFACE = ClassName.get("org.example.net.handler",
       "Handler");
 
-  public static final ClassName COMPLETE_ABLE_FUTURE_TYPE = ClassName.get("java.util.concurrent",
+  public static final ClassName COMPLETE_ABLE_FUTURE_CLASS_NAME = ClassName.get(
+      "java.util.concurrent",
       "CompletableFuture");
 
   public static final String MSG_ID_VAR_NAME = "msgId";
@@ -116,7 +117,7 @@ class Util {
     DeclaredType declaredType = (DeclaredType) mirror;
     TypeElement returnTypeElement = (TypeElement) declaredType.asElement();
     if (returnTypeElement.getQualifiedName()
-        .contentEquals(Util.COMPLETE_ABLE_FUTURE_TYPE.toString())) {
+        .contentEquals(Util.COMPLETE_ABLE_FUTURE_CLASS_NAME.toString())) {
       return declaredType;
     } else {
       return null;

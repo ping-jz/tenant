@@ -36,13 +36,12 @@ public class BaseRemoting {
    *
    * @param conn    目标链接
    * @param message 请求消息
-   * @param timeout 超时时间
    * @since 2021年08月15日 15:45:03
    */
-  public <T> CompletableFuture<T> invoke(final Connection conn, final Message message, int msgId,
-      final long timeout, TimeUnit timeUnit) {
+  public <T> CompletableFuture<T> invoke(ConnectionManager manager, final Connection conn,
+      final Message message, int msgId) {
     final CompletableFuture<T> future = new CompletableFuture<>();
-    return invokeWithFuture(conn, message, msgId, future, timeout, timeUnit);
+    return invokeWithFuture(manager, conn, message, msgId, future, 3, TimeUnit.SECONDS);
   }
 
   /**
@@ -53,18 +52,19 @@ public class BaseRemoting {
    * @param timeout 超时时间
    * @since 2021年08月15日 15:45:03
    */
-  public <T> CompletableFuture<T> invokeWithFuture(final Connection conn, final Message message,
+  public <T> CompletableFuture<T> invokeWithFuture(ConnectionManager manager, Connection conn,
+      Message message,
       int msgId, CompletableFuture<T> future, final long timeout, TimeUnit timeUnit) {
     Objects.requireNonNull(future);
 
-    conn.addInvokeFuture(msgId, future);
+    manager.addInvokeFuture(conn, msgId, future);
     Future<?> timeoutFuture = conn.channel().eventLoop().schedule(() -> {
-      conn.removeInvokeFuture(msgId, future);
+      manager.removeInvokeFuture(msgId, future);
     }, timeout, timeUnit);
     try {
       conn.channel().writeAndFlush(message).addListener(cf -> {
         if (!cf.isSuccess()) {
-          conn.removeInvokeFuture(msgId, future);
+          manager.removeInvokeFuture(msgId, future);
           timeoutFuture.cancel(false);
           logger.error("Invoke send failed. The address is {}", conn.channel().remoteAddress(),
               cf.cause());
@@ -72,7 +72,7 @@ public class BaseRemoting {
       });
     } catch (Exception e) {
       assert ReferenceCountUtil.release(message);
-      conn.removeInvokeFuture(msgId, future);
+      manager.removeInvokeFuture(msgId, future);
       timeoutFuture.cancel(false);
       logger.error("Exception caught when sending invocation. The address is {}",
           conn.channel().remoteAddress(), e);

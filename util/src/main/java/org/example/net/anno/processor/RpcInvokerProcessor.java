@@ -1,23 +1,23 @@
 package org.example.net.anno.processor;
 
-import static org.example.net.anno.processor.Util.BASE_REMOTING;
-import static org.example.net.anno.processor.Util.BYTEBUF_UTIL;
-import static org.example.net.anno.processor.Util.BYTE_BUF;
-import static org.example.net.anno.processor.Util.COMMON_SERIALIZER;
-import static org.example.net.anno.processor.Util.CONNECTION;
-import static org.example.net.anno.processor.Util.CONNECTION_GETTER;
-import static org.example.net.anno.processor.Util.LOGGER;
-import static org.example.net.anno.processor.Util.LOGGER_FACTOR;
-import static org.example.net.anno.processor.Util.MESSAGE_CLASS_NAME;
-import static org.example.net.anno.processor.Util.MSG_ID_VAR_NAME;
-import static org.example.net.anno.processor.Util.POOLED_UTIL;
-import static org.example.net.anno.processor.Util.isCompleteAbleFuture;
+import static org.example.net.Util.BASE_REMOTING;
+import static org.example.net.Util.BYTEBUF_UTIL;
+import static org.example.net.Util.BYTE_BUF;
+import static org.example.net.Util.COMMON_SERIALIZER;
+import static org.example.net.Util.CONNECTION_CLASS_NAME;
+import static org.example.net.Util.CONNECTION_GETTER;
+import static org.example.net.Util.LOGGER;
+import static org.example.net.Util.LOGGER_FACTOR;
+import static org.example.net.Util.MESSAGE_CLASS_NAME;
+import static org.example.net.Util.MSG_ID_VAR_NAME;
+import static org.example.net.Util.POOLED_UTIL;
 
 import com.google.auto.service.AutoService;
 import com.palantir.javapoet.ClassName;
 import com.palantir.javapoet.FieldSpec;
 import com.palantir.javapoet.JavaFile;
 import com.palantir.javapoet.MethodSpec;
+import com.palantir.javapoet.ParameterizedTypeName;
 import com.palantir.javapoet.TypeName;
 import com.palantir.javapoet.TypeSpec;
 import io.netty.util.ReferenceCountUtil;
@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
@@ -41,8 +40,10 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
+import org.example.net.Util;
 
 /**
  * 负责RPC方法的调用类和代理类
@@ -61,9 +62,8 @@ public class RpcInvokerProcessor extends AbstractProcessor {
   private static final String INNER_SIMPLE_NAME = "Invoker";
 
   private static final String CONNECTION_FIELD_NAME = "c";
-  private static final String MESSAGE_VAR_NAME = "m";
-  private static final String PACKET_VAR_NAME = "p";
   private static final String BUF_VAR_NAME = "buf";
+  private static final String MANAGER_VAR_NAME = "manager";
 
 
   @Override
@@ -110,7 +110,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
             .initializer("$T.getLogger($L.class)", LOGGER_FACTOR, simpleName)
             .build())
         .addField(FieldSpec
-            .builder(CONNECTION_GETTER, "manager")
+            .builder(CONNECTION_GETTER, MANAGER_VAR_NAME)
             .addModifiers(Modifier.PRIVATE)
             .build())
         .addField(FieldSpec
@@ -136,13 +136,13 @@ public class RpcInvokerProcessor extends AbstractProcessor {
         .addModifiers(Modifier.PUBLIC)
         .returns(inner_type)
         .addParameter(TypeName.INT, "id")
-        .addStatement("$T connection = manager.apply(id)", CONNECTION)
+        .addStatement("$T connection = manager.connection(id)", CONNECTION_CLASS_NAME)
         .addStatement("return of(connection)").build();
 
     MethodSpec ofConnection = MethodSpec.methodBuilder("of")
         .addModifiers(Modifier.PUBLIC)
         .returns(inner_type)
-        .addParameter(CONNECTION, "c")
+        .addParameter(CONNECTION_CLASS_NAME, "c")
         .addStatement("$T.requireNonNull(c)", Objects.class)
         .beginControlFlow("if (!c.isActive())")
         .addStatement("logger.error(\"[RPC] $L, 因为链接【{}】失效：无法处理\", c.id());", simpleName)
@@ -169,11 +169,11 @@ public class RpcInvokerProcessor extends AbstractProcessor {
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
 
     typeBuilder.addField(FieldSpec
-            .builder(CONNECTION, CONNECTION_FIELD_NAME)
+            .builder(CONNECTION_CLASS_NAME, CONNECTION_FIELD_NAME)
             .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
             .build())
         .addMethod(MethodSpec.constructorBuilder()
-            .addParameter(CONNECTION, CONNECTION_FIELD_NAME)
+            .addParameter(CONNECTION_CLASS_NAME, CONNECTION_FIELD_NAME)
             .addStatement("this.$L = $L", CONNECTION_FIELD_NAME, CONNECTION_FIELD_NAME)
             .build());
 
@@ -181,7 +181,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
       String methodName = e.getSimpleName().toString();
       ExecutableElement method = (ExecutableElement) e;
       TypeMirror typeMirror = method.getReturnType();
-      boolean callback = isCompleteAbleFuture(typeMirror) != null;
+      boolean callback = typeMirror.getKind() != TypeKind.VOID;
 
       MethodSpec.Builder methodBuilder = MethodSpec
           .methodBuilder(e.getSimpleName().toString())
@@ -207,7 +207,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
             .addStatement("$T $L = $T.DEFAULT.buffer()", BYTE_BUF, BUF_VAR_NAME, POOLED_UTIL);
         if (callback) {
           methodBuilder.addStatement("int $L = $L.nextCallBackMsgId()", MSG_ID_VAR_NAME,
-              CONNECTION_FIELD_NAME);
+              MANAGER_VAR_NAME);
         }
 
         methodBuilder.beginControlFlow("try");
@@ -223,7 +223,8 @@ public class RpcInvokerProcessor extends AbstractProcessor {
           TypeName paramTypeName = TypeName.get(paramType);
 
           // Connection和Message不用生成
-          if (paramTypeName.equals(CONNECTION) || paramTypeName.equals(MESSAGE_CLASS_NAME)) {
+          if (paramTypeName.equals(CONNECTION_CLASS_NAME) || paramTypeName.equals(
+              MESSAGE_CLASS_NAME)) {
             continue;
           }
 
@@ -257,16 +258,16 @@ public class RpcInvokerProcessor extends AbstractProcessor {
 
       if (callback) {
         methodBuilder
-            .returns(TypeName.get(typeMirror))
-            .addStatement("///TODO 先默认三秒吧，以后看需要改")
+            .returns(ParameterizedTypeName.get(Util.COMPLETE_ABLE_FUTURE_CLASS_NAME,
+                TypeName.get(typeMirror).box()))
             .addStatement(
-                "return remoting.invoke($L, $T.of($L, $L), $L, 3, $T.SECONDS)",
+                "return remoting.invoke($L, $L, $T.of($L, $L), $L)",
+                MANAGER_VAR_NAME,
                 CONNECTION_FIELD_NAME,
                 MESSAGE_CLASS_NAME,
                 protoIdVarName,
                 BUF_VAR_NAME,
-                MSG_ID_VAR_NAME,
-                TimeUnit.class);
+                MSG_ID_VAR_NAME);
 
       } else {
         methodBuilder.addStatement(

@@ -1,6 +1,7 @@
 package org.example.common.net.client;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
@@ -10,8 +11,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import java.net.InetSocketAddress;
 import java.util.Objects;
-import org.example.common.net.ConnectionManager;
-import org.example.net.Connection;
+import org.example.net.ConnectionManager;
 import org.example.net.codec.MessageCodec;
 import org.example.serde.Serializer;
 import org.example.util.NettyEventLoopUtil;
@@ -71,25 +71,14 @@ public class DefaultClient implements AutoCloseable {
   }
 
 
-  //创建链接和管理链接不该Client来管理，以后抽出去吧
-  /**
-   * @since 2021年08月13日 18:47:18
-   */
-  public Connection connection(String add, int port) {
-    Connection connection = createConnection(add, port);
-    manager.connections().put(connection.id(), connection);
-    return connection;
-  }
-
-
-  private Connection createConnection(String ip, int port) {
+  private Channel createConnection(String ip, int port) {
     try {
 
       ChannelFuture future = bootstrap.connect(new InetSocketAddress(ip, port));
       boolean suc = future.awaitUninterruptibly().isSuccess();
       if (suc) {
         future.channel().pipeline().addLast("manager", manager);
-        return new Connection(future.channel(),0);
+        return future.channel();
       } else {
         throw new RuntimeException(String.format("connect to %s:%s failed", ip, port));
       }

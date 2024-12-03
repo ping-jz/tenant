@@ -1,12 +1,14 @@
 package org.example.net.anno.processor;
 
-import static org.example.net.anno.processor.Util.BYTEBUF_UTIL;
-import static org.example.net.anno.processor.Util.BYTE_BUF;
-import static org.example.net.anno.processor.Util.LOGGER;
-import static org.example.net.anno.processor.Util.LOGGER_FACTOR;
-import static org.example.net.anno.processor.Util.MSG_ID_VAR_NAME;
-import static org.example.net.anno.processor.Util.SERIALIZER_VAR_NAME;
-import static org.example.net.anno.processor.Util.isCompleteAbleFuture;
+import static org.example.net.Util.BYTEBUF_UTIL;
+import static org.example.net.Util.BYTE_BUF;
+import static org.example.net.Util.CONNECTION_CLASS_NAME;
+import static org.example.net.Util.LOGGER;
+import static org.example.net.Util.LOGGER_FACTOR;
+import static org.example.net.Util.MESSAGE_CLASS_NAME;
+import static org.example.net.Util.MSG_ID_VAR_NAME;
+import static org.example.net.Util.SERIALIZER_VAR_NAME;
+import static org.example.net.Util.isCompleteAbleFuture;
 
 import com.google.auto.service.AutoService;
 import com.palantir.javapoet.FieldSpec;
@@ -43,6 +45,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
+import org.example.net.Util;
 
 /**
  * 负责RPC方法的调用类和代理类
@@ -63,7 +66,8 @@ public class RpcHandlerProcessor extends AbstractProcessor {
   private static final String MESSAGE_VAR_NAME = "m";
   private static final String BUF_VAR_NAME = "buf";
   private static final String PROTOS_VAR_NAME = "protos";
-  private static final ParameterSpec CONNECTION_PARAM_SPEC = ParameterSpec.builder(Util.CONNECTION,
+  private static final ParameterSpec CONNECTION_PARAM_SPEC = ParameterSpec.builder(
+      CONNECTION_CLASS_NAME,
       CONNECTION_VAR_NAME).build();
   private static final ParameterSpec MESSAGE_PARAM_SPEC = ParameterSpec.builder(
       Util.MESSAGE_CLASS_NAME,
@@ -102,7 +106,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
 
         try {
           generateHandler(facade, methodElements);
-          generateCallBackHandler(facade, methodElements);
+          //generateCallBackHandler(facade, methodElements);
         } catch (Exception e) {
           processingEnv.getMessager()
               .printError(
@@ -161,12 +165,11 @@ public class RpcHandlerProcessor extends AbstractProcessor {
     MethodSpec.Builder invoker = MethodSpec.methodBuilder("invoke")
         .addAnnotation(Override.class)
         .addModifiers(Modifier.PUBLIC)
-        .returns(BYTE_BUF)
         .addParameter(CONNECTION_PARAM_SPEC)
         .addParameter(MESSAGE_PARAM_SPEC)
         .addException(Exception.class);
 
-    invoker.beginControlFlow("return switch(m.proto())");
+    invoker.beginControlFlow("switch(m.proto())");
     IntList intList = generateMethod0(facde, handler, methods, invoker);
 
     invoker
@@ -194,11 +197,9 @@ public class RpcHandlerProcessor extends AbstractProcessor {
 
       MethodSpec.Builder handlerMethod = MethodSpec
           .methodBuilder(methodName)
-          .returns(BYTE_BUF)
           .addParameter(CONNECTION_PARAM_SPEC)
           .addParameter(MESSAGE_PARAM_SPEC)
-          .addModifiers(Modifier.FINAL, Modifier.PRIVATE)
-          .addException(Exception.class);
+          .addModifiers(Modifier.PRIVATE);
 
       invoker.addStatement("case $L -> $L($L, $L)", id, methodName, CONNECTION_VAR_NAME,
           MESSAGE_VAR_NAME);
@@ -206,71 +207,85 @@ public class RpcHandlerProcessor extends AbstractProcessor {
       handlerMethod.addStatement("$T $L = $L.packet()", BYTE_BUF, BUF_VAR_NAME, MESSAGE_VAR_NAME);
 
       TypeMirror returnTypeMirror = executableElement.getReturnType();
-      boolean callback = isCompleteAbleFuture(returnTypeMirror) != null;
+      boolean callback = returnTypeMirror.getKind() != TypeKind.VOID;
       if (callback) {
         handlerMethod.addStatement("int $L = $T.readInt32($L)", MSG_ID_VAR_NAME, BYTEBUF_UTIL,
             BUF_VAR_NAME);
       }
 
       List<? extends VariableElement> params = executableElement.getParameters();
-      if (!params.isEmpty()) {
-        for (VariableElement p : params) {
-          final String pname = p.getSimpleName().toString();
-          TypeMirror ptype = p.asType();
-          switch (ptype.getKind()) {
-            case BOOLEAN ->
-                handlerMethod.addStatement("boolean $L = $L.readBoolean()", pname, BUF_VAR_NAME);
-            case BYTE -> handlerMethod.addStatement("byte $L = $L.readByte()", pname, BUF_VAR_NAME);
-            case SHORT ->
-                handlerMethod.addStatement("short $L = $L.readShort()", pname, BUF_VAR_NAME);
-            case CHAR -> handlerMethod.addStatement("char $L = $L.readChar()", pname, BUF_VAR_NAME);
-            case FLOAT ->
-                handlerMethod.addStatement("float $L = $L.readFloat()", pname, BUF_VAR_NAME);
-            case DOUBLE ->
-                handlerMethod.addStatement("double $L = $L.readDouble()", pname, BUF_VAR_NAME);
-            case INT -> handlerMethod.addStatement("int $L = $T.readInt32($L)", pname, BYTEBUF_UTIL,
-                BUF_VAR_NAME);
-            case LONG ->
-                handlerMethod.addStatement("long $L = $T.readInt64($L)", pname, BYTEBUF_UTIL,
-                    BUF_VAR_NAME);
-            default -> handlerMethod.addStatement("$T $L = $L.read($L)", TypeName.get(ptype), pname,
-                SERIALIZER_VAR_NAME, BUF_VAR_NAME);
+      for (VariableElement p : params) {
+        final String pname = p.getSimpleName().toString();
+        TypeMirror ptype = p.asType();
+        switch (ptype.getKind()) {
+          case BOOLEAN ->
+              handlerMethod.addStatement("boolean $L = $L.readBoolean()", pname, BUF_VAR_NAME);
+          case BYTE -> handlerMethod.addStatement("byte $L = $L.readByte()", pname, BUF_VAR_NAME);
+          case SHORT ->
+              handlerMethod.addStatement("short $L = $L.readShort()", pname, BUF_VAR_NAME);
+          case CHAR -> handlerMethod.addStatement("char $L = $L.readChar()", pname, BUF_VAR_NAME);
+          case FLOAT ->
+              handlerMethod.addStatement("float $L = $L.readFloat()", pname, BUF_VAR_NAME);
+          case DOUBLE ->
+              handlerMethod.addStatement("double $L = $L.readDouble()", pname, BUF_VAR_NAME);
+          case INT -> handlerMethod.addStatement("int $L = $T.readInt32($L)", pname, BYTEBUF_UTIL,
+              BUF_VAR_NAME);
+          case LONG -> handlerMethod.addStatement("long $L = $T.readInt64($L)", pname, BYTEBUF_UTIL,
+              BUF_VAR_NAME);
+          default -> {
+            TypeMirror paramType = p.asType();
+            TypeName paramTypeName = TypeName.get(paramType);
+
+            if (paramTypeName.equals(CONNECTION_CLASS_NAME)) {
+              handlerMethod.addStatement("$T $L = $L", CONNECTION_CLASS_NAME, pname,
+                  CONNECTION_VAR_NAME);
+            } else if (paramTypeName.equals(MESSAGE_CLASS_NAME)) {
+              handlerMethod.addStatement("$T $L = $L", MESSAGE_CLASS_NAME, pname,
+                  MESSAGE_VAR_NAME);
+            } else {
+              handlerMethod.addStatement("$T $L = $L.read($L)", TypeName.get(ptype), pname,
+                  SERIALIZER_VAR_NAME, BUF_VAR_NAME);
+            }
           }
         }
+      }
+      if (!params.isEmpty()) {
         handlerMethod.addCode("\n");
       }
 
       String paramStr = params.stream().map(p -> p.getSimpleName().toString())
           .collect(Collectors.joining(", "));
 
-      if (returnTypeMirror.getKind() == TypeKind.VOID) {
-        handlerMethod.addStatement("$L.$L($L)", FACADE_VAR_NAME, methodName, paramStr);
-        handlerMethod.addStatement("return $T.EMPTY_BUFFER", Util.UNNPOOLED_UTIL);
-      } else {
-        String resVar = "res";
+      if (callback) {
+        String resVarName = "res";
         String resBuf = "resBuf";
 
         switch (returnTypeMirror.getKind()) {
           case BOOLEAN ->
-              handlerMethod.addStatement("boolean $L = $L.$L($L)", resVar, FACADE_VAR_NAME,
+              handlerMethod.addStatement("boolean $L = $L.$L($L)", resVarName, FACADE_VAR_NAME,
                   methodName, paramStr);
-          case BYTE -> handlerMethod.addStatement("byte $L = $L.$L($L)", resVar, FACADE_VAR_NAME,
-              methodName, paramStr);
-          case SHORT -> handlerMethod.addStatement("short $L = $L.$L($L)", resVar, FACADE_VAR_NAME,
-              methodName, paramStr);
-          case CHAR -> handlerMethod.addStatement("char $L = $L.$L($L)", resVar, FACADE_VAR_NAME,
-              methodName, paramStr);
-          case FLOAT -> handlerMethod.addStatement("float $L = $L.$L($L)", resVar, FACADE_VAR_NAME,
-              methodName, paramStr);
+          case BYTE ->
+              handlerMethod.addStatement("byte $L = $L.$L($L)", resVarName, FACADE_VAR_NAME,
+                  methodName, paramStr);
+          case SHORT ->
+              handlerMethod.addStatement("short $L = $L.$L($L)", resVarName, FACADE_VAR_NAME,
+                  methodName, paramStr);
+          case CHAR ->
+              handlerMethod.addStatement("char $L = $L.$L($L)", resVarName, FACADE_VAR_NAME,
+                  methodName, paramStr);
+          case FLOAT ->
+              handlerMethod.addStatement("float $L = $L.$L($L)", resVarName, FACADE_VAR_NAME,
+                  methodName, paramStr);
           case DOUBLE ->
-              handlerMethod.addStatement("double $L = $L.$L($L)", resVar, FACADE_VAR_NAME,
+              handlerMethod.addStatement("double $L = $L.$L($L)", resVarName, FACADE_VAR_NAME,
                   methodName, paramStr);
-          case INT -> handlerMethod.addStatement("int $L = $L.$L($L)", resVar, FACADE_VAR_NAME,
+          case INT -> handlerMethod.addStatement("int $L = $L.$L($L)", resVarName, FACADE_VAR_NAME,
               methodName, paramStr);
-          case LONG -> handlerMethod.addStatement("long $L = $L.$L($L)", resVar, FACADE_VAR_NAME,
-              methodName, paramStr);
+          case LONG ->
+              handlerMethod.addStatement("long $L = $L.$L($L)", resVarName, FACADE_VAR_NAME,
+                  methodName, paramStr);
           default -> handlerMethod.addStatement("$T $L = $L.$L($L)", TypeName.get(returnTypeMirror),
-              resVar,
+              resVarName,
               FACADE_VAR_NAME,
               methodName, paramStr);
         }
@@ -278,42 +293,19 @@ public class RpcHandlerProcessor extends AbstractProcessor {
         handlerMethod
             .addCode("\n")
             .addStatement("$T $L = $T.DEFAULT.buffer()", BYTE_BUF, resBuf, Util.POOLED_UTIL)
-            .beginControlFlow("try");
-        switch (returnTypeMirror.getKind()) {
-          case BOOLEAN -> handlerMethod.addStatement("$L.writeBoolean($L)", resBuf, resVar);
-          case BYTE -> handlerMethod.addStatement("$L.writeByte($L)", resBuf, resVar);
-          case SHORT -> handlerMethod.addStatement("$L.writeShort($L)", resBuf, resVar);
-          case CHAR -> handlerMethod.addStatement("$L.writeChar($L)", resBuf, resVar);
-          case FLOAT -> handlerMethod.addStatement("$L.writeFloat($L)", resBuf, resVar);
-          case DOUBLE -> handlerMethod.addStatement("$L.writeDouble($L)", resBuf, resVar);
-          case INT ->
-              handlerMethod.addStatement("$T.writeInt32($L, $L)", BYTEBUF_UTIL, resBuf, resVar);
-          case LONG ->
-              handlerMethod.addStatement("$T.writeInt64($L, $L)", BYTEBUF_UTIL, resBuf, resVar);
-          case DECLARED -> {
-            if (callback) {
-              handlerMethod
-                  .addStatement("$T.writeInt32($L, $L)", BYTEBUF_UTIL, resBuf, MSG_ID_VAR_NAME)
-                  .addStatement("$L.writeObject($L, $L.get())", SERIALIZER_VAR_NAME,
-                      resBuf,
-                      resVar
-                  );
-            } else {
-              handlerMethod.addStatement("$L.writeObject($L, $L)", SERIALIZER_VAR_NAME, resBuf,
-                  resVar);
-            }
-          }
-          default ->
-              handlerMethod.addStatement("$L.writeObject($L, $L)", SERIALIZER_VAR_NAME, resBuf,
-                  resVar);
-        }
-        handlerMethod
-            .addStatement("return $L", resBuf)
+            .beginControlFlow("try")
+            .addStatement("$T.writeInt32($L, $L)", BYTEBUF_UTIL, resBuf, MSG_ID_VAR_NAME)
+            .addStatement("$L.writeObject($L, $L)", SERIALIZER_VAR_NAME, resBuf, resVarName)
+            .addStatement("$L.channel().writeAndFlush($T.of($L, $L))", CONNECTION_VAR_NAME,
+                MESSAGE_CLASS_NAME, Util.CALL_BACK_ID, resBuf)
             .endControlFlow()
             .beginControlFlow("catch (Throwable t)")
             .addStatement("$T.release($L)", ReferenceCountUtil.class, resBuf)
             .addStatement("throw t")
             .endControlFlow();
+
+      } else {
+        handlerMethod.addStatement("$L.$L($L)", FACADE_VAR_NAME, methodName, paramStr);
       }
 
       handler.addMethod(handlerMethod.build());

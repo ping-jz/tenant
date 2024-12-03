@@ -14,8 +14,7 @@ import java.net.InetSocketAddress;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.example.common.ThreadCommonResource;
-import org.example.common.net.ConnectionManager;
-import org.example.net.Connection;
+import org.example.net.ConnectionManager;
 import org.example.net.codec.MessageCodec;
 import org.example.serde.Serializer;
 import org.example.util.NettyEventLoopUtil;
@@ -67,16 +66,6 @@ public class DefaultServer implements AutoCloseable {
     this.ip = ip;
     this.port = port;
     connectionManager = new ConnectionManager();
-  }
-
-  /**
-   * 获取链接
-   *
-   * @param id 连接ID
-   * @since 2021年08月17日 17:42:20
-   */
-  public Connection getConnection(Integer id) {
-    return connectionManager.connections().get(id);
   }
 
   /**

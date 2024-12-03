@@ -1,8 +1,6 @@
 package org.example.net;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
-import io.netty.util.ReferenceCountUtil;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.example.net.handler.Handler;
@@ -81,16 +79,9 @@ public class DefaultDispatcher implements Dispatcher {
       return;
     }
 
-    ByteBuf result = null;
     try {
-      result = handler.invoke(connection, msg);
-      if (0 < msg.proto() && result != null && result.isReadable()) {
-        Message response = Message.of(Math.negateExact(msg.proto()), result);
-        channel.write(response);
-      }
-
+      handler.invoke(connection, msg);
     } catch (Throwable e) {
-      ReferenceCountUtil.release(result);
       logger.error("from:{}, proto:{}, handler error", channel.remoteAddress(), msg.proto(), e);
     }
   }
