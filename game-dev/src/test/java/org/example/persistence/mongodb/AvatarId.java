@@ -9,7 +9,7 @@ import org.example.util.Identity;
  * @since 2024/11/18 22:58
  */
 
-public record AvatarId(long id) implements Identity<AvatarId>, Serializable {
+public record AvatarId(long id) implements Identity, Comparable<AvatarId>, Serializable {
 
   /**
    * 推荐静态引用

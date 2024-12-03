@@ -72,7 +72,6 @@
     <dependency>
       <groupId>org.jctools</groupId>
       <artifactId>jctools-core</artifactId>
-      <scope>test</scope>
     </dependency>
 
     <dependency>

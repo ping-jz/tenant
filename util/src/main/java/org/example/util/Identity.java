@@ -6,8 +6,7 @@ package org.example.util;
  * @author ZJP
  * @since 2021年09月29日 16:31:02
  **/
-@FunctionalInterface
-public interface Identity<T> extends Comparable<T> {
+public interface Identity {
 
 
   @Override
@@ -15,5 +14,8 @@ public interface Identity<T> extends Comparable<T> {
 
   @Override
   int hashCode();
+
+  @Override
+  String toString();
 
 }

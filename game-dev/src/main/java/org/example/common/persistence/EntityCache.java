@@ -3,7 +3,6 @@ package org.example.common.persistence;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.RemovalCause;
-import java.io.Serializable;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.Executor;
@@ -28,7 +27,7 @@ import org.example.common.persistence.accessor.Accessor;
  * @author ZJP
  * @since 2021年09月29日 16:34:55
  **/
-public class EntityCache<K extends Serializable & Comparable<K>, T> {
+public class EntityCache<K, T> {
 
   /**
    * spring mongo template
@@ -51,7 +50,7 @@ public class EntityCache<K extends Serializable & Comparable<K>, T> {
       Executor executor) {
     Caffeine<K, ValueWrapper<T>> caffeine = Caffeine.newBuilder().maximumSize(cacheSize)
         .expireAfterAccess(expireMill, TimeUnit.MILLISECONDS)
-        .removalListener((key, value, cause) -> {
+        .evictionListener((key, value, cause) -> {
           if (value != null && cause != RemovalCause.EXPLICIT) {
             doWriteBack(key, value.getValue());
           }

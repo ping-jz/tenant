@@ -1,6 +1,5 @@
 package org.example.common.persistence;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -9,7 +8,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.example.common.persistence.accessor.Accessor;
-import org.example.util.Identity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,17 +47,16 @@ public class EntityService {
   }
 
 
-  public <PK extends Serializable & Comparable<PK>, T extends Identity<PK>> void registeEntityClass(
-      Class<T> clazz) {
+  public <T> void registeEntityClass(Class<T> clazz) {
     @SuppressWarnings("all")
     Accessor ac = accessor;
-    EntityCache<PK, T> cache = new EntityCache<PK, T>(TimeUnit.SECONDS.toMillis(60), 1024, clazz,
+    EntityCache<?, T> cache = new EntityCache<>(TimeUnit.SECONDS.toMillis(60), 1024, clazz,
         ac, executors);
     caches.put(clazz, cache);
   }
 
 
-  public <PK extends Serializable & Comparable<PK>, T extends Identity<PK>> EntityCache<PK, T> getEntityCache(
+  public <PK, T> EntityCache<PK, T> getEntityCache(
       Class<T> clazz) {
     Objects.requireNonNull(clazz);
     return (EntityCache<PK, T>) caches.get(clazz);
