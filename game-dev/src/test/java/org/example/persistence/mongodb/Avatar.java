@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.FieldType;
 
 @Document(collection = "avatar")
-public class Avatar {
+class Avatar {
 
   @Id
   @Field(targetType = FieldType.INT64)

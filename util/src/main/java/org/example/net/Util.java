@@ -2,6 +2,7 @@ package org.example.net;
 
 import com.palantir.javapoet.ClassName;
 import com.palantir.javapoet.FieldSpec;
+import com.palantir.javapoet.TypeName;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -10,9 +11,6 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 import org.example.net.anno.Req;
 
@@ -22,6 +20,12 @@ public final class Util {
   public static final int CALL_BACK_ID = 1;
 
   /** 常用类型 */
+
+  public static final TypeName EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(ExecutorSupplier.class);
+  public static final TypeName RAW_EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(
+      RawExecutorSupplier.class);
+  public static final TypeName RPC_EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(
+      RpcExecutorSupplier.class);
   public static final ClassName CONNECTION_CLASS_NAME = ClassName.get("org.example.net",
       "Connection");
   public static final ClassName HANDLER_ANNOTATION = ClassName.get(
@@ -109,20 +113,6 @@ public final class Util {
     return id;
   }
 
-
-  public static DeclaredType isCompleteAbleFuture(TypeMirror mirror) {
-    if (mirror.getKind() != TypeKind.DECLARED) {
-      return null;
-    }
-    DeclaredType declaredType = (DeclaredType) mirror;
-    TypeElement returnTypeElement = (TypeElement) declaredType.asElement();
-    if (returnTypeElement.getQualifiedName()
-        .contentEquals(Util.COMPLETE_ABLE_FUTURE_CLASS_NAME.toString())) {
-      return declaredType;
-    } else {
-      return null;
-    }
-  }
 
   private Util() {
   }

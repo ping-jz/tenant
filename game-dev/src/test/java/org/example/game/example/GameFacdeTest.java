@@ -1,4 +1,4 @@
-package org.example.common.net;
+package org.example.game.example;
 
 import static org.example.net.Connection.connection;
 
@@ -15,9 +15,7 @@ import org.example.common.model.ReqMove;
 import org.example.common.model.ReqMoveSerde;
 import org.example.common.model.ResMove;
 import org.example.common.model.ResMoveSerde;
-import org.example.common.net.generated.invoker.GameFacadeInvoker;
-import org.example.game.facade.example.GameFacade;
-import org.example.game.facade.example.GameFacadeHandler;
+import org.example.common.net.generated.invoker.ExampleFacadeInvoker;
 import org.example.net.Connection;
 import org.example.net.ConnectionManager;
 import org.example.net.DefaultDispatcher;
@@ -35,7 +33,7 @@ public class GameFacdeTest {
   private static EmbeddedChannel embeddedChannel;
   private static ConnectionManager connectionManager;
   private static CommonSerializer commonSerializer;
-  private static GameFacadeInvoker invoker;
+  private static ExampleFacadeInvoker invoker;
 
   @BeforeAll
   public static void beforeAll() {
@@ -44,12 +42,12 @@ public class GameFacdeTest {
     commonSerializer.registerSerializer(ReqMove.class, new ReqMoveSerde(commonSerializer));
     commonSerializer.registerSerializer(ResMove.class, new ResMoveSerde(commonSerializer));
 
-    invoker = new GameFacadeInvoker(connectionManager, commonSerializer);
+    invoker = new ExampleFacadeInvoker(connectionManager, commonSerializer);
 
     DefaultDispatcher handlerRegistry = new DefaultDispatcher();
-    GameFacade facade = new GameFacade(invoker);
-    GameFacadeHandler handler = new GameFacadeHandler(facade, commonSerializer);
-    for (int id : GameFacadeHandler.protos) {
+    ExampleFacade facade = new ExampleFacade(invoker);
+    ExampleFacadeHandler handler = new ExampleFacadeHandler(facade, commonSerializer);
+    for (int id : ExampleFacadeHandler.protos) {
       handlerRegistry.registeHandler(id, handler);
     }
 
@@ -66,7 +64,7 @@ public class GameFacdeTest {
   }
 
   @RepeatedTest(10)
-  public void echo() {
+  public void echo() throws Exception {
     String str = String.valueOf(ThreadLocalRandom.current().nextLong());
     invoker.of(embeddedChannel.attr(Connection.CONNECTION).get())
         .echo(str);
@@ -89,9 +87,12 @@ public class GameFacdeTest {
       embeddedChannel.writeInbound(reqBuf);
     }
 
+    TimeUnit.MILLISECONDS.sleep(10);
+
     //验证返回的结果
     {
       ByteBuf resBuf = embeddedChannel.readOutbound();
+      Assertions.assertNotNull(resBuf);
       resBuf.skipBytes(Integer.BYTES);
       int protoId = NettyByteBufUtil.readInt32(resBuf);
       Assertions.assertNotEquals(0, protoId);
@@ -103,7 +104,7 @@ public class GameFacdeTest {
   }
 
   @RepeatedTest(10)
-  public void nothing() {
+  public void nothing() throws Exception {
     invoker.of(embeddedChannel.attr(Connection.CONNECTION).get())
         .nothing();
 
@@ -123,6 +124,7 @@ public class GameFacdeTest {
 
     //验证返回的结果
     {
+      TimeUnit.MILLISECONDS.sleep(10);
       ByteBuf resBuf = embeddedChannel.readOutbound();
       Assertions.assertNull(resBuf);
     }
@@ -165,12 +167,14 @@ public class GameFacdeTest {
       ByteBuf reqBuf1 = embeddedChannel.readOutbound();
       embeddedChannel.writeInbound(reqBuf1);
 
+      TimeUnit.MILLISECONDS.sleep(10);
+
       //然后在将结果发送一次
       ByteBuf resBuf2 = embeddedChannel.readOutbound();
       embeddedChannel.writeInbound(resBuf2);
     }
 
-    Assertions.assertEquals(hashcode, callback.get(1, TimeUnit.SECONDS));
+    Assertions.assertEquals(hashcode, callback.get(100, TimeUnit.MILLISECONDS));
   }
 
 

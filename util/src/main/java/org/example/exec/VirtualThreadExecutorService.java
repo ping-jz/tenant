@@ -9,6 +9,8 @@ public class VirtualThreadExecutorService {
 
   private final LoadingCache<Identity, VirtualThreadExecutor> executors;
 
+  private static final VirtualThreadExecutorService common = new VirtualThreadExecutorService();
+
   public VirtualThreadExecutorService() {
     executors = Caffeine
         .newBuilder()
@@ -16,17 +18,19 @@ public class VirtualThreadExecutorService {
         .build(id -> new VirtualThreadExecutor());
   }
 
-  public <T> void execute(Identity id, Runnable command) {
+  public void execute(Identity id, Runnable command) {
     executors.get(id).execute(command);
   }
 
-  public <T> VirtualThreadExecutor removeExecutor(Identity id) {
+  public VirtualThreadExecutor removeExecutor(Identity id) {
     return executors.asMap().remove(id);
   }
 
-  public <T> VirtualThreadExecutor getExecutor(Identity id) {
+  public VirtualThreadExecutor getExecutor(Identity id) {
     return executors.get(id);
   }
 
-
+  public static VirtualThreadExecutorService commonPool() {
+    return common;
+  }
 }

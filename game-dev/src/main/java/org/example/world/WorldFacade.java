@@ -2,8 +2,9 @@ package org.example.world;
 
 
 import org.example.common.model.ReqMove;
-import org.example.net.anno.Req;
 import org.example.common.net.annotation.RpcModule;
+import org.example.net.RawExecutorSupplier;
+import org.example.net.anno.Req;
 
 /**
  * 世界门面(文档生产插件测试)
@@ -12,7 +13,7 @@ import org.example.common.net.annotation.RpcModule;
  * @since 2021年09月27日 15:04:09
  **/
 @RpcModule
-public class WorldFacade {
+public class WorldFacade implements RawExecutorSupplier {
 
   /**
    * 你说什么我就说什么
