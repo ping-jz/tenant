@@ -77,7 +77,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
       for (Element clazz : annotationElements) {
         TypeElement typeElement = (TypeElement) clazz;
         try {
-          List<Element> elements = Util.getReqMethod(processingEnv, typeElement);
+          List<ExecutableElement> elements = Util.getReqMethod(processingEnv, typeElement);
           generateOuter(typeElement, elements);
         } catch (Exception e) {
           processingEnv.getMessager()
@@ -94,7 +94,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
     return false;
   }
 
-  public void generateOuter(TypeElement typeElement, List<Element> elements)
+  public void generateOuter(TypeElement typeElement, List<ExecutableElement> elements)
       throws Exception {
     TypeSpec inner = generateInner(typeElement, elements);
 
@@ -162,8 +162,8 @@ public class RpcInvokerProcessor extends AbstractProcessor {
     }
   }
 
-  public TypeSpec generateInner(TypeElement typeElement, List<Element> methods) {
-    final String protoIdVarName = "id";
+  public TypeSpec generateInner(TypeElement typeElement, List<ExecutableElement> methods) {
+    final String protoIdVarName = "id_";
 
     TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(INNER_SIMPLE_NAME)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
@@ -177,14 +177,13 @@ public class RpcInvokerProcessor extends AbstractProcessor {
             .addStatement("this.$L = $L", CONNECTION_FIELD_NAME, CONNECTION_FIELD_NAME)
             .build());
 
-    for (Element e : methods) {
-      String methodName = e.getSimpleName().toString();
-      ExecutableElement method = (ExecutableElement) e;
+    for (ExecutableElement method : methods) {
+      Name methodName = method.getSimpleName();
       TypeMirror typeMirror = method.getReturnType();
       boolean callback = typeMirror.getKind() != TypeKind.VOID;
 
       MethodSpec.Builder methodBuilder = MethodSpec
-          .methodBuilder(e.getSimpleName().toString())
+          .methodBuilder(methodName.toString())
           .addModifiers(Modifier.PUBLIC);
 
       //Handle ID

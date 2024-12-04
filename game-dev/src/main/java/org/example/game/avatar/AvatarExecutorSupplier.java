@@ -7,7 +7,7 @@ import org.example.common.model.AvatarId;
 import org.example.exec.VirtualThreadExecutorService;
 import org.example.net.Connection;
 import org.example.net.Message;
-import org.example.net.RpcExecutorSupplier;
+import org.example.net.handler.RpcExecutorSupplier;
 
 /**
  * 根据网络通道提供的信息，返回玩家对应的Executor

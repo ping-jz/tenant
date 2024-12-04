@@ -1,6 +1,8 @@
-package org.example.net;
+package org.example.net.handler;
 
 import java.util.concurrent.Executor;
+import org.example.net.Connection;
+import org.example.net.Message;
 
 @FunctionalInterface
 public interface RpcExecutorSupplier {

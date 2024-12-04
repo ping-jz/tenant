@@ -13,6 +13,10 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
 import org.example.net.anno.Req;
+import org.example.net.handler.ExecutorSupplier;
+import org.example.net.handler.FirstArgExecutorSupplier;
+import org.example.net.handler.RawExecutorSupplier;
+import org.example.net.handler.RpcExecutorSupplier;
 
 public final class Util {
 
@@ -22,6 +26,8 @@ public final class Util {
   /** 常用类型 */
 
   public static final TypeName EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(ExecutorSupplier.class);
+  public static final TypeName FIRST_ARG_EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(
+      FirstArgExecutorSupplier.class);
   public static final TypeName RAW_EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(
       RawExecutorSupplier.class);
   public static final TypeName RPC_EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(
@@ -61,9 +67,9 @@ public final class Util {
 
   public static final String MSG_ID_VAR_NAME = "msgId";
 
-  public static List<Element> getReqMethod(ProcessingEnvironment processingEnv,
+  public static List<ExecutableElement> getReqMethod(ProcessingEnvironment processingEnv,
       TypeElement typeElement) {
-    List<Element> res = new ArrayList<>();
+    List<ExecutableElement> res = new ArrayList<>();
 
     for (Element element : typeElement.getEnclosedElements()) {
       if (element.getKind() != ElementKind.METHOD) {
@@ -92,7 +98,7 @@ public final class Util {
         continue;
       }
 
-      res.add(element);
+      res.add((ExecutableElement) element);
     }
 
     return res;

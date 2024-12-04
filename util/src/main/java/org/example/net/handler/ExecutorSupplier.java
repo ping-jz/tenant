@@ -1,10 +1,9 @@
-package org.example.net;
+package org.example.net.handler;
 
 import java.util.concurrent.Executor;
-import java.util.function.Supplier;
 
 @FunctionalInterface
-public interface ExecutorSupplier extends Supplier<Executor> {
+public interface ExecutorSupplier {
 
   /**
    * 根据具体场景，返回对应的执行者 实现者需保证线程安全

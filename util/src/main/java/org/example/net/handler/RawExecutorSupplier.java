@@ -1,4 +1,4 @@
-package org.example.net;
+package org.example.net.handler;
 
 /**
  * 无需进行线程分发

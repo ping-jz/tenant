@@ -9,8 +9,8 @@ import org.example.common.net.annotation.RpcModule;
 import org.example.common.net.generated.invoker.ExampleFacadeInvoker;
 import org.example.exec.VirtualThreadExecutorService;
 import org.example.net.Connection;
-import org.example.net.ExecutorSupplier;
 import org.example.net.anno.Req;
+import org.example.net.handler.ExecutorSupplier;
 
 /**
  * 游戏门面(文档生产插件测试)

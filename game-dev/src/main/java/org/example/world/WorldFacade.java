@@ -3,8 +3,8 @@ package org.example.world;
 
 import org.example.common.model.ReqMove;
 import org.example.common.net.annotation.RpcModule;
-import org.example.net.RawExecutorSupplier;
 import org.example.net.anno.Req;
+import org.example.net.handler.RawExecutorSupplier;
 
 /**
  * 世界门面(文档生产插件测试)
