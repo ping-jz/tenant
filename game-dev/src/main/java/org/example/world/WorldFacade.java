@@ -2,8 +2,8 @@ package org.example.world;
 
 
 import org.example.common.model.ReqMove;
-import org.example.common.net.annotation.RpcModule;
 import org.example.net.anno.Req;
+import org.example.net.anno.Rpc;
 import org.example.net.handler.RawExecutorSupplier;
 
 /**
@@ -12,7 +12,7 @@ import org.example.net.handler.RawExecutorSupplier;
  * @author ZJP
  * @since 2021年09月27日 15:04:09
  **/
-@RpcModule
+@Rpc
 public class WorldFacade implements RawExecutorSupplier {
 
   /**

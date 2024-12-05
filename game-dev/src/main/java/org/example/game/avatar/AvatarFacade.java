@@ -4,10 +4,10 @@ import java.util.Arrays;
 import java.util.Objects;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
-import org.example.common.net.annotation.RpcModule;
 import org.example.common.net.generated.invoker.AvatarFacadeInvoker;
 import org.example.net.Connection;
 import org.example.net.anno.Req;
+import org.example.net.anno.Rpc;
 
 /**
  * 游戏门面(文档生产插件测试)
@@ -15,7 +15,7 @@ import org.example.net.anno.Req;
  * @author ZJP
  * @since 2021年09月27日 15:54:54
  **/
-@RpcModule
+@Rpc
 public class AvatarFacade implements AvatarExecutorSupplier {
 
   private final AvatarFacadeInvoker facadeInvoker;

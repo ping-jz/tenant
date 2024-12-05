@@ -5,10 +5,8 @@ import java.util.Objects;
 import org.example.common.model.AvatarId;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
-import org.example.common.net.generated.invoker.AvatarIdFacadeInvoker;
-import org.example.net.Connection;
+import org.example.net.anno.LocalRpc;
 import org.example.net.anno.Req;
-import org.example.net.anno.Rpc;
 import org.example.net.handler.FirstArgExecutorSupplier;
 
 /**
@@ -17,29 +15,22 @@ import org.example.net.handler.FirstArgExecutorSupplier;
  * @author ZJP
  * @since 2021年09月27日 15:54:54
  **/
-@Rpc
-public class AvatarIdFacade implements FirstArgExecutorSupplier<AvatarId> {
+@LocalRpc
+public class AvatarIdFacadeLocal implements FirstArgExecutorSupplier<AvatarId> {
 
-  private final AvatarIdFacadeInvoker facadeInvoker;
+  public AvatarId id = null;
 
-  public AvatarIdFacade(AvatarIdFacadeInvoker facadeInvoker) {
-    this.facadeInvoker = facadeInvoker;
-  }
-
-
-  /**
-   * 回声
-   *
-   * @author ZJP
-   * @since 2021年09月27日 16:01:08
-   **/
-  @Req
-  public void echo(AvatarId id, String str, Connection connection) {
-    facadeInvoker.of(connection).echo(id, str);
+  public AvatarIdFacadeLocal() {
   }
 
   @Req
-  public void nothing(AvatarId id) {
+  public AvatarId echo(AvatarId id) {
+    return id;
+  }
+
+  @Req
+  public void set(AvatarId id) {
+    this.id = id;
   }
 
   @Req

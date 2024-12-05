@@ -52,7 +52,7 @@ import org.example.net.Util;
  * @author zhongjianping
  * @since 2024/8/9 11:19
  */
-@SupportedAnnotationTypes("org.example.common.net.annotation.RpcModule")
+@SupportedAnnotationTypes("org.example.net.anno.Rpc")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @AutoService(Processor.class)
 public class RpcInvokerProcessor extends AbstractProcessor {

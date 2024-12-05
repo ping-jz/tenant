@@ -1,10 +1,9 @@
-package org.example.common.net.annotation;
+package org.example.net.anno;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.springframework.stereotype.Component;
 
 /**
  * 远程调用模块标记
@@ -14,6 +13,5 @@ import org.springframework.stereotype.Component;
  **/
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Component
-public @interface RpcModule {
+public @interface Rpc {
 }

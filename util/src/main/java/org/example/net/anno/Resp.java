@@ -11,6 +11,7 @@ import java.lang.annotation.Target;
  * @author ZJP
  * @since 2021年07月25日 15:00:25
  **/
+@Deprecated
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Resp {

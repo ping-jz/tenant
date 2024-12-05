@@ -5,11 +5,11 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
-import org.example.common.net.annotation.RpcModule;
 import org.example.common.net.generated.invoker.ExampleFacadeInvoker;
 import org.example.exec.VirtualThreadExecutorService;
 import org.example.net.Connection;
 import org.example.net.anno.Req;
+import org.example.net.anno.Rpc;
 import org.example.net.handler.ExecutorSupplier;
 
 /**
@@ -18,7 +18,7 @@ import org.example.net.handler.ExecutorSupplier;
  * @author ZJP
  * @since 2021年09月27日 15:54:54
  **/
-@RpcModule
+@Rpc
 public class ExampleFacade implements ExecutorSupplier {
 
   private static final ExampleIdentity IDENTITY = new ExampleIdentity();

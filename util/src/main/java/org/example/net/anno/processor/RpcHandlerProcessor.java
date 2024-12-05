@@ -56,7 +56,7 @@ import org.example.net.Util;
  * @author zhongjianping
  * @since 2024/8/9 11:19
  */
-@SupportedAnnotationTypes("org.example.common.net.annotation.RpcModule")
+@SupportedAnnotationTypes("org.example.net.anno.Rpc")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @AutoService(Processor.class)
 public class RpcHandlerProcessor extends AbstractProcessor {
@@ -134,7 +134,6 @@ public class RpcHandlerProcessor extends AbstractProcessor {
     String simpleName = qualifiedName.substring(lastIdx + 1);
 
     TypeSpec.Builder typeSpecBuilder = TypeSpec.classBuilder(simpleName)
-        .addAnnotation(Util.HANDLER_ANNOTATION)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addSuperinterface(Util.HANDLER_INTERFACE)
         .addField(FieldSpec
@@ -457,28 +456,4 @@ public class RpcHandlerProcessor extends AbstractProcessor {
     return executableElement.getReturnType().getKind() != TypeKind.VOID;
   }
 
-  /**
-   * Hanlder构建信息
-   *
-   * @author zhongjianping
-   * @since 2024/12/4 12:17
-   */
-  private static class TypeSpecInfo {
-
-    private final TypeElement typeElement;
-    /** Hanlder构建者 */
-    private final TypeSpec.Builder builder;
-    /** 请求方法 */
-    private List<ExecutableElement> methods;
-
-    /** 执行器代码块 */
-    private CodeBlock executor;
-
-    TypeSpecInfo(TypeElement typeElement, TypeSpec.Builder builder,
-        List<ExecutableElement> methods) {
-      this.typeElement = typeElement;
-      this.builder = builder;
-      this.methods = methods;
-    }
-  }
 }

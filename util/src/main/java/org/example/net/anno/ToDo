@@ -1,4 +1,5 @@
 1.Handler不在返回任何值，返回值由Handler具体实现，并且要处理好异常。为接下来的线程分发做准备
 2.增加对【FirstArgExecutorSupplier】,【RpcExecutorSupplier】，【ExecutorSupplier】,【RawExecutorSupplier】的线程分发支持
-3.增加本地代理支持，需要支持CompleteAbleFuture的同步获取，回调获取支持。并对结构进行Result封装
-4.本地代理增加【首个参数为Identity】,【实现了Suppler<Executor>】的线程分发支持
+3.增加本地代理支持，需要支持CompleteAbleFuture的同步获取，回调获取支持
+4.本地代理增加【FirstArgExecutorSupplier】,【ExecutorSupplier】的线程分发支持
+5.对CompleteAbleFutre的结果用Result进行分装

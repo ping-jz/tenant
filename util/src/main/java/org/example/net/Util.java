@@ -34,8 +34,6 @@ public final class Util {
       RpcExecutorSupplier.class);
   public static final ClassName CONNECTION_CLASS_NAME = ClassName.get("org.example.net",
       "Connection");
-  public static final ClassName HANDLER_ANNOTATION = ClassName.get(
-      "org.example.common.generator.rpc", "Handler");
   public static final ClassName CONNECTION_GETTER =
       ClassName.get("org.example.net", "ConnectionManager");
   public static final ClassName BASE_REMOTING = ClassName.get("org.example.net", "BaseRemoting");
@@ -64,6 +62,11 @@ public final class Util {
   public static final ClassName COMPLETE_ABLE_FUTURE_CLASS_NAME = ClassName.get(
       "java.util.concurrent",
       "CompletableFuture");
+
+  public static final ClassName SUPPLIER_CLASS_NAME = ClassName.get(
+      "java.util.function",
+      "Supplier");
+
 
   public static final String MSG_ID_VAR_NAME = "msgId";
 
