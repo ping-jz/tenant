@@ -103,6 +103,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
     TypeSpec.Builder outerBuilder = TypeSpec.classBuilder(simpleName)
         .addJavadoc("{@link $T}\n", typeElement)
         .addJavadoc("@since $S", LocalDateTime.now())
+        .addAnnotation(Util.COMPONENT_ANNOTATION)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addField(FieldSpec
             .builder(LOGGER, "logger")
@@ -135,7 +136,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
     MethodSpec ofId = MethodSpec.methodBuilder("of")
         .addModifiers(Modifier.PUBLIC)
         .returns(inner_type)
-        .addParameter(TypeName.INT, "id")
+        .addParameter(Util.IDENTITY_CLASS_NAME, "id")
         .addStatement("$T connection = manager.connection(id)", CONNECTION_CLASS_NAME)
         .addStatement("return of(connection)").build();
 

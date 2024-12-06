@@ -58,7 +58,7 @@
             <manifest>
               <addClasspath>true</addClasspath>
               <classpathPrefix>lib/</classpathPrefix>
-              <mainClass>org.example.GameApplication</mainClass>
+              <mainClass>org.example.game.GameStart</mainClass>
             </manifest>
             <manifestEntries>
               <Class-Path>resources/</Class-Path>
@@ -105,7 +105,7 @@
               <goal>java</goal>
             </goals>
             <configuration>
-              <mainClass>org.example.SourceCodeGenerator</mainClass>
+              <mainClass>org.example.common.SourceCodeGenerator</mainClass>
               <!-- 传递给 Java 应用程序的命令行参数 -->
               <arguments>
                 <argument>${game.generated.directory}</argument>

@@ -1,4 +1,4 @@
-package org.example.util;
+package org.example.common.util;
 
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollServerSocketChannel;
@@ -8,7 +8,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
-public class NettyEventLoopUtil {
+public final class NettyEventLoopUtil {
 
   private NettyEventLoopUtil() {
   }

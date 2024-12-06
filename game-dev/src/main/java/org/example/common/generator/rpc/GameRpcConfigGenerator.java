@@ -12,7 +12,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import javax.lang.model.element.Modifier;
+import org.example.net.ConnectionManager;
 import org.example.net.DefaultDispatcher;
+import org.example.net.handler.CallBackFacade;
 import org.example.net.handler.Handler;
 import org.example.serde.CommonSerializer;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -22,6 +24,10 @@ import org.springframework.context.annotation.Configuration;
 public class GameRpcConfigGenerator {
 
   private static final String HANDLER_SIMPLE_NAME = "Handler";
+  private static final ClassName CALL_BACK_CONFIG = ClassName.get(
+      "org.example.common.config.generated", "CallBackRpcConfig");
+  private static String contextVarName = "c";
+
 
   private GameRpcConfigGenerator() {
   }
@@ -31,9 +37,11 @@ public class GameRpcConfigGenerator {
   }
 
   public void run(Path outputDirs) {
+    //For callback
+    //  generateCallBackConfig(outputDirs, "org.example.common.config.generated", "CallBackRpcConfig");
 
     //For Game
-    generateCOnfig(outputDirs, "org.example.game.config.generated", "GameRpcConfig",
+    generateConfig(outputDirs, "org.example.game.config.generated", "GameRpcConfig",
         new ClassGraph()
             .enableAnnotationInfo()
             .enableClassInfo()
@@ -42,7 +50,7 @@ public class GameRpcConfigGenerator {
             .acceptPackages("org.example.game").scan());
 
     //For World
-    generateCOnfig(outputDirs, "org.example.world.config.generated", "WorldRpcConfig",
+    generateConfig(outputDirs, "org.example.world.config.generated", "WorldRpcConfig",
         new ClassGraph()
             .enableAnnotationInfo()
             .enableClassInfo()
@@ -51,7 +59,7 @@ public class GameRpcConfigGenerator {
             .acceptPackages("org.example.world").scan());
   }
 
-  private static void generateCOnfig(Path outputDirs, String outPutPackage, String simpleName,
+  private static void generateConfig(Path outputDirs, String outPutPackage, String simpleName,
       ScanResult classGraph) {
 
     TypeSpec.Builder typeSpecBuilder = TypeSpec
@@ -61,9 +69,9 @@ public class GameRpcConfigGenerator {
         .addJavadoc("@since $S\n", LocalDateTime.now())
         .addAnnotation(Configuration.class);
 
-    String contextVarName = "c";
     String dispatcherVarName = "d";
     String serializerVarName = "s";
+    String managerVar = "m";
     String handlerRegisterMethodName = "handlerRegister";
 
     MethodSpec registerBean = MethodSpec.methodBuilder("defaultDispatcher")
@@ -84,7 +92,25 @@ public class GameRpcConfigGenerator {
         .addParameter(
             ParameterSpec.builder(AnnotationConfigApplicationContext.class, contextVarName).build())
         .addStatement("$T $L = $L.getBean($T.class)", CommonSerializer.class, serializerVarName,
-            contextVarName, CommonSerializer.class);
+            contextVarName, CommonSerializer.class)
+        .addStatement("$T $L = $L.getBean($T.class)", ConnectionManager.class, managerVar,
+            contextVarName, ConnectionManager.class);
+
+    {
+      String callBackVarName = "callBack";
+      handlerRegister
+          .beginControlFlow("")
+          .addStatement("$T $L = new $T($L, $L)",
+              CallBackFacade.class,
+              callBackVarName,
+              CallBackFacade.class,
+              managerVar, serializerVarName)
+          .addStatement("$L.registeHandler($L.id(), $L)",
+              dispatcherVarName,
+              callBackVarName,
+              callBackVarName)
+          .endControlFlow();
+    }
 
     for (ClassInfo info : classGraph.getClassesImplementing(Handler.class)) {
       if (!info.getName().endsWith(HANDLER_SIMPLE_NAME)) {
@@ -120,4 +146,41 @@ public class GameRpcConfigGenerator {
       throw new RuntimeException(e);
     }
   }
+
+//  private static void generateCallBackConfig(Path outputDirs, String outPutPackage,
+//      String simpleName) {
+//
+//    TypeSpec.Builder typeSpecBuilder = TypeSpec
+//        .classBuilder(simpleName)
+//        .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+//        .addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build())
+//        .addJavadoc("RPC注册配置\n")
+//        .addJavadoc("@author zhongjianping\n")
+//        .addJavadoc("@since $S\n", LocalDateTime.now());
+//
+//    String dispatcherVarName = "d";
+//    String serializerVarName = "s";
+//
+//    MethodSpec.Builder callBackRegister = MethodSpec.methodBuilder(callBackRegisterMethodName)
+//        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+//        .addParameter(
+//            ParameterSpec.builder(AnnotationConfigApplicationContext.class, contextVarName)
+//                .build());
+//
+//    ClassName callBack = ClassName.get(CallBackFacade.class);
+//    callBackRegister
+//        .addStatement("$T callback = new $T($L)", callBack, callBack, serializerVarName)
+//    //.addStatement("$L.registeHandler(callback.id(), callback)", dispatcherVarName)
+//    ;
+//
+//    TypeSpec typeSpec = typeSpecBuilder
+//        .addMethod(callBackRegister.build())
+//        .build();
+//    JavaFile javaFile = JavaFile.builder(outPutPackage, typeSpec).build();
+//    try {
+//      javaFile.writeTo(outputDirs);
+//    } catch (IOException e) {
+//      throw new RuntimeException(e);
+//    }
+//  }
 }

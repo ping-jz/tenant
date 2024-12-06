@@ -1,6 +1,6 @@
 package org.example.game.avatar;
 
-import static org.example.net.Connection.connection;
+import static org.example.game.avatar.IntId.intId;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -22,8 +22,8 @@ import org.example.net.Connection;
 import org.example.net.ConnectionManager;
 import org.example.net.DefaultDispatcher;
 import org.example.net.codec.MessageCodec;
+import org.example.net.handler.CallBackFacade;
 import org.example.net.handler.DispatcherHandler;
-import org.example.net.handler.FacadeCallBack;
 import org.example.serde.CommonSerializer;
 import org.example.serde.NettyByteBufUtil;
 import org.junit.jupiter.api.Assertions;
@@ -53,13 +53,12 @@ public class AvatarFacadeTest {
       handlerRegistry.registeHandler(id, handler);
     }
 
-    FacadeCallBack gameFacadeCallBack = new FacadeCallBack(connectionManager, commonSerializer);
+    CallBackFacade gameFacadeCallBack = new CallBackFacade(connectionManager, commonSerializer);
     handlerRegistry.registeHandler(gameFacadeCallBack.id(), gameFacadeCallBack);
 
     embeddedChannel = new EmbeddedChannel();
     embeddedChannel.attr(AttributeKey.valueOf("AvatarId")).set(new AvatarId(1));
-    Connection connection = connection(1, embeddedChannel);
-    connectionManager.registerConnection(connection);
+    connectionManager.bindChannel(intId(1), embeddedChannel);
     embeddedChannel.pipeline()
         .addLast(new MessageCodec())
         .addLast(new DispatcherHandler(handlerRegistry));

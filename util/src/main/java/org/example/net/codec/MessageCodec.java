@@ -6,7 +6,6 @@ import io.netty.handler.codec.ByteToMessageCodec;
 import java.util.List;
 import org.example.net.Message;
 import org.example.serde.NettyByteBufUtil;
-import org.example.serde.Serializer;
 
 /**
  * {@link Message} 序列化和反序列
@@ -17,10 +16,6 @@ import org.example.serde.Serializer;
 public class MessageCodec extends ByteToMessageCodec<Message> {
 
   public MessageCodec() {
-  }
-
-
-  public MessageCodec(Serializer<?> serializer) {
   }
 
   @Override
@@ -62,10 +57,5 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
     out.add(Message.of(
         NettyByteBufUtil.readInt32(buf),
         buf));
-  }
-
-  @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    ctx.close();
   }
 }

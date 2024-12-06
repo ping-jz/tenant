@@ -108,6 +108,7 @@ public class LocalRpcProcessor extends AbstractProcessor {
     }
     TypeSpec.Builder typeBuilder = TypeSpec
         .classBuilder(simpleName)
+        .addAnnotation(Util.COMPONENT_ANNOTATION)
         .addJavadoc("{@link $T}\n", typeElement)
         .addJavadoc("@since $S", LocalDateTime.now())
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL);

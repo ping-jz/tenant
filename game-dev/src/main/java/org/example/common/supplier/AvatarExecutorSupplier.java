@@ -1,4 +1,4 @@
-package org.example.game.avatar;
+package org.example.common.supplier;
 
 import io.netty.util.AttributeKey;
 import java.util.Objects;

@@ -67,6 +67,11 @@ public final class Util {
       "java.util.function",
       "Supplier");
 
+  public static final ClassName COMPONENT_ANNOTATION = ClassName.get(
+      "org.springframework.stereotype", "Component");
+
+  public static final ClassName IDENTITY_CLASS_NAME = ClassName.get("org.example.util", "Identity");
+
 
   public static final String MSG_ID_VAR_NAME = "msgId";
 

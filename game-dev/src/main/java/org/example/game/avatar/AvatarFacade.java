@@ -5,6 +5,7 @@ import java.util.Objects;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
 import org.example.common.net.generated.invoker.AvatarFacadeInvoker;
+import org.example.common.supplier.AvatarExecutorSupplier;
 import org.example.net.Connection;
 import org.example.net.anno.Req;
 import org.example.net.anno.Rpc;

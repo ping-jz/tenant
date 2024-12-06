@@ -1,10 +1,10 @@
 package org.example.net;
 
 import io.netty.util.ReferenceCountUtil;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,8 +40,7 @@ public class BaseRemoting {
    */
   public <T> CompletableFuture<T> invoke(ConnectionManager manager, final Connection conn,
       final Message message, int msgId) {
-    final CompletableFuture<T> future = new CompletableFuture<>();
-    return invokeWithFuture(manager, conn, message, msgId, future, 3, TimeUnit.SECONDS);
+    return invokeWithFuture(manager, conn, message, msgId, 3, TimeUnit.SECONDS);
   }
 
   /**
@@ -54,13 +53,19 @@ public class BaseRemoting {
    */
   public <T> CompletableFuture<T> invokeWithFuture(ConnectionManager manager, Connection conn,
       Message message,
-      int msgId, CompletableFuture<T> future, final long timeout, TimeUnit timeUnit) {
-    Objects.requireNonNull(future);
-
+      int msgId, final long timeout, TimeUnit timeUnit) {
+    CompletableFuture<T> future = new CompletableFuture<>();
     manager.addInvokeFuture(conn, msgId, future);
     Future<?> timeoutFuture = conn.channel().eventLoop().schedule(() -> {
-      manager.removeInvokeFuture(msgId, future);
+      if (manager.removeInvokeFuture(msgId, future)) {
+        future.completeExceptionally(new TimeoutException("回调消息过期"));
+        logger.error("回调函数过期,消息ID:{},链接:{}", msgId, conn);
+      }
     }, timeout, timeUnit);
+
+    future.whenCompleteAsync((_a, _b) -> {
+      timeoutFuture.cancel(false);
+    });
     try {
       conn.channel().writeAndFlush(message).addListener(cf -> {
         if (!cf.isSuccess()) {

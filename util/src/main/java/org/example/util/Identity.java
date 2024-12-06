@@ -7,8 +7,6 @@ package org.example.util;
  * @since 2021年09月29日 16:31:02
  **/
 public interface Identity {
-
-
   @Override
   boolean equals(Object o);
 

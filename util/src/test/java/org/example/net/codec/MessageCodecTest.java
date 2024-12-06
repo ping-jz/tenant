@@ -9,7 +9,6 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
 import org.example.net.Message;
-import org.example.serde.CommonSerializer;
 import org.example.serde.NettyByteBufUtil;
 import org.junit.jupiter.api.Test;
 
@@ -17,8 +16,7 @@ public class MessageCodecTest {
 
   @Test
   public void outBoundTest() {
-    CommonSerializer serializer = new CommonSerializer();
-    EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(serializer));
+    EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec());
 
     int protoId = ThreadLocalRandom.current().nextInt();
     Message message = Message.of(
@@ -45,8 +43,7 @@ public class MessageCodecTest {
 
   @Test
   public void inBoundTest() {
-    CommonSerializer serializer = new CommonSerializer();
-    EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec(serializer));
+    EmbeddedChannel channel = new EmbeddedChannel(new MessageCodec());
 
     int proto = ThreadLocalRandom.current().nextInt();
     int optIdx = ThreadLocalRandom.current().nextInt();

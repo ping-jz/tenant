@@ -6,15 +6,14 @@ import java.util.concurrent.TimeUnit;
 import org.example.util.Identity;
 
 public class VirtualThreadExecutorService {
+  private static final VirtualThreadExecutorService common = new VirtualThreadExecutorService();
 
   private final LoadingCache<Identity, VirtualThreadExecutor> executors;
-
-  private static final VirtualThreadExecutorService common = new VirtualThreadExecutorService();
 
   public VirtualThreadExecutorService() {
     executors = Caffeine
         .newBuilder()
-        .expireAfterAccess(30, TimeUnit.MINUTES)
+        .expireAfterAccess(1, TimeUnit.MINUTES)
         .build(id -> new VirtualThreadExecutor());
   }
 

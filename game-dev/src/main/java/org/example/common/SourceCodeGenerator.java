@@ -1,9 +1,7 @@
-package org.example;
+package org.example.common;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import org.example.common.generator.SerdeConfigGenerator;
 import org.example.common.generator.rpc.GameRpcConfigGenerator;
@@ -25,13 +23,8 @@ public final class SourceCodeGenerator {
     }
 
     Path outputDir = Path.of(args[0]);
-    ExecutorService executors = Executors.newVirtualThreadPerTaskExecutor();
-    try {
-      for (Consumer<Path> consumer : codeGenerators()) {
-        executors.execute(() -> consumer.accept(outputDir));
-      }
-    } finally {
-      executors.close();
+    for (Consumer<Path> consumer : codeGenerators()) {
+      consumer.accept(outputDir);
     }
   }
 

@@ -4,6 +4,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.springframework.stereotype.Component;
 
 /**
  * 远程调用方法标记
@@ -13,6 +14,7 @@ import java.lang.annotation.Target;
  **/
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
+@Component
 public @interface Req {
 
   /**

@@ -12,21 +12,21 @@ import org.example.serde.NettyByteBufUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FacadeCallBack implements Handler {
+public class CallBackFacade implements Handler {
 
-  static final Logger logger = LoggerFactory.getLogger("CallBackLogger");
+  static final Logger logger = LoggerFactory.getLogger(CallBackFacade.class);
 
   private final CommonSerializer serializer;
   private final ConnectionManager manager;
 
-  public FacadeCallBack(ConnectionManager manager, CommonSerializer serializer) {
+  public CallBackFacade(ConnectionManager manager, CommonSerializer serializer) {
     this.serializer = serializer;
     this.manager = manager;
   }
 
   void callback(Connection c, Message m) throws Exception {
     final int msgId = NettyByteBufUtil.readInt32(m.packet());
-    final CompletableFuture<Integer> futureVar = manager.removeInvokeFuture(msgId);
+    final CompletableFuture<?> futureVar = manager.removeInvokeFuture(msgId);
     if (futureVar == null) {
       logger.error(
           "寻找回调函数失败, 可能原因：【回调函数过期/回调函数不存在】, 消息ID:{}, 链接地址:{} ",
