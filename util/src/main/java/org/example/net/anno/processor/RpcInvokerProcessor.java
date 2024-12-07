@@ -250,7 +250,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
             .endControlFlow()
             .beginControlFlow("catch(Throwable t)")
             .addStatement("$T.release($L)", ReferenceCountUtil.class, BUF_VAR_NAME)
-            .addStatement("throw new RuntimeException(t)")
+            .addStatement("throw t")
             .endControlFlow()
             .addCode("\n")
         ;

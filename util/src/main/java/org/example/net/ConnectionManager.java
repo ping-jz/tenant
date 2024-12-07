@@ -38,23 +38,16 @@ public class ConnectionManager implements AutoCloseable {
     Connection connection = channel.attr(Connection.CONNECTION).getAndSet(null);
     if (connection != null) {
       connections.remove(connection.id());
-      connection.close();
     }
   }
 
   public Connection bindChannel(Identity id, Channel channel) {
-    Connection connection = Connection.newConnection(id, channel);
-    connections.put(connection.id(), connection);
-    return connection;
-  }
-
-  public Connection reBindConnection(Identity newId, Channel channel) {
     Connection oldConnection = channel.attr(Connection.CONNECTION).getAndSet(null);
     if (oldConnection != null) {
       connections.remove(oldConnection.id());
     }
 
-    Connection connection = Connection.newConnection(newId, channel);
+    Connection connection = Connection.newConnection(id, channel);
     connections.put(connection.id(), connection);
     return connection;
   }
@@ -71,13 +64,9 @@ public class ConnectionManager implements AutoCloseable {
     return connections.get(address);
   }
 
-  public <T> void addInvokeFuture(Connection connection, Integer id,
+  public <T> void addInvokeFuture(Integer id,
       CompletableFuture<T> future) {
-    if (connection.isActive()) {
-      invokeFutures.putIfAbsent(id, future);
-    } else {
-      future.completeExceptionally(new IllegalStateException("Connection is close"));
-    }
+    invokeFutures.putIfAbsent(id, future);
   }
 
   public int nextCallBackMsgId() {

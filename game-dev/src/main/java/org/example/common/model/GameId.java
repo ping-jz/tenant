@@ -14,9 +14,4 @@ public record GameId(String id) implements Identity, Comparable<GameId> {
   public int compareTo(GameId o) {
     return id.compareTo(o.id);
   }
-
-  @Override
-  public String toString() {
-    return "GameId[" + id + ']';
-  }
 }

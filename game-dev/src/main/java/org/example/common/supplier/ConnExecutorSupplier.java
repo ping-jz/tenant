@@ -14,6 +14,7 @@ import org.example.net.handler.RpcExecutorSupplier;
  */
 public interface ConnExecutorSupplier extends RpcExecutorSupplier {
 
+  @Override
   default Executor get(Connection c, Message m) {
     return VirtualThreadExecutorService.commonPool().getExecutor(c.id());
   }

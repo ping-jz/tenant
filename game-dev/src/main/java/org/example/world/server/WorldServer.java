@@ -43,7 +43,7 @@ public class WorldServer implements AutoCloseable {
   }
 
   @EventListener
-  public void contextStart(ContextStartedEvent _startedEvent) throws Exception {
+  public void contextStart(ContextStartedEvent ignore) throws Exception {
     start();
   }
 
@@ -76,7 +76,7 @@ public class WorldServer implements AutoCloseable {
       InetSocketAddress address = (InetSocketAddress) channelFuture.channel().localAddress();
       prot = address.getPort();
     }
-    logger.info("服务器:【{}】,启动成功：绑定端口： {}!", config.getId(), prot);
+    logger.info("服务器:{},启动成功：绑定端口： {}!", config.getId(), prot);
     return channelFuture.isSuccess();
   }
 
@@ -84,7 +84,7 @@ public class WorldServer implements AutoCloseable {
   public void close() throws Exception {
     if (serverChannel != null) {
       serverChannel.close();
-      logger.info("服务器：【{}】，关闭链接！！", config.getId());
+      logger.info("服务器：{}，关闭链接！！", config.getId());
     }
   }
 

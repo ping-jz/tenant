@@ -19,29 +19,31 @@
     </game.generated.directory>
   </properties>
 
-  <build>
+  <profiles>
+    <profile>
+      <id>game</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <main.class>org.example.game.GameStart</main.class>
+        <filename>game</filename>
+        <outputdir>${project.build.directory}/release/game</outputdir>
+      </properties>
+    </profile>
+    <profile>
+      <id>world</id>
+      <properties>
+        <main.class>org.example.world.WorldStart</main.class>
+        <filename>world</filename>
+        <outputdir>${project.build.directory}/release/world</outputdir>
+      </properties>
+    </profile>
+  </profiles>
 
+  <build>
+    <finalName>${filename}</finalName>
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy-dependencies</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>copy-dependencies</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/release/lib</outputDirectory>
-              <overWriteReleases>false</overWriteReleases>
-              <overWriteSnapshots>false</overWriteSnapshots>
-              <overWriteIfNewer>true</overWriteIfNewer>
-              <includeScope>runtime</includeScope>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
 
       <!-- package -->
       <plugin>
@@ -57,15 +59,29 @@
           <archive>
             <manifest>
               <addClasspath>true</addClasspath>
-              <classpathPrefix>lib/</classpathPrefix>
-              <mainClass>org.example.game.GameStart</mainClass>
             </manifest>
             <manifestEntries>
-              <Class-Path>resources/</Class-Path>
+              <Class-Path>./</Class-Path>
             </manifestEntries>
           </archive>
-          <outputDirectory>${project.build.directory}/release</outputDirectory>
+          <outputDirectory>${outputdir}</outputDirectory>
+        </configuration>
+      </plugin>
 
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>${main.class}</mainClass>
+          <outputDirectory>${outputdir}</outputDirectory>
+          <layout>JAR</layout>
         </configuration>
       </plugin>
 
@@ -81,7 +97,7 @@
               <goal>copy-resources</goal>
             </goals>
             <configuration>
-              <outputDirectory>${project.build.directory}/release/resources/</outputDirectory>
+              <outputDirectory>${outputdir}</outputDirectory>
               <resources>
                 <resource>
                   <directory>src/main/resources</directory>
@@ -171,6 +187,12 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>game-util</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.auto.service</groupId>
+          <artifactId>auto-service</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <!-- spring -->
     <dependency>
@@ -194,16 +216,24 @@
       <artifactId>fastjson2</artifactId>
     </dependency>
 
-    <!-- https://mvnrepository.com/artifact/io.netty/netty-all -->
     <dependency>
       <groupId>io.netty</groupId>
-      <artifactId>netty-all</artifactId>
+      <artifactId>netty-buffer</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.example</groupId>
-      <artifactId>proxy-util-dev</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-epoll</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-handler</artifactId>
     </dependency>
 
     <!-- logging -->

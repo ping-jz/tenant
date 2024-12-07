@@ -22,11 +22,11 @@ public class RegisterService {
 
   public boolean serverRegister(Connection connection, Identity identity) {
     if (Objects.requireNonNull(connection.id()) instanceof AnonymousId) {
-      connectionManager.reBindConnection(identity, connection.channel());
-      logger.error("服务器：【{}】， 注册成功", identity);
+      connectionManager.bindChannel(identity, connection.channel());
+      logger.error("服务器：{}， 注册成功", identity);
       return true;
     } else {
-      logger.error("服务器：【{}】， 重复注册", connection.id());
+      logger.error("服务器：{}， 重复注册", connection.id());
       return false;
     }
   }

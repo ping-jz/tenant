@@ -309,10 +309,9 @@ public class RpcHandlerProcessor extends AbstractProcessor {
   private static IntList buildMethod0(TypeSpecInfo info,
       MethodSpec.Builder handlerMethod) {
     IntList intList = new IntArrayList();
-    for (Element element : info.methods) {
-      ExecutableElement executableElement = (ExecutableElement) element;
-      final int id = Util.calcProtoId(info.typeElement, executableElement);
-      Name methodName = executableElement.getSimpleName();
+    for (ExecutableElement element : info.methods) {
+      final int id = Util.calcProtoId(info.typeElement, element);
+      Name methodName = element.getSimpleName();
 
       MethodSpec.Builder methodBuilder = MethodSpec
           .methodBuilder(methodName.toString())
@@ -325,12 +324,12 @@ public class RpcHandlerProcessor extends AbstractProcessor {
 
       methodBuilder.addStatement("$T $L = $L.packet()", BYTE_BUF, BUF_VAR_NAME, MESSAGE_VAR_NAME);
 
-      if (hasReturnValue(executableElement)) {
+      if (hasReturnValue(element)) {
         methodBuilder.addStatement("int $L = $T.readInt32($L)", MSG_ID_VAR_NAME, BYTEBUF_UTIL,
             BUF_VAR_NAME);
       }
 
-      List<? extends VariableElement> params = executableElement.getParameters();
+      List<? extends VariableElement> params = element.getParameters();
       int idx = 0;
       for (VariableElement p : params) {
         final String pname = PARAM_PREFIX + idx;
@@ -372,7 +371,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
         methodBuilder.addCode("\n");
       }
 
-      CodeBlock.Builder invokeCodeBlock = buildInvokeCodeBlock(executableElement);
+      CodeBlock.Builder invokeCodeBlock = buildInvokeCodeBlock(element);
       if (info.executor != null) {
         methodBuilder
             .addCode("$T $L = () ->", Runnable.class, RUNNABLE_VAR_NAME)

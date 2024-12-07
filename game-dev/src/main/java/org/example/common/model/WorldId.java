@@ -14,9 +14,4 @@ public record WorldId(String id) implements Identity, Comparable<WorldId> {
   public int compareTo(WorldId o) {
     return id.compareTo(o.id);
   }
-
-  @Override
-  public String toString() {
-    return "WorldId[" + id + ']';
-  }
 }

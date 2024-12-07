@@ -48,31 +48,31 @@ public class RemoteService {
     new DefaultClientBootStrap(threadCommonResource, channelInitializer).connect(server)
         .addListener((ChannelFuture f) -> {
           if (f.isSuccess()) {
-            logger.error("服务器：【{}】，连接成功", server, f.cause());
+            logger.error("目标服务器：{}，连接成功", server, f.cause());
             registerChannel(server, f.channel());
           } else {
-            logger.error("服务器：【{}】，连接失败", server, f.cause());
+            logger.error("目标服务器：{}，连接失败", server, f.cause());
             threadCommonResource.getWorker().schedule(() -> connect(server), 3, TimeUnit.SECONDS);
           }
         });
   }
 
 
-  public void registerChannel(ServerInfo server, Channel channel) {
+  void registerChannel(ServerInfo server, Channel channel) {
     Connection connection = channel.attr(Connection.CONNECTION).get();
     if (connection.id() instanceof AnonymousId) {
       registerFacadeInvoker.of(connection).serverRegister(config.getId())
           .whenComplete((res, ex) -> {
             if (ex != null || !res) {
-              logger.error("本服：【{}】尝试与服务器【{}】注册，结果：{},", config.getId(),
+              logger.error("本服：{}与目标服务器{}注册，结果：{},", config.getId(),
                   server.id(), res, ex);
             } else {
-              logger.info("本服：【{}】与服务器【{}】，注册结果成功", config.getId(), server.id());
-              connectionManager.reBindConnection(server.id(), channel);
+              logger.info("本服：{}与目标服务器{}，注册成功", config.getId(), server.id());
+              connectionManager.bindChannel(server.id(), channel);
             }
           });
     } else {
-      logger.error("服务器：【{}】，尝试重复注册", connection.id());
+      logger.error("服务器：{}，尝试重复注册", connection.id());
     }
   }
 
