@@ -2,4 +2,8 @@
 2.增加对【FirstArgExecutorSupplier】,【RpcExecutorSupplier】，【ExecutorSupplier】,【RawExecutorSupplier】的线程分发支持
 3.增加本地代理支持，需要支持CompleteAbleFuture的同步获取，回调获取支持
 4.本地代理增加【FirstArgExecutorSupplier】,【ExecutorSupplier】的线程分发支持
-5.对CompleteAbleFutre的结果用Result进行分装
+5.对CompleteAbleFutre的结果用Result进行分装,并且确定好回调的默认执行者(ThreadLocal或者ScopedValue)
+6.启动的的时候直接切换VirtualThreadExecutor中去。 业务逻辑都在虚拟线程中执行，网络方面就交给Netty，在解码完消息之后就切换到VirtualThreadExecutor。
+还有关闭的时候也在平台线程中执行
+7.如果方便快捷的识别环境
+1.注意线程的分发的调用，业务应主要使用VirtualExecutors和VirtualExecutor否则就要注意调用的方法

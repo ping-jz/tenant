@@ -8,4 +8,7 @@ public record AnonymousId(Object o) implements Identity {
     return new AnonymousId(new Object());
   }
 
+  public static AnonymousId anonymousId(Object o) {
+    return new AnonymousId(0);
+  }
 }

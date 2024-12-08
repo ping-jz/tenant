@@ -1,7 +1,7 @@
 package org.example.game.config;
 
 import org.example.common.handler.ConnectionManagerHandler;
-import org.example.exec.VirtualThreadExecutorService;
+import org.example.exec.VirutalExecutors;
 import org.example.net.ConnectionManager;
 import org.example.net.DefaultDispatcher;
 import org.example.net.handler.DispatcherHandler;
@@ -28,8 +28,8 @@ public class GameConfiguration {
   }
 
   @Bean
-  public VirtualThreadExecutorService virtualThreadExecutor() {
-    return new VirtualThreadExecutorService();
+  public VirutalExecutors virtualThreadExecutor() {
+    return new VirutalExecutors();
   }
 
   @Bean

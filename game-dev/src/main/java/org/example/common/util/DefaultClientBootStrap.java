@@ -6,7 +6,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import java.net.InetSocketAddress;
 import org.example.common.ThreadCommonResource;
 import org.example.common.model.ServerInfo;
 
@@ -31,6 +30,6 @@ public class DefaultClientBootStrap {
         .handler(new LoggingHandler(LogLevel.INFO))
         .handler(initializer);
 
-    return b.connect(new InetSocketAddress(worldServer.port()));
+    return b.connect(worldServer.addr());
   }
 }

@@ -5,11 +5,13 @@ import static org.example.common.model.WorldId.worldId;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 import org.example.common.ThreadCommonResource;
 import org.example.common.model.ServerInfo;
 import org.example.common.net.generated.invoker.RegisterFacadeInvoker;
 import org.example.common.util.DefaultClientBootStrap;
+import org.example.exec.VirutalExecutors;
 import org.example.game.GameConfig;
 import org.example.model.AnonymousId;
 import org.example.net.Connection;
@@ -41,22 +43,27 @@ public class RemoteService {
   }
 
   public void serverStart() {
-    connect(serInfo(worldId("world"), 8082));
+    connect(serInfo(worldId("world"), new InetSocketAddress("localhost", 8082)));
   }
 
   public void connect(ServerInfo server) {
-    new DefaultClientBootStrap(threadCommonResource, channelInitializer).connect(server)
-        .addListener((ChannelFuture f) -> {
-          if (f.isSuccess()) {
-            logger.error("目标服务器：{}，连接成功", server, f.cause());
-            registerChannel(server, f.channel());
-          } else {
-            logger.error("目标服务器：{}，连接失败", server, f.cause());
-            threadCommonResource.getWorker().schedule(() -> connect(server), 3, TimeUnit.SECONDS);
-          }
-        });
+    try {
+      ChannelFuture f = new DefaultClientBootStrap(threadCommonResource,
+          channelInitializer).connect(server).sync();
+      if (f.isSuccess()) {
+        logger.info("目标服务器：{}，连接成功", server, f.cause());
+        registerChannel(server, f.channel());
+      } else {
+        logger.error("目标服务器：{}，连接失败", server, f.cause());
+        VirutalExecutors.commonPool()
+            .schedule(() -> connect(server), 3, TimeUnit.SECONDS);
+      }
+    } catch (Exception e) {
+      logger.error("连接：{}异常", server, e);
+      VirutalExecutors.commonPool()
+          .schedule(() -> connect(server), 3, TimeUnit.SECONDS);
+    }
   }
-
 
   void registerChannel(ServerInfo server, Channel channel) {
     Connection connection = channel.attr(Connection.CONNECTION).get();

@@ -63,6 +63,10 @@ public final class Util {
       "java.util.concurrent",
       "CompletableFuture");
 
+  public static final ClassName NET_COMPLETE_ABLE_FUTURE_CLASS_NAME = ClassName.get(
+      CompleteAbleFuture.class);
+
+
   public static final ClassName SUPPLIER_CLASS_NAME = ClassName.get(
       "java.util.function",
       "Supplier");

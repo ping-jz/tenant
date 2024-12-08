@@ -4,7 +4,7 @@ import io.netty.util.AttributeKey;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import org.example.common.model.AvatarId;
-import org.example.exec.VirtualThreadExecutorService;
+import org.example.exec.VirutalExecutors;
 import org.example.net.Connection;
 import org.example.net.Message;
 import org.example.net.handler.RpcExecutorSupplier;
@@ -22,7 +22,7 @@ public interface AvatarExecutorSupplier extends RpcExecutorSupplier {
     AttributeKey<AvatarId> key = AttributeKey.valueOf("AvatarId");
     AvatarId avatarIdentity = Objects
         .requireNonNull(c.channel().attr(key).get(), "玩家ID为空，请检查");
-    return VirtualThreadExecutorService.commonPool().getExecutor(avatarIdentity);
+    return VirutalExecutors.commonPool().getExecutor(avatarIdentity);
   }
 
 }

@@ -30,7 +30,8 @@ public class ConnectionManager implements AutoCloseable {
   }
 
   public void anoymousChannel(Channel channel) {
-    Connection connection = Connection.newConnection(anonymousId(), channel);
+    Connection connection = Connection.newConnection(
+        anonymousId(channel.id()), channel);
     connections.put(connection.id(), connection);
   }
 

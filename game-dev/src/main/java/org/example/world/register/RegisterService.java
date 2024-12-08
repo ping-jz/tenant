@@ -20,10 +20,10 @@ public class RegisterService {
     this.connectionManager = connectionManager;
   }
 
-  public boolean serverRegister(Connection connection, Identity identity) {
+  public boolean serverRegister(Identity identity, Connection connection) {
     if (Objects.requireNonNull(connection.id()) instanceof AnonymousId) {
       connectionManager.bindChannel(identity, connection.channel());
-      logger.error("服务器：{}， 注册成功", identity);
+      logger.info("服务器：{}， 注册成功", identity);
       return true;
     } else {
       logger.error("服务器：{}， 重复注册", connection.id());

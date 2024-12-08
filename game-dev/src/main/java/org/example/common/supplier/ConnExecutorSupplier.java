@@ -1,7 +1,7 @@
 package org.example.common.supplier;
 
 import java.util.concurrent.Executor;
-import org.example.exec.VirtualThreadExecutorService;
+import org.example.exec.VirutalExecutors;
 import org.example.net.Connection;
 import org.example.net.Message;
 import org.example.net.handler.RpcExecutorSupplier;
@@ -16,6 +16,6 @@ public interface ConnExecutorSupplier extends RpcExecutorSupplier {
 
   @Override
   default Executor get(Connection c, Message m) {
-    return VirtualThreadExecutorService.commonPool().getExecutor(c.id());
+    return VirutalExecutors.commonPool().getExecutor(c.id());
   }
 }

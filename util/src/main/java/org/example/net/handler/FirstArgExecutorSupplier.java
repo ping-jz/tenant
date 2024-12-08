@@ -1,7 +1,7 @@
 package org.example.net.handler;
 
 import java.util.concurrent.Executor;
-import org.example.exec.VirtualThreadExecutorService;
+import org.example.exec.VirutalExecutors;
 import org.example.util.Identity;
 
 /**
@@ -13,6 +13,6 @@ import org.example.util.Identity;
 public interface FirstArgExecutorSupplier<T extends Identity> {
 
   default Executor get(T t) {
-    return VirtualThreadExecutorService.commonPool().getExecutor(t);
+    return VirutalExecutors.commonPool().getExecutor(t);
   }
 }

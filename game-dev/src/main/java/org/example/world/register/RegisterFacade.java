@@ -1,13 +1,13 @@
 package org.example.world.register;
 
-import org.example.common.supplier.ConnExecutorSupplier;
 import org.example.net.Connection;
 import org.example.net.anno.Req;
 import org.example.net.anno.Rpc;
+import org.example.net.handler.FirstArgExecutorSupplier;
 import org.example.util.Identity;
 
 @Rpc
-public class RegisterFacade implements ConnExecutorSupplier {
+public class RegisterFacade implements FirstArgExecutorSupplier<Identity> {
 
   private RegisterService registerService;
 
@@ -16,8 +16,8 @@ public class RegisterFacade implements ConnExecutorSupplier {
   }
 
   @Req
-  public boolean serverRegister(Connection connection, Identity identity) {
-    return registerService.serverRegister(connection, identity);
+  public boolean serverRegister(Identity identity, Connection connection) {
+    return registerService.serverRegister(identity, connection);
   }
 
 }

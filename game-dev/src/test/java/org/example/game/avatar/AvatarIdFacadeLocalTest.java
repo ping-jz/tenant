@@ -2,12 +2,12 @@ package org.example.game.avatar;
 
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import org.example.common.model.AvatarId;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
+import org.example.net.CompleteAbleFuture;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
@@ -68,9 +68,14 @@ public class AvatarIdFacadeLocalTest {
         long1,
         float1, double1, reqMove, resMove);
 
-    CompletableFuture<Integer> callback = invoker
+    CompleteAbleFuture<Integer> callback = invoker
         .callback(avatarId, boolean1, byte1, short1, char1, int1, long1, float1, double1, reqMove,
             resMove);
+
+    Assertions.assertThrows(NullPointerException.class,
+        () -> callback.whenComplete((ignorea, ingorea) -> {
+        })
+    );
 
     Assertions.assertEquals(hashcode, callback.get(10, TimeUnit.MILLISECONDS));
   }

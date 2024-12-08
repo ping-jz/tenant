@@ -8,7 +8,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.ArrayUtils;
@@ -17,6 +16,7 @@ import org.example.common.model.ReqMoveSerde;
 import org.example.common.model.ResMove;
 import org.example.common.model.ResMoveSerde;
 import org.example.common.net.generated.invoker.ExampleFacadeInvoker;
+import org.example.net.CompleteAbleFuture;
 import org.example.net.Connection;
 import org.example.net.ConnectionManager;
 import org.example.net.DefaultDispatcher;
@@ -158,7 +158,7 @@ public class GameFacdeTest {
     int hashcode = Objects.hash(boolean1, Arrays.hashCode(byte1), short1, char1, int1, long1,
         float1, double1, reqMove, resMove);
 
-    CompletableFuture<Integer> callback = invoker.of(
+    CompleteAbleFuture<Integer> callback = invoker.of(
             embeddedChannel.attr(Connection.CONNECTION).get())
         .callback(boolean1, byte1, short1, char1, int1, long1, float1, double1, reqMove, resMove);
 

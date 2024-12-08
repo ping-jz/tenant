@@ -6,7 +6,7 @@ import java.util.concurrent.Executor;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
 import org.example.common.net.generated.invoker.ExampleFacadeInvoker;
-import org.example.exec.VirtualThreadExecutorService;
+import org.example.exec.VirutalExecutors;
 import org.example.net.Connection;
 import org.example.net.anno.Req;
 import org.example.net.anno.Rpc;
@@ -55,7 +55,7 @@ public class ExampleFacade implements ExecutorSupplier {
 
   @Override
   public Executor get() {
-    return VirtualThreadExecutorService.commonPool().getExecutor(IDENTITY);
+    return VirutalExecutors.commonPool().getExecutor(IDENTITY);
   }
 }
 

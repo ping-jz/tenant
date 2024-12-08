@@ -154,7 +154,7 @@ public class LocalRpcProcessor extends AbstractProcessor {
         if (hasReutrn) {
           ParameterizedTypeName returnType = ParameterizedTypeName
               .get(
-                  Util.COMPLETE_ABLE_FUTURE_CLASS_NAME,
+                  Util.NET_COMPLETE_ABLE_FUTURE_CLASS_NAME,
                   returnTypeName.box()
               );
 
@@ -170,7 +170,8 @@ public class LocalRpcProcessor extends AbstractProcessor {
               .beginControlFlow("")
               .addStatement("return $L", buildInvokeCodeBlock(method).build())
               .endControlFlow("")
-              .addStatement("return $T.supplyAsync($L, $L)", Util.COMPLETE_ABLE_FUTURE_CLASS_NAME,
+              .addStatement("return $T.supplyAsync($L, $L)",
+                  Util.NET_COMPLETE_ABLE_FUTURE_CLASS_NAME,
                   RUNNABLE_VAR_NAME, info.executor)
           ;
 

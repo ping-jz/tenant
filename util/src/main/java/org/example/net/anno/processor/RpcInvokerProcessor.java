@@ -258,7 +258,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
 
       if (callback) {
         methodBuilder
-            .returns(ParameterizedTypeName.get(Util.COMPLETE_ABLE_FUTURE_CLASS_NAME,
+            .returns(ParameterizedTypeName.get(Util.NET_COMPLETE_ABLE_FUTURE_CLASS_NAME,
                 TypeName.get(typeMirror).box()))
             .addStatement(
                 "return remoting.invoke($L, $L, $T.of($L, $L), $L)",
