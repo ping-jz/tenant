@@ -21,12 +21,9 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -47,6 +44,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
+import org.apache.commons.lang3.tuple.Pair;
 import org.example.net.Util;
 
 /**
@@ -74,7 +72,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
       CONNECTION_CLASS_NAME,
       CONNECTION_VAR_NAME).build();
   private static final ParameterSpec MESSAGE_PARAM_SPEC = ParameterSpec.builder(
-      Util.MESSAGE_CLASS_NAME,
+      MESSAGE_CLASS_NAME,
       MESSAGE_VAR_NAME).build();
 
 
@@ -172,35 +170,38 @@ public class RpcHandlerProcessor extends AbstractProcessor {
   }
 
   private void buildExecuotSupplerCode(TypeSpecInfo info) {
-    List<TypeName> supplierInterfaces = executorSupplierInters(info);
+    List<Pair<TypeMirror, TypeName>> supplierInterfaces = ExecutorSupplierUtil.executorSupplierInters(
+        processingEnv, info);
     switch (supplierInterfaces.size()) {
       case 1 -> {
-        TypeName typeName = supplierInterfaces.getFirst();
+        Pair<TypeMirror, TypeName> pair = supplierInterfaces.getFirst();
+        TypeName typeName = pair.getRight();
         TypeName rawType = typeName;
         if (rawType instanceof ParameterizedTypeName t) {
           rawType = t.rawType();
         }
         if (typeName.equals(Util.RPC_EXECUTOR_SUPPLIER_CLASS_NAME)) {
           info.executor = CodeBlock.builder()
-              .add("$L.get($L, $L).execute($L)",
+              .add("$L.get($L, $L)",
                   FACADE_VAR_NAME,
                   CONNECTION_VAR_NAME,
-                  MESSAGE_VAR_NAME,
-                  RUNNABLE_VAR_NAME)
+                  MESSAGE_VAR_NAME
+              )
               .build();
         } else if (rawType.equals(Util.EXECUTOR_SUPPLIER_CLASS_NAME)) {
           info.executor = CodeBlock.builder()
-              .add("$L.get().execute($L)",
-                  FACADE_VAR_NAME,
-                  RUNNABLE_VAR_NAME)
+              .add("$L.get()",
+                  FACADE_VAR_NAME
+              )
               .build();
         } else if (rawType.equals(Util.FIRST_ARG_EXECUTOR_SUPPLIER_CLASS_NAME)) {
-          firstArgExecutorSupplerCheck(info, typeName);
+          ExecutorSupplierUtil.firstArgExecutorSupplerCheck(processingEnv, info,
+              TypeName.get(pair.getLeft()));
           info.executor = CodeBlock.builder()
-              .add("$L.get($L).execute($L)",
+              .add("$L.get($L)",
                   FACADE_VAR_NAME,
-                  PARAM_PREFIX + 0,
-                  RUNNABLE_VAR_NAME)
+                  PARAM_PREFIX + 0
+              )
               .build();
         } else if (typeName.equals(Util.RAW_EXECUTOR_SUPPLIER_CLASS_NAME)) {
           info.executor = null;
@@ -216,67 +217,12 @@ public class RpcHandlerProcessor extends AbstractProcessor {
           info.typeElement);
       default -> processingEnv.getMessager().printError(
           "重复ExecutorSuppler接口，请选择实现其中之一保留：%s"
-              .formatted(supplierInterfaces.stream().map(TypeName::toString)
+              .formatted(supplierInterfaces
+                  .stream()
+                  .map(Pair::getLeft)
+                  .map(TypeMirror::toString)
                   .collect(Collectors.joining(", "))),
           info.typeElement);
-    }
-  }
-
-  List<TypeName> executorSupplierInters(TypeSpecInfo info) {
-    List<TypeName> supplierInterface = new ArrayList<>();
-
-    Queue<TypeMirror> typeMirrors = new ArrayDeque<>(info.typeElement.getInterfaces());
-
-    while (!typeMirrors.isEmpty()) {
-      TypeMirror inter = typeMirrors.poll();
-      TypeName typeName = TypeName.get(inter);
-      TypeName rawType = typeName;
-      if (typeName instanceof ParameterizedTypeName t) {
-        rawType = t.rawType();
-      }
-      if (rawType.equals(Util.EXECUTOR_SUPPLIER_CLASS_NAME)
-          || rawType.equals(Util.RPC_EXECUTOR_SUPPLIER_CLASS_NAME)
-          || rawType.equals(Util.FIRST_ARG_EXECUTOR_SUPPLIER_CLASS_NAME)
-          || rawType.equals(Util.RAW_EXECUTOR_SUPPLIER_CLASS_NAME)
-      ) {
-        supplierInterface.add(typeName);
-      } else {
-        TypeElement typeElement = (TypeElement) processingEnv.getTypeUtils().asElement(inter);
-        typeMirrors.addAll(typeElement.getInterfaces());
-      }
-    }
-
-    return supplierInterface;
-  }
-
-  void firstArgExecutorSupplerCheck(TypeSpecInfo info, TypeName inter) {
-    ParameterizedTypeName parameterizedTypeName = null;
-    if (inter instanceof ParameterizedTypeName p) {
-      parameterizedTypeName = p;
-    } else {
-      return;
-    }
-
-    TypeName name = parameterizedTypeName.typeArguments().getFirst();
-    for (ExecutableElement element : info.methods) {
-      List<? extends VariableElement> parameters = element.getParameters();
-      if (parameters.isEmpty()) {
-        processingEnv.getMessager()
-            .printError("方法参数不能为空，并且类型为：%s, 详情定义：%s".formatted(name, inter),
-                element);
-        continue;
-      }
-
-      VariableElement p0 = parameters.getFirst();
-      TypeName paramTypeName = TypeName.get(p0.asType());
-      if (!paramTypeName.equals(name)) {
-        processingEnv.getMessager()
-            .printError(
-                "参数：%s，提供的类型：%s,需要的类型：%s, 详情定义：%s".formatted(p0.getSimpleName(),
-                    paramTypeName, name, inter
-                ),
-                p0);
-      }
     }
   }
 
@@ -378,7 +324,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
             .beginControlFlow("")
             .addCode(invokeCodeBlock.build())
             .endControlFlow("")
-            .addStatement(info.executor);
+            .addStatement("$L.execute($L)", info.executor, RUNNABLE_VAR_NAME);
       } else {
         methodBuilder.addCode(invokeCodeBlock.build());
       }

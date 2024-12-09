@@ -7,7 +7,7 @@ import org.example.common.model.AvatarId;
 import org.example.exec.VirutalExecutors;
 import org.example.net.Connection;
 import org.example.net.Message;
-import org.example.net.handler.RpcExecutorSupplier;
+import org.example.net.handler.RpcExecSupplier;
 
 /**
  * 根据网络通道提供的信息，返回玩家对应的Executor
@@ -15,7 +15,7 @@ import org.example.net.handler.RpcExecutorSupplier;
  * @author zhongjianping
  * @since 2024/12/4 13:37
  */
-public interface AvatarExecutorSupplier extends RpcExecutorSupplier {
+public interface AvatarExecSupplier extends RpcExecSupplier {
 
   @Override
   default Executor get(Connection c, Message m) {

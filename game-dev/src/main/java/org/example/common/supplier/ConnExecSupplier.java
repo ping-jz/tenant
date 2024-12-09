@@ -4,7 +4,7 @@ import java.util.concurrent.Executor;
 import org.example.exec.VirutalExecutors;
 import org.example.net.Connection;
 import org.example.net.Message;
-import org.example.net.handler.RpcExecutorSupplier;
+import org.example.net.handler.RpcExecSupplier;
 
 /**
  * 使用Connection来获取Executor
@@ -12,7 +12,7 @@ import org.example.net.handler.RpcExecutorSupplier;
  * @author zhongjianping
  * @since 2024/12/5 18:37
  */
-public interface ConnExecutorSupplier extends RpcExecutorSupplier {
+public interface ConnExecSupplier extends RpcExecSupplier {
 
   @Override
   default Executor get(Connection c, Message m) {

@@ -5,7 +5,7 @@ import java.util.Objects;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
 import org.example.common.net.generated.invoker.AvatarFacadeInvoker;
-import org.example.common.supplier.AvatarExecutorSupplier;
+import org.example.common.supplier.AvatarExecSupplier;
 import org.example.net.Connection;
 import org.example.net.anno.Req;
 import org.example.net.anno.Rpc;
@@ -17,7 +17,7 @@ import org.example.net.anno.Rpc;
  * @since 2021年09月27日 15:54:54
  **/
 @Rpc
-public class AvatarFacade implements AvatarExecutorSupplier {
+public class AvatarFacade implements AvatarExecSupplier {
 
   private final AvatarFacadeInvoker facadeInvoker;
 

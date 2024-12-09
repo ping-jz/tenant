@@ -9,7 +9,7 @@ import org.example.common.net.generated.invoker.AvatarIdFacadeInvoker;
 import org.example.net.Connection;
 import org.example.net.anno.Req;
 import org.example.net.anno.Rpc;
-import org.example.net.handler.FirstArgExecutorSupplier;
+import org.example.net.handler.IdExecSupplier;
 
 /**
  * 游戏门面(文档生产插件测试)
@@ -18,7 +18,7 @@ import org.example.net.handler.FirstArgExecutorSupplier;
  * @since 2021年09月27日 15:54:54
  **/
 @Rpc
-public class AvatarIdFacade implements FirstArgExecutorSupplier<AvatarId> {
+public class AvatarIdFacade implements IdExecSupplier<AvatarId> {
 
   private final AvatarIdFacadeInvoker facadeInvoker;
 

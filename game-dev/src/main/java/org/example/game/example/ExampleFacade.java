@@ -10,7 +10,7 @@ import org.example.exec.VirutalExecutors;
 import org.example.net.Connection;
 import org.example.net.anno.Req;
 import org.example.net.anno.Rpc;
-import org.example.net.handler.ExecutorSupplier;
+import org.example.net.handler.ExecSupplier;
 
 /**
  * 游戏门面(文档生产插件测试)
@@ -19,7 +19,7 @@ import org.example.net.handler.ExecutorSupplier;
  * @since 2021年09月27日 15:54:54
  **/
 @Rpc
-public class ExampleFacade implements ExecutorSupplier {
+public class ExampleFacade implements ExecSupplier {
 
   private static final ExampleIdentity IDENTITY = new ExampleIdentity();
 

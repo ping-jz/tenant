@@ -7,7 +7,7 @@ import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
 import org.example.net.anno.LocalRpc;
 import org.example.net.anno.Req;
-import org.example.net.handler.FirstArgExecutorSupplier;
+import org.example.net.handler.IdExecSupplier;
 
 /**
  * 游戏门面(文档生产插件测试)
@@ -16,9 +16,9 @@ import org.example.net.handler.FirstArgExecutorSupplier;
  * @since 2021年09月27日 15:54:54
  **/
 @LocalRpc
-public class AvatarIdFacadeLocal implements FirstArgExecutorSupplier<AvatarId> {
+public class AvatarIdFacadeLocal implements IdExecSupplier<AvatarId> {
 
-  public AvatarId id = null;
+  public AvatarId id;
 
   public AvatarIdFacadeLocal() {
   }

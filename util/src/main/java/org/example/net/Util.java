@@ -13,10 +13,10 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
 import org.example.net.anno.Req;
-import org.example.net.handler.ExecutorSupplier;
-import org.example.net.handler.FirstArgExecutorSupplier;
-import org.example.net.handler.RawExecutorSupplier;
-import org.example.net.handler.RpcExecutorSupplier;
+import org.example.net.handler.ExecSupplier;
+import org.example.net.handler.FirstArgExecSupplier;
+import org.example.net.handler.RawExecSupplier;
+import org.example.net.handler.RpcExecSupplier;
 
 public final class Util {
 
@@ -25,13 +25,13 @@ public final class Util {
 
   /** 常用类型 */
 
-  public static final TypeName EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(ExecutorSupplier.class);
+  public static final TypeName EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(ExecSupplier.class);
   public static final TypeName FIRST_ARG_EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(
-      FirstArgExecutorSupplier.class);
+      FirstArgExecSupplier.class);
   public static final TypeName RAW_EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(
-      RawExecutorSupplier.class);
+      RawExecSupplier.class);
   public static final TypeName RPC_EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(
-      RpcExecutorSupplier.class);
+      RpcExecSupplier.class);
   public static final ClassName CONNECTION_CLASS_NAME = ClassName.get("org.example.net",
       "Connection");
   public static final ClassName CONNECTION_GETTER =

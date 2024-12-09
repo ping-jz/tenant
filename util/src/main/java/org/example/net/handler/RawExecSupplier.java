@@ -6,6 +6,6 @@ package org.example.net.handler;
  * @author zhongjianping
  * @since 2024/12/4 14:37
  */
-public interface RawExecutorSupplier {
+public interface RawExecSupplier {
 
 }
