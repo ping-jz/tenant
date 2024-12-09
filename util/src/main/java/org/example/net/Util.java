@@ -64,7 +64,7 @@ public final class Util {
       "CompletableFuture");
 
   public static final ClassName NET_COMPLETE_ABLE_FUTURE_CLASS_NAME = ClassName.get(
-      CompleteAbleFuture.class);
+      AsyncFuture.class);
 
 
   public static final ClassName SUPPLIER_CLASS_NAME = ClassName.get(

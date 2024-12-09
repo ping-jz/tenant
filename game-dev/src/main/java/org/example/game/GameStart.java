@@ -1,7 +1,6 @@
 package org.example.game;
 
 
-import org.example.exec.DefaultIdentity;
 import org.example.exec.VirutalExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +15,7 @@ public final class GameStart {
       AnnotationConfigApplicationContext child = new AnnotationConfigApplicationContext();
 
       Thread thread = VirutalExecutors.commonPool()
-          .executeWith(DefaultIdentity.DEFAULT, () -> {
+          .execute(() -> {
             child.register(GameConfig.class);
             child.refresh();
             child.start();

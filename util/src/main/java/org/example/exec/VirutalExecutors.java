@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.example.util.Identity;
 
@@ -14,14 +15,28 @@ public class VirutalExecutors {
 
   private static final VirutalExecutors common = new VirutalExecutors();
 
-  private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+  private final ScheduledExecutorService scheduledExecutorService;
   private final LoadingCache<Identity, VirtualExecutor> temporalExecutor;
+  private final ThreadFactory defaultVirFactory;
 
   public VirutalExecutors() {
+    scheduledExecutorService = Executors.newScheduledThreadPool(1);
     temporalExecutor = Caffeine
         .newBuilder()
         .expireAfterAccess(Duration.ofMinutes(1))
         .build(VirtualExecutor::new);
+    defaultVirFactory = Thread.ofVirtual().name("VIR-", 1).factory();
+  }
+
+  /**
+   * 直接用虚拟线程执行
+   *
+   * @since 2024/12/8 18:31
+   */
+  public Thread execute(Runnable command) {
+    Thread thread = defaultVirFactory.newThread(command);
+    thread.start();
+    return thread;
   }
 
   /**
@@ -35,30 +50,27 @@ public class VirutalExecutors {
   }
 
   /**
-   * 使用当前{@link VirtualExecutor#current()}来执行定时任务，如果不在{@link VirtualExecutor}环境中则报错
+   * {@link ScheduledExecutorService#schedule(Runnable, long, TimeUnit)}，当任务触发时。会交由虚拟线程来执行
    *
    * @since 2024/12/8 18:31
    */
-  public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-    VirtualExecutor executor = VirtualExecutor.current();
-    Identity id = Objects.requireNonNull(executor,
-        "当前环境缺少VirtualExecutor。请求修复或使用scheduleOndefault来执行").getIdentity();
+  public ScheduledFuture<?> schedule(Runnable command, Duration duration) {
     return scheduledExecutorService.schedule(() -> {
-      executeWith(id, command);
-    }, delay, unit);
+      execute(command);
+    }, duration.toNanos(), TimeUnit.NANOSECONDS);
   }
 
   /**
-   * 使用当前{@link VirtualExecutor#current()}来执行定时任务，如果不在{@link VirtualExecutor}环境中则报错
+   * 使用提供{@code id}来执行定时任务
    *
+   * @param identity 执行器ID
    * @since 2024/12/8 18:31
    */
-  public ScheduledFuture<?> schedule(Identity identity, Runnable command, long delay,
-      TimeUnit unit) {
+  public ScheduledFuture<?> scheduleWith(Identity identity, Runnable command, Duration duration) {
     Identity id = Objects.requireNonNull(identity, "identity不能为空");
     return scheduledExecutorService.schedule(() -> {
       executeWith(id, command);
-    }, delay, unit);
+    }, duration.toNanos(), TimeUnit.NANOSECONDS);
   }
 
 

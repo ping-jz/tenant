@@ -39,7 +39,7 @@ public class BaseRemoting {
    * @param message 请求消息
    * @since 2021年08月15日 15:45:03
    */
-  public <T> CompleteAbleFuture<T> invoke(ConnectionManager manager, final Connection conn,
+  public <T> AsyncFuture<T> invoke(ConnectionManager manager, final Connection conn,
       final Message message, int msgId) {
     return invokeWithFuture(manager, conn, message, msgId, 3, TimeUnit.SECONDS);
   }
@@ -52,10 +52,10 @@ public class BaseRemoting {
    * @param timeout 超时时间
    * @since 2021年08月15日 15:45:03
    */
-  public <T> CompleteAbleFuture<T> invokeWithFuture(ConnectionManager manager, Connection conn,
+  public <T> AsyncFuture<T> invokeWithFuture(ConnectionManager manager, Connection conn,
       Message message, int msgId, final long timeout, TimeUnit timeUnit) {
     CompletableFuture<T> f = new CompletableFuture<>();
-    CompleteAbleFuture<T> wrapper = CompleteAbleFuture.of(f);
+    AsyncFuture<T> wrapper = AsyncFuture.of(f);
     try {
       manager.addInvokeFuture(msgId, f);
       f.whenComplete((ignore1, ex) -> {

@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.example.common.model.AvatarId;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
-import org.example.net.CompleteAbleFuture;
+import org.example.net.AsyncFuture;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
@@ -68,14 +68,9 @@ public class AvatarIdFacadeLocalTest {
         long1,
         float1, double1, reqMove, resMove);
 
-    CompleteAbleFuture<Integer> callback = invoker
+    AsyncFuture<Integer> callback = invoker
         .callback(avatarId, boolean1, byte1, short1, char1, int1, long1, float1, double1, reqMove,
             resMove);
-
-    Assertions.assertThrows(NullPointerException.class,
-        () -> callback.whenComplete((ignorea, ingorea) -> {
-        })
-    );
 
     Assertions.assertEquals(hashcode, callback.get(10, TimeUnit.MILLISECONDS));
   }

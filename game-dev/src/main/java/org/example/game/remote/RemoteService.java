@@ -6,7 +6,7 @@ import static org.example.common.model.WorldId.worldId;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import java.net.InetSocketAddress;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import org.example.common.ThreadCommonResource;
 import org.example.common.model.ServerInfo;
 import org.example.common.net.generated.invoker.RegisterFacadeInvoker;
@@ -47,21 +47,21 @@ public class RemoteService {
   }
 
   public void connect(ServerInfo server) {
-    try {
-      ChannelFuture f = new DefaultClientBootStrap(threadCommonResource,
-          channelInitializer).connect(server).sync();
-      if (f.isSuccess()) {
-        logger.info("目标服务器：{}，连接成功", server, f.cause());
-        registerChannel(server, f.channel());
-      } else {
-        logger.error("目标服务器：{}，连接失败", server, f.cause());
-        VirutalExecutors.commonPool()
-            .schedule(() -> connect(server), 3, TimeUnit.SECONDS);
-      }
-    } catch (Exception e) {
-      logger.error("连接：{}异常", server, e);
+    new DefaultClientBootStrap(threadCommonResource, channelInitializer)
+        .connect(server)
+        .addListener((ChannelFuture f) -> {
+          connect0(server, f);
+        });
+  }
+
+  void connect0(ServerInfo server, ChannelFuture f) {
+    if (f.isSuccess()) {
+      logger.info("目标服务器：{}，连接成功", server, f.cause());
+      registerChannel(server, f.channel());
+    } else {
+      logger.error("目标服务器：{}，连接失败", server, f.cause());
       VirutalExecutors.commonPool()
-          .schedule(() -> connect(server), 3, TimeUnit.SECONDS);
+          .schedule(() -> connect(server), Duration.ofSeconds(3));
     }
   }
 
@@ -69,7 +69,7 @@ public class RemoteService {
     Connection connection = channel.attr(Connection.CONNECTION).get();
     if (connection.id() instanceof AnonymousId) {
       registerFacadeInvoker.of(connection).serverRegister(config.getId())
-          .whenComplete((res, ex) -> {
+          .async((res, ex) -> {
             if (ex != null || !res) {
               logger.error("本服：{}与目标服务器{}注册，结果：{},", config.getId(),
                   server.id(), res, ex);

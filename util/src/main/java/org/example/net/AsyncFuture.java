@@ -1,5 +1,6 @@
 package org.example.net;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -9,49 +10,49 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
-import org.example.exec.DefaultIdentity;
 import org.example.exec.VirtualExecutor;
 import org.example.exec.VirutalExecutors;
 import org.example.util.Identity;
 
 /**
- * 对{@link CompletableFuture},按照业务环境进行线程分发
+ * 异步回调，在创建时绑定当前{@link VirtualExecutor#getIdentity()}，此后所有回调都在此绑定的{@link VirtualExecutor}
+ * 下执行。如果无法获取当前的{{@link VirtualExecutor}。则绑定默认执行器
  *
  * @author zhongjianping
  * @since 2024/12/8 14:22
  */
-public class CompleteAbleFuture<T> {
+public class AsyncFuture<T> {
+
+  private static final ID DEFAULT = ID.AsyncFuture;
 
   private final CompletableFuture<T> f;
+  private final Identity identity;
   private Future<?> timeOutFuture;
 
-  public CompleteAbleFuture(CompletableFuture<T> f) {
+  public AsyncFuture(CompletableFuture<T> f) {
     this.f = f;
+    VirtualExecutor virutalExecutor = VirtualExecutor.current();
+    if (virutalExecutor == null) {
+      identity = DEFAULT;
+    } else {
+      identity = virutalExecutor.getIdentity();
+    }
   }
 
-  public static <U> CompleteAbleFuture<U> of(CompletableFuture<U> f) {
-    return new CompleteAbleFuture<>(f);
+  public static <U> AsyncFuture<U> of(CompletableFuture<U> f) {
+    return new AsyncFuture<>(f);
   }
 
   /**
    * 如果当前在VirtualThreadExecutor环境中。 则此回调则在相同VirtualTHreadExecuotr中执行。
    * {@link CompletableFuture#whenCompleteAsync(BiConsumer, Executor)}}
    * <p>
-   * 如果当前不在在VirtualThreadExecutor环境中，则参考
-   * {@link CompleteAbleFuture#whenCompleteAsync(BiConsumer, VirtualExecutor)}
-   * <p>
    *
    * @author zhongjianping
    * @since 2024/12/8 14:15
    */
-  public CompleteAbleFuture<T> whenComplete(
+  public AsyncFuture<T> async(
       BiConsumer<? super T, ? super Throwable> consumer) {
-    VirtualExecutor executor = VirtualExecutor.current();
-    Objects.requireNonNull(executor,
-        "在非VirtualThreadExecutor环境中进行了回调。修复方法："
-            + "1.使用org.example.net.CompleteAbleFuture.future()此方法来获取真实的CompleteAbleFuture进行调用"
-            + "2.使用org.example.net.CompleteAbleFuture#whenCompleteAsync(BiConsumer, VirtualExecutor)");
-    Identity identity = executor.getIdentity();
     f.whenCompleteAsync(consumer, r -> {
       VirutalExecutors.commonPool().executeWith(identity, r);
     });
@@ -61,7 +62,7 @@ public class CompleteAbleFuture<T> {
   /**
    * {@link CompletableFuture#whenCompleteAsync(BiConsumer, Executor)}}
    */
-  public CompleteAbleFuture<T> whenCompleteAsync(
+  public AsyncFuture<T> async(
       BiConsumer<? super T, ? super Throwable> consumer, VirtualExecutor executor) {
     Objects.requireNonNull(executor, "executor不能为空");
     Identity identity = executor.getIdentity();
@@ -103,23 +104,14 @@ public class CompleteAbleFuture<T> {
     return f.cancel(mayInterruptIfRunning);
   }
 
-  /**
-   * {@link CompletableFuture#cancel(boolean)}
-   *
-   * @since 2024/12/8 21:06
-   */
-  public boolean completeExceptionally(Throwable ex) {
-    return f.completeExceptionally(ex);
-  }
-
-  public Future<?> timeOut(long time, TimeUnit unit) {
+  public Future<?> timeOut(Duration duration) {
     if (timeOutFuture != null) {
       timeOutFuture.cancel(false);
     }
 
-    timeOutFuture = VirutalExecutors.commonPool().schedule(DefaultIdentity.DEFAULT, () -> {
+    timeOutFuture = VirutalExecutors.commonPool().schedule(() -> {
       f.completeExceptionally(new TimeoutException("回调函数过期"));
-    }, time, unit);
+    }, duration);
     return timeOutFuture;
   }
 
@@ -127,7 +119,7 @@ public class CompleteAbleFuture<T> {
     return timeOutFuture;
   }
 
-  CompleteAbleFuture<T> timeOutFuture(Future<?> future) {
+  org.example.net.AsyncFuture<T> timeOutFuture(Future<?> future) {
     if (timeOutFuture != null) {
       timeOutFuture.cancel(false);
     }
@@ -140,9 +132,14 @@ public class CompleteAbleFuture<T> {
    *
    * @since 2024/12/8 17:31
    */
-  public static <U> CompleteAbleFuture<U> supplyAsync(Supplier<U> supplier,
+  public static <U> AsyncFuture<U> supplyAsync(Supplier<U> supplier,
       Executor executor) {
     Objects.requireNonNull(executor, "executor不能为空");
-    return new CompleteAbleFuture<>(CompletableFuture.supplyAsync(supplier, executor));
+    return new AsyncFuture<>(CompletableFuture.supplyAsync(supplier, executor));
+  }
+
+  private enum ID implements Identity {
+    AsyncFuture
   }
 }
+
