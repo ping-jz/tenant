@@ -54,40 +54,43 @@ public class BaseRemoting {
    */
   public <T> CompleteAbleFuture<T> invokeWithFuture(ConnectionManager manager, Connection conn,
       Message message, int msgId, final long timeout, TimeUnit timeUnit) {
-    CompletableFuture<T> future = new CompletableFuture<>();
-    manager.addInvokeFuture(msgId, future);
+    CompletableFuture<T> f = new CompletableFuture<>();
+    CompleteAbleFuture<T> wrapper = CompleteAbleFuture.of(f);
     try {
+      manager.addInvokeFuture(msgId, f);
+      f.whenComplete((ignore1, ex) -> {
+        manager.removeInvokeFuture(msgId, f);
+        Future<?> timeOutFuture = wrapper.timeOutFuture();
+        if (timeOutFuture != null) {
+          timeOutFuture.cancel(false);
+        }
+        if (ex instanceof TimeoutException) {
+          logger.error("回调函数过期,消息ID:{},链接:{}", msgId, conn);
+        }
+      });
+
+      //设置过期任务
+      Future<?> timeoutFuture = conn.channel().eventLoop().schedule(() -> {
+        f.completeExceptionally(new TimeoutException("回调消息过期"));
+      }, timeout, timeUnit);
+      wrapper.timeOutFuture(timeoutFuture);
       conn
           .channel()
           .writeAndFlush(message)
           .addListener((ChannelFuture cf) -> {
-            if (cf.isSuccess()) {
-              Future<?> timeoutFuture = cf.channel().eventLoop().schedule(() -> {
-                if (manager.removeInvokeFuture(msgId, future)) {
-                  future.completeExceptionally(new TimeoutException("回调消息过期"));
-                  logger.error("回调函数过期,消息ID:{},链接:{}", msgId, conn);
-                }
-              }, timeout, timeUnit);
-
-              future.whenComplete((ignore1, ignore2) -> {
-                timeoutFuture.cancel(false);
-              });
-            } else {
-              manager.removeInvokeFuture(msgId, future);
-              future.completeExceptionally(cf.cause());
-
+            if (!cf.isSuccess()) {
+              f.completeExceptionally(cf.cause());
               logger.error("Invoke send failed. The address is {}", conn,
                   cf.cause());
             }
           });
     } catch (Exception e) {
       ReferenceCountUtil.release(message);
-      manager.removeInvokeFuture(msgId, future);
-      future.completeExceptionally(e);
+      f.completeExceptionally(e);
       logger.error("Exception caught when sending invocation. The address is {}",
           conn, e);
     }
 
-    return new CompleteAbleFuture<>(future);
+    return wrapper;
   }
 }

@@ -16,26 +16,12 @@ public class VirutalExecutors {
 
   private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
   private final LoadingCache<Identity, VirtualExecutor> temporalExecutor;
-  private final LoadingCache<Identity, VirtualExecutor> executors;
 
   public VirutalExecutors() {
     temporalExecutor = Caffeine
         .newBuilder()
         .expireAfterAccess(Duration.ofMinutes(1))
         .build(VirtualExecutor::new);
-
-    executors = Caffeine
-        .newBuilder()
-        .build(VirtualExecutor::new);
-  }
-
-  /**
-   * 使用默认的{@link DefaultIdentity#DEFAULT}所属的{@link VirtualExecutor} 来执行任务
-   *
-   * @since 2024/12/8 18:31
-   */
-  public Thread executeOndefault(Runnable command) {
-    return executeOnId(DefaultIdentity.DEFAULT, command);
   }
 
   /**
@@ -44,19 +30,8 @@ public class VirutalExecutors {
    * @param id 指定执行器所属ID
    * @since 2024/12/8 18:31
    */
-  public Thread executeOnId(Identity id, Runnable command) {
+  public Thread executeWith(Identity id, Runnable command) {
     return temporalExecutor.get(id).exec(command);
-  }
-
-  /**
-   * 使用默认的{@link DefaultIdentity#DEFAULT}所属的{@link VirtualExecutor} 来执行定时任务
-   *
-   * @since 2024/12/8 18:31
-   */
-  public ScheduledFuture<?> scheduleOndefault(Runnable command, long delay, TimeUnit unit) {
-    return scheduledExecutorService.schedule(() -> {
-      executeOnId(DefaultIdentity.DEFAULT, command);
-    }, delay, unit);
   }
 
   /**
@@ -69,9 +44,23 @@ public class VirutalExecutors {
     Identity id = Objects.requireNonNull(executor,
         "当前环境缺少VirtualExecutor。请求修复或使用scheduleOndefault来执行").getIdentity();
     return scheduledExecutorService.schedule(() -> {
-      executeOnId(id, command);
+      executeWith(id, command);
     }, delay, unit);
   }
+
+  /**
+   * 使用当前{@link VirtualExecutor#current()}来执行定时任务，如果不在{@link VirtualExecutor}环境中则报错
+   *
+   * @since 2024/12/8 18:31
+   */
+  public ScheduledFuture<?> schedule(Identity identity, Runnable command, long delay,
+      TimeUnit unit) {
+    Identity id = Objects.requireNonNull(identity, "identity不能为空");
+    return scheduledExecutorService.schedule(() -> {
+      executeWith(id, command);
+    }, delay, unit);
+  }
+
 
   public VirtualExecutor getExecutor(Identity id) {
     return temporalExecutor.get(id);
