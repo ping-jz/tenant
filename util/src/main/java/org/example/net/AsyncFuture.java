@@ -23,20 +23,23 @@ import org.example.util.Identity;
  */
 public class AsyncFuture<T> {
 
-  private static final ID DEFAULT = ID.AsyncFuture;
-
   private final CompletableFuture<T> f;
-  private final Identity identity;
+  private final Executor executor;
   private Future<?> timeOutFuture;
 
   public AsyncFuture(CompletableFuture<T> f) {
     this.f = f;
     VirtualExecutor virutalExecutor = VirtualExecutor.current();
+    Identity identity;
     if (virutalExecutor == null) {
-      identity = DEFAULT;
+      identity = ID.AsyncFuture;
     } else {
       identity = virutalExecutor.getIdentity();
     }
+
+    executor = r -> {
+      VirutalExecutors.commonPool().executeWith(identity, r);
+    };
   }
 
   public static <U> AsyncFuture<U> of(CompletableFuture<U> f) {
@@ -53,9 +56,7 @@ public class AsyncFuture<T> {
    */
   public AsyncFuture<T> async(
       BiConsumer<? super T, ? super Throwable> consumer) {
-    f.whenCompleteAsync(consumer, r -> {
-      VirutalExecutors.commonPool().executeWith(identity, r);
-    });
+    f.whenCompleteAsync(consumer, executor);
     return this;
   }
 
@@ -65,10 +66,7 @@ public class AsyncFuture<T> {
   public AsyncFuture<T> async(
       BiConsumer<? super T, ? super Throwable> consumer, VirtualExecutor executor) {
     Objects.requireNonNull(executor, "executor不能为空");
-    Identity identity = executor.getIdentity();
-    f.whenCompleteAsync(consumer, r -> {
-      VirutalExecutors.commonPool().executeWith(identity, r);
-    });
+    f.whenCompleteAsync(consumer, executor);
     return this;
   }
 
@@ -119,7 +117,7 @@ public class AsyncFuture<T> {
     return timeOutFuture;
   }
 
-  org.example.net.AsyncFuture<T> timeOutFuture(Future<?> future) {
+  AsyncFuture<T> timeOutFuture(Future<?> future) {
     if (timeOutFuture != null) {
       timeOutFuture.cancel(false);
     }

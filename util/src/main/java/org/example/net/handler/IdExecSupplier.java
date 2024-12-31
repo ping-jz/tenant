@@ -10,7 +10,7 @@ import org.example.util.Identity;
  * @author zhongjianping
  * @since 2024/12/4 15:51
  */
-public interface IdExecSupplier<T extends Identity> extends FirstArgExecSupplier<T> {
+public interface IdExecSupplier<T extends Identity> extends ArgExecSupplier<T> {
 
   @Override
   default Executor get(T t) {

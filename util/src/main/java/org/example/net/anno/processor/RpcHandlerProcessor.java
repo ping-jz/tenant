@@ -3,6 +3,7 @@ package org.example.net.anno.processor;
 import static org.example.net.Util.BYTEBUF_UTIL;
 import static org.example.net.Util.BYTE_BUF;
 import static org.example.net.Util.CONNECTION_CLASS_NAME;
+import static org.example.net.Util.FACADE_VAR_NAME;
 import static org.example.net.Util.MESSAGE_CLASS_NAME;
 import static org.example.net.Util.MSG_ID_VAR_NAME;
 import static org.example.net.Util.SERIALIZER_VAR_NAME;
@@ -13,7 +14,6 @@ import com.palantir.javapoet.FieldSpec;
 import com.palantir.javapoet.JavaFile;
 import com.palantir.javapoet.MethodSpec;
 import com.palantir.javapoet.ParameterSpec;
-import com.palantir.javapoet.ParameterizedTypeName;
 import com.palantir.javapoet.TypeName;
 import com.palantir.javapoet.TypeSpec;
 import io.netty.util.ReferenceCountUtil;
@@ -21,13 +21,16 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -43,8 +46,9 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
+import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
-import org.apache.commons.lang3.tuple.Pair;
+import javax.tools.StandardLocation;
 import org.example.net.Util;
 
 /**
@@ -59,14 +63,11 @@ import org.example.net.Util;
 @AutoService(Processor.class)
 public class RpcHandlerProcessor extends AbstractProcessor {
 
-  private static final String FACADE_VAR_NAME = "f";
-
   private static final String CONNECTION_VAR_NAME = "c";
   private static final String MESSAGE_VAR_NAME = "m";
   private static final String BUF_VAR_NAME = "b";
   private static final String PROTOS_VAR_NAME = "protos";
   private static final String RUNNABLE_VAR_NAME = "r";
-  private static final String PARAM_PREFIX = "a_";
 
   private static final ParameterSpec CONNECTION_PARAM_SPEC = ParameterSpec.builder(
       CONNECTION_CLASS_NAME,
@@ -74,6 +75,14 @@ public class RpcHandlerProcessor extends AbstractProcessor {
   private static final ParameterSpec MESSAGE_PARAM_SPEC = ParameterSpec.builder(
       MESSAGE_CLASS_NAME,
       MESSAGE_VAR_NAME).build();
+
+  private Set<String> set = Collections.emptySet();
+
+  @Override
+  public synchronized void init(ProcessingEnvironment processingEnv) {
+    super.init(processingEnv);
+    set = new ConcurrentSkipListSet<>();
+  }
 
 
   @Override
@@ -102,6 +111,8 @@ public class RpcHandlerProcessor extends AbstractProcessor {
           continue;
         }
 
+        set.add(facade.toString());
+
         try {
           buildHandler(facade, methodElements);
           //generateCallBackHandler(facade, methodElements);
@@ -117,6 +128,23 @@ public class RpcHandlerProcessor extends AbstractProcessor {
                   ),
                   facade);
         }
+      }
+    }
+
+    if (roundEnv.processingOver()) {
+      try {
+        FileObject fileObject = processingEnv.getFiler()
+            .createResource(StandardLocation.CLASS_OUTPUT, "",
+                "META-INF/services/testssss");
+
+        try (PrintWriter writer = new PrintWriter(fileObject.openWriter())) {
+          for (String s : set) {
+            writer.println(s);
+          }
+          writer.println(Instant.now().toString());
+        }
+      } catch (IOException e) {
+        throw new RuntimeException(e);
       }
     }
 
@@ -164,66 +192,9 @@ public class RpcHandlerProcessor extends AbstractProcessor {
       List<ExecutableElement> elements) {
     TypeSpecInfo info = new TypeSpecInfo(typeElement, builder, elements);
 
-    buildExecuotSupplerCode(info);
+    ExecutorSupplierUtil.buildExecuotSupplerCode(processingEnv, info);
 
     return info;
-  }
-
-  private void buildExecuotSupplerCode(TypeSpecInfo info) {
-    List<Pair<TypeMirror, TypeName>> supplierInterfaces = ExecutorSupplierUtil.executorSupplierInters(
-        processingEnv, info);
-    switch (supplierInterfaces.size()) {
-      case 1 -> {
-        Pair<TypeMirror, TypeName> pair = supplierInterfaces.getFirst();
-        TypeName typeName = pair.getRight();
-        TypeName rawType = typeName;
-        if (rawType instanceof ParameterizedTypeName t) {
-          rawType = t.rawType();
-        }
-        if (typeName.equals(Util.RPC_EXECUTOR_SUPPLIER_CLASS_NAME)) {
-          info.executor = CodeBlock.builder()
-              .add("$L.get($L, $L)",
-                  FACADE_VAR_NAME,
-                  CONNECTION_VAR_NAME,
-                  MESSAGE_VAR_NAME
-              )
-              .build();
-        } else if (rawType.equals(Util.EXECUTOR_SUPPLIER_CLASS_NAME)) {
-          info.executor = CodeBlock.builder()
-              .add("$L.get()",
-                  FACADE_VAR_NAME
-              )
-              .build();
-        } else if (rawType.equals(Util.FIRST_ARG_EXECUTOR_SUPPLIER_CLASS_NAME)) {
-          ExecutorSupplierUtil.firstArgExecutorSupplerCheck(processingEnv, info,
-              TypeName.get(pair.getLeft()));
-          info.executor = CodeBlock.builder()
-              .add("$L.get($L)",
-                  FACADE_VAR_NAME,
-                  PARAM_PREFIX + 0
-              )
-              .build();
-        } else if (typeName.equals(Util.RAW_EXECUTOR_SUPPLIER_CLASS_NAME)) {
-          info.executor = null;
-        } else {
-          processingEnv.getMessager()
-              .printError("不支持的ExecutorSuppler接口：%s, 请联系作者".formatted(typeName),
-                  info.typeElement);
-        }
-      }
-      case 0 -> processingEnv.getMessager().printError(
-          "缺少ExecutorSuppler接口，请选择实现其中之一：%s, %s"
-              .formatted(Util.EXECUTOR_SUPPLIER_CLASS_NAME, Util.RPC_EXECUTOR_SUPPLIER_CLASS_NAME),
-          info.typeElement);
-      default -> processingEnv.getMessager().printError(
-          "重复ExecutorSuppler接口，请选择实现其中之一保留：%s"
-              .formatted(supplierInterfaces
-                  .stream()
-                  .map(Pair::getLeft)
-                  .map(TypeMirror::toString)
-                  .collect(Collectors.joining(", "))),
-          info.typeElement);
-    }
   }
 
   void buildtMethod(TypeSpecInfo info) {
@@ -276,10 +247,8 @@ public class RpcHandlerProcessor extends AbstractProcessor {
       }
 
       List<? extends VariableElement> params = element.getParameters();
-      int idx = 0;
       for (VariableElement p : params) {
-        final String pname = PARAM_PREFIX + idx;
-        idx += 1;
+        final String pname = p.getSimpleName().toString();
         TypeMirror ptype = p.asType();
         switch (ptype.getKind()) {
           case BOOLEAN ->
@@ -324,7 +293,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
             .beginControlFlow("")
             .addCode(invokeCodeBlock.build())
             .endControlFlow("")
-            .addStatement("$L.execute($L)", info.executor, RUNNABLE_VAR_NAME);
+            .addStatement("$L.execute($L)", info.executor.apply(element), RUNNABLE_VAR_NAME);
       } else {
         methodBuilder.addCode(invokeCodeBlock.build());
       }
@@ -342,8 +311,8 @@ public class RpcHandlerProcessor extends AbstractProcessor {
    * @since 2024/12/4 11:01
    */
   private static CodeBlock.Builder buildInvokeCodeBlock(ExecutableElement executableElement) {
-    String paramStr = IntStream.range(0, executableElement.getParameters().size())
-        .mapToObj(idx -> PARAM_PREFIX + idx)
+    String paramStr = executableElement.getParameters().stream()
+        .map(p -> p.getSimpleName().toString())
         .collect(Collectors.joining(", "));
     Name methodName = executableElement.getSimpleName();
 

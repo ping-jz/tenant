@@ -2,6 +2,7 @@ package org.example.exec;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.RemovalCause;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -24,8 +25,14 @@ public class VirutalExecutors {
     temporalExecutor = Caffeine
         .newBuilder()
         .expireAfterAccess(Duration.ofMinutes(1))
+        .evictionListener((Identity k, VirtualExecutor v, RemovalCause c) -> {
+          if (!v.isEmpty()) {
+            //TODO 这里处理下，剩下的任务要切换到新的executor去
+            //TODO 如果当前的executor发生了死锁或者执行了耗时的操作
+          }
+        })
         .build(VirtualExecutor::new);
-    defaultVirFactory = Thread.ofVirtual().name("VIR-", 1).factory();
+    defaultVirFactory = Thread.ofVirtual().name("VIRTUALS").factory();
   }
 
   /**

@@ -4,6 +4,7 @@ import com.palantir.javapoet.CodeBlock;
 import com.palantir.javapoet.TypeSpec;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
@@ -22,7 +23,7 @@ class TypeSpecInfo {
   public final List<ExecutableElement> methods;
 
   /** 执行器代码块 */
-  public CodeBlock executor;
+  public Function<ExecutableElement, CodeBlock> executor;
 
   TypeSpecInfo(TypeElement typeElement, TypeSpec.Builder builder,
       List<ExecutableElement> methods) {

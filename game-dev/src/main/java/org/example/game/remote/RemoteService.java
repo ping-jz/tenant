@@ -3,6 +3,7 @@ package org.example.game.remote;
 import static org.example.common.model.ServerInfo.serInfo;
 import static org.example.common.model.WorldId.worldId;
 
+import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import java.net.InetSocketAddress;
@@ -10,7 +11,7 @@ import java.time.Duration;
 import org.example.common.ThreadCommonResource;
 import org.example.common.model.ServerInfo;
 import org.example.common.net.generated.invoker.RegisterFacadeInvoker;
-import org.example.common.util.DefaultClientBootStrap;
+import org.example.common.util.NettyEventLoopUtil;
 import org.example.exec.VirutalExecutors;
 import org.example.game.GameConfig;
 import org.example.model.AnonymousId;
@@ -47,10 +48,14 @@ public class RemoteService {
   }
 
   public void connect(ServerInfo server) {
-    new DefaultClientBootStrap(threadCommonResource, channelInitializer)
-        .connect(server)
+    Bootstrap b = new Bootstrap();
+    b
+        .group(threadCommonResource.getWorker())
+        .channel(NettyEventLoopUtil.getClientSocketChannelClass())
+        .handler(channelInitializer)
+        .connect(server.addr())
         .addListener((ChannelFuture f) -> {
-          connect0(server, f);
+          VirutalExecutors.commonPool().execute(() -> connect0(server, f));
         });
   }
 

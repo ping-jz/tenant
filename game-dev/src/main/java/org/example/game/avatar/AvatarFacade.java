@@ -5,7 +5,7 @@ import java.util.Objects;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
 import org.example.common.net.generated.invoker.AvatarFacadeInvoker;
-import org.example.common.supplier.AvatarExecSupplier;
+import org.example.common.supplier.AvatarConnectionExecutor;
 import org.example.net.Connection;
 import org.example.net.anno.Req;
 import org.example.net.anno.Rpc;
@@ -17,7 +17,7 @@ import org.example.net.anno.Rpc;
  * @since 2021年09月27日 15:54:54
  **/
 @Rpc
-public class AvatarFacade implements AvatarExecSupplier {
+public class AvatarFacade implements AvatarConnectionExecutor {
 
   private final AvatarFacadeInvoker facadeInvoker;
 
@@ -38,12 +38,12 @@ public class AvatarFacade implements AvatarExecSupplier {
   }
 
   @Req
-  public void nothing() {
+  public void nothing(Connection ignore) {
   }
 
 
   @Req
-  public int callback(boolean boolean1, byte[] byte1, short short1,
+  public int callback(Connection ignore, boolean boolean1, byte[] byte1, short short1,
       char char1, int int1, long long1,
       float float1, double double1, ReqMove reqMove, ResMove resMove) {
     return Objects.hash(boolean1, Arrays.hashCode(byte1), short1, char1, int1, long1, float1,

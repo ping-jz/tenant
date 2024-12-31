@@ -6,7 +6,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.ReentrantLock;
 import org.example.util.Identity;
-import org.jctools.queues.MpscChunkedArrayQueue;
+import org.jctools.queues.MpscUnboundedArrayQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,11 +26,13 @@ public class VirtualExecutor implements Executor {
 
   public VirtualExecutor(Identity identity) {
     this.identity = identity;
-    queue = new MpscChunkedArrayQueue<>(128);
+    queue = new MpscUnboundedArrayQueue<>(128);
     lock = new ReentrantLock();
-    factory = Thread.ofVirtual().name(identity.toString()).uncaughtExceptionHandler((t, e) -> {
-      logger.error("VirtualExecutor uncaughtException", e);
-    }).factory();
+    factory = Thread.ofVirtual().name(identity.toString())
+        .uncaughtExceptionHandler((t, e) -> {
+          logger.error("VirtualExecutor uncaughtException", e);
+        })
+        .factory();
   }
 
   public Identity getIdentity() {
@@ -67,6 +69,10 @@ public class VirtualExecutor implements Executor {
     return thread;
   }
 
+  public boolean isEmpty() {
+    return queue.isEmpty();
+  }
+
   public static VirtualExecutor current() {
     Identity identity = CURRENT.get();
     if (identity == null) {
@@ -75,6 +81,5 @@ public class VirtualExecutor implements Executor {
 
     return VirutalExecutors.commonPool().getExecutor(identity);
   }
-
 
 }

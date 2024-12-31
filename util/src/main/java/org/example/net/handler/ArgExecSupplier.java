@@ -9,7 +9,7 @@ import java.util.concurrent.Executor;
  * @since 2024/12/4 15:51
  */
 @FunctionalInterface
-public interface FirstArgExecSupplier<T> {
+public interface ArgExecSupplier<T> {
 
   Executor get(T t);
 }

@@ -1,5 +1,7 @@
 package org.example.net.anno.processor;
 
+import static org.example.net.Util.FACADE_VAR_NAME;
+
 import com.google.auto.service.AutoService;
 import com.palantir.javapoet.ClassName;
 import com.palantir.javapoet.CodeBlock;
@@ -16,7 +18,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
@@ -32,7 +33,6 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
-import org.apache.commons.lang3.tuple.Pair;
 import org.example.net.Util;
 
 /**
@@ -50,9 +50,7 @@ public class LocalRpcProcessor extends AbstractProcessor {
 
   private static final String INVOKER_SUBFIX = "Invoker";
   private static final String LOCAL_SUBFIX = "Local";
-  private static final String FACADE_VAR_NAME = "f";
   private static final String RUNNABLE_VAR_NAME = "r";
-  private static final String PARAM_PREFIX = "a_";
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -112,7 +110,7 @@ public class LocalRpcProcessor extends AbstractProcessor {
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
 
     TypeSpecInfo info = new TypeSpecInfo(typeElement, typeBuilder, methods);
-    buildExecuotSupplerCode(info);
+    ExecutorSupplierUtil.buildExecuotSupplerCode(processingEnv, info);
     buildConstructor(info);
 
     for (ExecutableElement method : methods) {
@@ -127,15 +125,10 @@ public class LocalRpcProcessor extends AbstractProcessor {
           .addModifiers(Modifier.PUBLIC)
           .addJavadoc("{@link $T#$L}", typeElement, methodName);
 
-      int idx = 0;
       for (VariableElement variableElement : method.getParameters()) {
-        String pname = PARAM_PREFIX + idx;
         TypeName paramTypeName = TypeName.get(variableElement.asType());
         methodBuilder
-            .addParameter(paramTypeName, variableElement.getSimpleName().toString())
-            .addStatement("$T $L = $L", paramTypeName, pname, variableElement.getSimpleName())
-        ;
-        idx += 1;
+            .addParameter(paramTypeName, variableElement.getSimpleName().toString());
       }
 
       if (info.executor == null) {
@@ -170,7 +163,7 @@ public class LocalRpcProcessor extends AbstractProcessor {
               .endControlFlow("")
               .addStatement("return $T.supplyAsync($L, $L)",
                   Util.NET_COMPLETE_ABLE_FUTURE_CLASS_NAME,
-                  RUNNABLE_VAR_NAME, info.executor)
+                  RUNNABLE_VAR_NAME, info.executor.apply(method))
           ;
 
         } else {
@@ -179,7 +172,7 @@ public class LocalRpcProcessor extends AbstractProcessor {
               .beginControlFlow("")
               .addStatement(buildInvokeCodeBlock(method).build())
               .endControlFlow("")
-              .addStatement("$L.execute($L)", info.executor, RUNNABLE_VAR_NAME);
+              .addStatement("$L.execute($L)", info.executor.apply(method), RUNNABLE_VAR_NAME);
         }
       }
 
@@ -213,8 +206,8 @@ public class LocalRpcProcessor extends AbstractProcessor {
    * @since 2024/12/4 11:01
    */
   private static CodeBlock.Builder buildInvokeCodeBlock(ExecutableElement method) {
-    String paramStr = IntStream.range(0, method.getParameters().size())
-        .mapToObj(idx -> PARAM_PREFIX + idx)
+    String paramStr = method.getParameters().stream()
+        .map(p -> p.getSimpleName().toString())
         .collect(Collectors.joining(", "));
 
     CodeBlock.Builder codeBlock = CodeBlock.builder();
@@ -222,54 +215,4 @@ public class LocalRpcProcessor extends AbstractProcessor {
 
     return codeBlock;
   }
-
-  private void buildExecuotSupplerCode(TypeSpecInfo info) {
-    List<Pair<TypeMirror, TypeName>> supplierInterfaces = ExecutorSupplierUtil.executorSupplierInters(
-        processingEnv, info);
-    switch (supplierInterfaces.size()) {
-      case 1 -> {
-        Pair<TypeMirror, TypeName> pair = supplierInterfaces.getFirst();
-        TypeName typeName = pair.getRight();
-        TypeName rawType = typeName;
-        if (rawType instanceof ParameterizedTypeName t) {
-          rawType = t.rawType();
-        }
-        if (rawType.equals(Util.EXECUTOR_SUPPLIER_CLASS_NAME)) {
-          info.executor = CodeBlock.builder()
-              .add("$L.get()",
-                  FACADE_VAR_NAME)
-              .build();
-        } else if (rawType.equals(Util.FIRST_ARG_EXECUTOR_SUPPLIER_CLASS_NAME)) {
-          ExecutorSupplierUtil.firstArgExecutorSupplerCheck(processingEnv, info,
-              TypeName.get(pair.getLeft()));
-          info.executor = CodeBlock.builder()
-              .add("$L.get($L)",
-                  FACADE_VAR_NAME,
-                  PARAM_PREFIX + 0)
-              .build();
-        } else if (typeName.equals(Util.RAW_EXECUTOR_SUPPLIER_CLASS_NAME)) {
-          info.executor = null;
-        } else {
-          processingEnv.getMessager()
-              .printError("【%s】不支持ExecutorSuppler接口：【%s】, 需要删除".formatted(info.typeElement,
-                      typeName),
-                  info.typeElement);
-        }
-      }
-      case 0 -> processingEnv.getMessager().printError(
-          "缺少ExecutorSuppler接口，请选择实现其中之一：%s, %s"
-              .formatted(Util.EXECUTOR_SUPPLIER_CLASS_NAME, Util.RPC_EXECUTOR_SUPPLIER_CLASS_NAME),
-          info.typeElement);
-      default -> processingEnv.getMessager().printError(
-          "重复ExecutorSuppler接口，请选择实现其中之一保留：%s"
-              .formatted(supplierInterfaces
-                  .stream()
-                  .map(Pair::getLeft)
-                  .map(TypeMirror::toString)
-                  .collect(Collectors.joining(", "))),
-          info.typeElement);
-    }
-  }
-
-
 }
