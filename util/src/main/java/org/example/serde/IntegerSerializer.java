@@ -12,12 +12,12 @@ import io.netty.buffer.ByteBuf;
 public class IntegerSerializer implements Serializer<Integer> {
 
   @Override
-  public Integer readObject(ByteBuf buf) {
+  public Integer readObject(CommonSerializer serializer, ByteBuf buf) {
     return NettyByteBufUtil.readInt32(buf);
   }
 
   @Override
-  public void writeObject(ByteBuf buf, Integer object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, Integer object) {
     NettyByteBufUtil.writeInt32(buf, object);
   }
 }

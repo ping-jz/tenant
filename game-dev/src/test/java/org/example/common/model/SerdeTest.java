@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import org.example.serde.CollectionSerializer;
 import org.example.serde.CommonSerializer;
-import org.example.serde.processor.SerdeProcessor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,9 +22,9 @@ public class SerdeTest {
   @BeforeAll
   public static void prepare() {
     codeSerde = new CommonSerializer();
-    codeSerde.registerSerializer(ReqMove.class, new ReqMoveSerde(codeSerde));
-    codeSerde.registerSerializer(ResMove.class, new ResMoveSerde(codeSerde));
-    codeSerde.registerSerializer(List.class, new CollectionSerializer(codeSerde));
+    codeSerde.registerSerializer(ReqMove.class, new ReqMoveSerde());
+    codeSerde.registerSerializer(ResMove.class, new ResMoveSerde());
+    codeSerde.registerSerializer(List.class, new CollectionSerializer());
   }
 
   private ReqMove req;
@@ -52,7 +51,7 @@ public class SerdeTest {
     ByteBuf byteBuf = Unpooled.buffer();
 
     codeSerde.writeObject(byteBuf, res);
-    ResMove move = codeSerde.read(byteBuf);
+    ResMove move = codeSerde.readObject(byteBuf);
 
     Assertions.assertEquals(res, move);
   }
@@ -62,7 +61,7 @@ public class SerdeTest {
     ByteBuf byteBuf = Unpooled.buffer();
 
     codeSerde.writeObject(byteBuf, req);
-    ReqMove move = codeSerde.read(byteBuf);
+    ReqMove move = codeSerde.readObject(byteBuf);
 
     Assertions.assertEquals(req, move);
   }
@@ -73,8 +72,8 @@ public class SerdeTest {
 
     codeSerde.writeObject(byteBuf, req);
     codeSerde.writeObject(byteBuf, res);
-    ReqMove reqMove = codeSerde.read(byteBuf);
-    ResMove resMove = codeSerde.read(byteBuf);
+    ReqMove reqMove = codeSerde.readObject(byteBuf);
+    ResMove resMove = codeSerde.readObject(byteBuf);
 
     Assertions.assertEquals(req, reqMove);
     Assertions.assertEquals(res, resMove);

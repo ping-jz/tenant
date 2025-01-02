@@ -12,12 +12,12 @@ import io.netty.buffer.ByteBuf;
 public class LongSerializer implements Serializer<Long> {
 
   @Override
-  public Long readObject(ByteBuf buf) {
+  public Long readObject(CommonSerializer serializer, ByteBuf buf) {
     return NettyByteBufUtil.readInt64(buf);
   }
 
   @Override
-  public void writeObject(ByteBuf buf, Long object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, Long object) {
     NettyByteBufUtil.writeInt64(buf, object);
   }
 }

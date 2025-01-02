@@ -22,6 +22,7 @@ public class ObjectSerializerTest {
   @BeforeEach
   public void before() {
     serializer = new CommonSerializer();
+    new DefaultSerializersRegister().register(serializer);
     buf = Unpooled.buffer();
   }
 
@@ -59,7 +60,7 @@ public class ObjectSerializerTest {
     serializer.registerObject(PrimitiveObj.class);
     serializer.writeObject(buf, obj);
 
-    PrimitiveObj res = serializer.read(buf);
+    PrimitiveObj res = serializer.readObject(buf);
     assertEquals(obj, res);
   }
 
@@ -73,7 +74,7 @@ public class ObjectSerializerTest {
     serializer.registerObject(WrapperObj.class);
     serializer.writeObject(buf, obj);
 
-    WrapperObj res = serializer.read(buf);
+    WrapperObj res = serializer.readObject(buf);
     assertEquals(obj, res);
   }
 
@@ -98,7 +99,7 @@ public class ObjectSerializerTest {
 
     serializer.writeObject(buf, composeObj);
 
-    ComposeObj res = serializer.read(buf);
+    ComposeObj res = serializer.readObject(buf);
     assertEquals(composeObj, res);
   }
 
@@ -124,7 +125,7 @@ public class ObjectSerializerTest {
 
     serializer.writeObject(buf, child);
 
-    Child res = serializer.read(buf);
+    Child res = serializer.readObject(buf);
     assertEquals(child, res);
     assertNotEquals(child.ignore, res.ignore);
   }

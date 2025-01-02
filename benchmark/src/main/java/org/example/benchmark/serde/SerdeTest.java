@@ -2,6 +2,7 @@ package org.example.benchmark.serde;
 
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,14 +38,14 @@ public class SerdeTest {
     object = new CodecObject();
 
     codeSerde = new CommonSerializer();
-    codeSerde.registerSerializer(CodecObject.class, new CodecObjectSerde(codeSerde));
-    codeSerde.registerSerializer(List.class, new CollectionSerializer(codeSerde));
-    codeSerde.registerSerializer(ArrayList.class, new CollectionSerializer(codeSerde));
+    codeSerde.registerSerializer(CodecObject.class, new CodecObjectSerde());
+    codeSerde.registerSerializer(List.class, new CollectionSerializer());
+    codeSerde.registerSerializer(ArrayList.class, new CollectionSerializer());
 
     refSerde = new CommonSerializer();
     refSerde.registerObject(CodecObject.class);
-    refSerde.registerSerializer(List.class, new CollectionSerializer(refSerde));
-    refSerde.registerSerializer(ArrayList.class, new CollectionSerializer(refSerde));
+    refSerde.registerSerializer(List.class, new CollectionSerializer());
+    refSerde.registerSerializer(ArrayList.class, new CollectionSerializer());
   }
 
   @Setup(Level.Iteration)
@@ -58,15 +59,16 @@ public class SerdeTest {
   @BenchmarkMode({Mode.AverageTime, Mode.Throughput})
   @OutputTimeUnit(TimeUnit.SECONDS)
   public void codecSerdeTest(Blackhole bh) {
-    ByteBuf buf2 = codeSerde.writeObject(object);
-    CodecObject object2 = codeSerde.read(buf2);
+    ByteBuf buf = PooledByteBufAllocator.DEFAULT.directBuffer();
+    codeSerde.writeObject(buf, object);
+    CodecObject object2 = codeSerde.readObject(buf);
 
     if (!object2.equals(object)) {
       throw new RuntimeException();
     }
     bh.consume(object2);
 
-    ReferenceCountUtil.release(buf2);
+    ReferenceCountUtil.release(buf);
   }
 
   @Benchmark
@@ -74,15 +76,16 @@ public class SerdeTest {
   @BenchmarkMode({Mode.AverageTime, Mode.Throughput})
   @OutputTimeUnit(TimeUnit.SECONDS)
   public void codecRefTest(Blackhole bh) {
-    ByteBuf buf2 = refSerde.writeObject(object);
-    CodecObject object2 = refSerde.read(buf2);
+    ByteBuf buf = PooledByteBufAllocator.DEFAULT.directBuffer();
+    refSerde.writeObject(buf, object);
+    CodecObject object2 = refSerde.readObject(buf);
 
     if (!object2.equals(object)) {
       throw new RuntimeException();
     }
     bh.consume(object2);
 
-    ReferenceCountUtil.release(buf2);
+    ReferenceCountUtil.release(buf);
   }
 
   public static void main(String[] args) throws RunnerException {

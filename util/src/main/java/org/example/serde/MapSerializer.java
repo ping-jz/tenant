@@ -4,9 +4,8 @@ import io.netty.buffer.ByteBuf;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.function.IntFunction;
-import java.util.function.IntSupplier;
-import java.util.function.Supplier;
 import org.example.serde.CommonSerializer.SerializerPair;
 
 /**
@@ -28,25 +27,21 @@ import org.example.serde.CommonSerializer.SerializerPair;
 public class MapSerializer<K, V> implements Serializer<Map<K, V>> {
 
   /**
-   * 序列化实现集合
-   */
-  private CommonSerializer serializer;
-  /**
    * Map工厂
    */
   private IntFunction<Map<K, V>> supplier;
 
-  public MapSerializer(CommonSerializer serializer) {
-    this(serializer, HashMap::new);
+  public MapSerializer() {
+    this(HashMap::new);
   }
 
-  public MapSerializer(CommonSerializer serializer, IntFunction<Map<K, V>> mapSupplier) {
-    this.serializer = serializer;
+  public MapSerializer(IntFunction<Map<K, V>> mapSupplier) {
     this.supplier = mapSupplier;
   }
 
   @Override
-  public Map<K, V> readObject(ByteBuf buf) {
+  @SuppressWarnings("unchecked")
+  public Map<K, V> readObject(CommonSerializer serializer, ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
     if (length < 0) {
       return null;
@@ -54,41 +49,42 @@ public class MapSerializer<K, V> implements Serializer<Map<K, V>> {
 
     int keyTypeId = NettyByteBufUtil.readInt32(buf);
     int valueTypeId = NettyByteBufUtil.readInt32(buf);
-    Serializer<Object> keySer = serializer;
-    Serializer<Object> valSer = serializer;
+    if (keyTypeId != 0 && valueTypeId != 0) {
+      Serializer<Object> keySer = null;
+      Serializer<Object> valSer = null;
 
-    if (keyTypeId != 0) {
-      Class<?> clz = serializer.getClazz(keyTypeId);
-      if (clz != null) {
-        SerializerPair pair = serializer.getSerializerPair(clz);
-        if (pair != null) {
-          keySer = (Serializer<Object>) pair.serializer();
-        }
+      Class<?> kClz = Objects.requireNonNull(serializer.getClazz(keyTypeId),
+          () -> "Map解析，未注册的Key类型ID:%s".formatted(keyTypeId));
+      SerializerPair kPair = Objects.requireNonNull(serializer.getSerializerPair(kClz),
+          () -> "Map解析，未注册的Key类型:%s".formatted(kClz));
+      keySer = (Serializer<Object>) kPair.serializer();
+
+      Class<?> vClz = Objects.requireNonNull(serializer.getClazz(valueTypeId),
+          () -> "Map解析，未注册的Value类型ID:%s".formatted(valueTypeId));
+      SerializerPair vPair = Objects.requireNonNull(serializer.getSerializerPair(vClz),
+          () -> "Map解析，未注册的Value类型:%s".formatted(vClz));
+      valSer = (Serializer<Object>) vPair.serializer();
+
+      Map<K, V> map = supplier.apply(length);
+      for (int i = 0; i < length; i++) {
+        K key = (K) keySer.readObject(serializer, buf);
+        V val = (V) valSer.readObject(serializer, buf);
+        map.put(key, val);
       }
-    }
-
-    if (valueTypeId != 0) {
-      Class<?> clz = serializer.getClazz(valueTypeId);
-      if (clz != null) {
-        SerializerPair pair = serializer.getSerializerPair(clz);
-        if (pair != null) {
-          valSer = (Serializer<Object>) pair.serializer();
-        }
+      return map;
+    } else {
+      Map<K, V> map = supplier.apply(length);
+      for (int i = 0; i < length; i++) {
+        K key = serializer.readObject(buf);
+        V val = serializer.readObject(buf);
+        map.put(key, val);
       }
+      return map;
     }
-
-
-    Map<K, V> map = supplier.apply(length);
-    for (int i = 0; i < length; i++) {
-      K key = (K) keySer.readObject(buf);
-      V val = (V) valSer.readObject(buf);
-      map.put(key, val);
-    }
-    return map;
   }
 
   @Override
-  public void writeObject(ByteBuf buf, Map<K, V> object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, Map<K, V> object) {
     if (object == null) {
       NettyByteBufUtil.writeInt32(buf, -1);
       return;

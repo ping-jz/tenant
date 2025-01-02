@@ -35,7 +35,7 @@ public class CallBackFacade implements Handler {
       return;
     }
     ByteBuf buf = Unpooled.wrappedBuffer(m.packet());
-    futureVar.complete(serializer.read(buf));
+    futureVar.complete(serializer.readObject(buf));
   }
 
   public int id() {

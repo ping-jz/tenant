@@ -33,12 +33,14 @@ public class CollectionSerializerTest {
     serializer = new CommonSerializer();
     buf = Unpooled.buffer();
 
-    CollectionSerializer collectSer = new CollectionSerializer(serializer);
+    new DefaultSerializersRegister().register(serializer);
+    CollectionSerializer collectSer = new CollectionSerializer();
 
     serializer.registerSerializer(Collection.class, collectSer);
     serializer.registerSerializer(List.class, collectSer);
     serializer.registerSerializer(ArrayList.class, collectSer);
-    serializer.registerSerializer(LinkedList.class, new CollectionSerializer(serializer, i -> new LinkedList<>()));
+    serializer.registerSerializer(LinkedList.class,
+        new CollectionSerializer(i -> new LinkedList<>()));
   }
 
   @RepeatedTest(3)
@@ -51,7 +53,7 @@ public class CollectionSerializerTest {
     }
 
     serializer.writeObject(buf, col);
-    List<Integer> res = serializer.read(buf);
+    List<Integer> res = serializer.readObject(buf);
     assertEquals(col, res);
   }
 
@@ -65,7 +67,7 @@ public class CollectionSerializerTest {
     }
 
     serializer.writeObject(buf, col);
-    List<Double> res = serializer.read(buf);
+    List<Double> res = serializer.readObject(buf);
     assertEquals(col, res);
   }
 
@@ -81,7 +83,7 @@ public class CollectionSerializerTest {
     col.set(random.nextInt(size), null);
 
     serializer.writeObject(buf, col);
-    List<String> res = serializer.read(buf);
+    List<String> res = serializer.readObject(buf);
     assertEquals(col, res);
   }
 
@@ -102,7 +104,7 @@ public class CollectionSerializerTest {
     col.set(random.nextInt(size), null);
 
     serializer.writeObject(buf, col);
-    List<List<String>> res = serializer.read(buf);
+    List<List<String>> res = serializer.readObject(buf);
     assertEquals(col, res);
   }
 

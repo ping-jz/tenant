@@ -27,10 +27,6 @@ public class ObjectSerializer implements Serializer<Object> {
    */
   private Class<?> clazz;
   /**
-   * 序列实现集合
-   */
-  private CommonSerializer serializer;
-  /**
    * 默认无参构造
    */
   private MethodHandle constructor;
@@ -39,10 +35,9 @@ public class ObjectSerializer implements Serializer<Object> {
    */
   private FieldInfo[] fields;
 
-  public ObjectSerializer(Class<?> clazz, CommonSerializer serializer) {
+  public ObjectSerializer(Class<?> clazz) {
     this.clazz = clazz;
-    this.serializer = serializer;
-    register(serializer, clazz);
+    register(clazz);
   }
 
   /**
@@ -71,7 +66,7 @@ public class ObjectSerializer implements Serializer<Object> {
    *
    * @since 2021年07月18日 11:09:50
    */
-  public void register(CommonSerializer serializer, Class<?> clazz) {
+  public void register(Class<?> clazz) {
     MethodHandles.Lookup lookup = MethodHandles.lookup();
     try {
       Constructor<?> temp = clazz.getDeclaredConstructor();
@@ -108,7 +103,7 @@ public class ObjectSerializer implements Serializer<Object> {
   }
 
   @Override
-  public Object readObject(ByteBuf buf) {
+  public Object readObject(CommonSerializer serializer, ByteBuf buf) {
     Object o;
     try {
       o = constructor.invoke();
@@ -118,28 +113,26 @@ public class ObjectSerializer implements Serializer<Object> {
 
     for (FieldInfo field : fields) {
       try {
-        Serializer<Object> serializer =
-          this.serializer;
         Object value = serializer.readObject(buf);
         MethodHandle setter = field.setter();
         setter.invoke(o, value);
       } catch (Throwable e) {
-        throw new RuntimeException(String.format("反序列化:%s, 字段:%s 错误", clazz, field.name()), e);
+        throw new RuntimeException(String.format("反序列化:%s, 字段:%s 错误", clazz, field.name()),
+            e);
       }
     }
     return o;
   }
 
   @Override
-  public void writeObject(ByteBuf buf, Object object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, Object object) {
     for (FieldInfo field : fields) {
       try {
         Object value = field.getter().invoke(object);
-        Serializer<Object> serializer =
-            this.serializer;
         serializer.writeObject(buf, value);
       } catch (Throwable e) {
-        throw new RuntimeException(String.format("序列化:%s, 字段:%s 错误", clazz, field.name()), e);
+        throw new RuntimeException(String.format("序列化:%s, 字段:%s 错误", clazz, field.name()),
+            e);
       }
     }
   }

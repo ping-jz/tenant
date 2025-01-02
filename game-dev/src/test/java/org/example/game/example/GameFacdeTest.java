@@ -24,6 +24,7 @@ import org.example.net.codec.MessageCodec;
 import org.example.net.handler.CallBackFacade;
 import org.example.net.handler.DispatcherHandler;
 import org.example.serde.CommonSerializer;
+import org.example.serde.DefaultSerializersRegister;
 import org.example.serde.NettyByteBufUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -40,8 +41,9 @@ public class GameFacdeTest {
   public static void beforeAll() {
     connectionManager = new ConnectionManager();
     commonSerializer = new CommonSerializer();
-    commonSerializer.registerSerializer(ReqMove.class, new ReqMoveSerde(commonSerializer));
-    commonSerializer.registerSerializer(ResMove.class, new ResMoveSerde(commonSerializer));
+    new DefaultSerializersRegister().register(commonSerializer);
+    commonSerializer.registerSerializer(ReqMove.class, new ReqMoveSerde());
+    commonSerializer.registerSerializer(ResMove.class, new ResMoveSerde());
 
     invoker = new ExampleFacadeInvoker(connectionManager, commonSerializer);
 
@@ -96,7 +98,7 @@ public class GameFacdeTest {
       resBuf.skipBytes(Integer.BYTES);
       int protoId = NettyByteBufUtil.readInt32(resBuf);
       Assertions.assertNotEquals(0, protoId);
-      Assertions.assertEquals(str, commonSerializer.read(resBuf));
+      Assertions.assertEquals(str, commonSerializer.readObject(resBuf));
 
       Assertions.assertFalse(resBuf.isReadable());
       Assertions.assertNull(embeddedChannel.readOutbound());

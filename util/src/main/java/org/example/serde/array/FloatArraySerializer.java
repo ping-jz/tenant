@@ -1,9 +1,7 @@
 package org.example.serde.array;
 
 import io.netty.buffer.ByteBuf;
-import java.lang.reflect.Array;
 import org.example.serde.CommonSerializer;
-import org.example.serde.CommonSerializer.SerializerPair;
 import org.example.serde.NettyByteBufUtil;
 import org.example.serde.Serializer;
 
@@ -34,27 +32,24 @@ import org.example.serde.Serializer;
  **/
 public class FloatArraySerializer implements Serializer<float[]> {
 
-  public FloatArraySerializer() {
-  }
-
 
   @Override
-  public float[] readObject(ByteBuf buf) {
+  public float[] readObject(CommonSerializer serializer, ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
-    if (length == -1) {
+    if (length < 0) {
       return null;
-    } else {
-      float[] array = new float[length];
-      for (int i = 0; i < length; i++) {
-        array[i] = buf.readFloat();
-      }
-      return array;
     }
+
+    float[] array = new float[length];
+    for (int i = 0; i < length; i++) {
+      array[i] = buf.readFloat();
+    }
+    return array;
   }
 
 
   @Override
-  public void writeObject(ByteBuf buf, float[] object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, float[] object) {
     final int length = object.length;
     NettyByteBufUtil.writeInt32(buf, length);
     for (float o : object) {

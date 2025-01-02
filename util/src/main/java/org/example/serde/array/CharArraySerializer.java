@@ -32,29 +32,23 @@ import org.example.serde.Serializer;
  **/
 public class CharArraySerializer implements Serializer<char[]> {
 
-
-  public CharArraySerializer() {
-
-  }
-
-
   @Override
-  public char[] readObject(ByteBuf buf) {
+  public char[] readObject(CommonSerializer serializer, ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
-    if (length == -1) {
+    if (length < 0) {
       return null;
-    } else {
+    }
       char[] array = new char[length];
       for (int i = 0; i < length; i++) {
         array[i] = buf.readChar();
       }
       return array;
-    }
+
   }
 
 
   @Override
-  public void writeObject(ByteBuf buf, char[] object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, char[] object) {
     final int length = object.length;
     NettyByteBufUtil.writeInt32(buf, length);
     for (char o : object) {

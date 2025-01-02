@@ -3,6 +3,7 @@ package org.example.serde.array;
 import io.netty.buffer.ByteBuf;
 import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
+import org.example.serde.CommonSerializer;
 import org.example.serde.NettyByteBufUtil;
 import org.example.serde.Serializer;
 
@@ -14,7 +15,7 @@ public class StringArraySerializer implements Serializer<String[]> {
 
 
   @Override
-  public String[] readObject(ByteBuf buf) {
+  public String[] readObject(CommonSerializer serializer, ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
     if (length < 0) {
       return null;
@@ -33,7 +34,7 @@ public class StringArraySerializer implements Serializer<String[]> {
 
 
   @Override
-  public void writeObject(ByteBuf buf, String[] object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, String[] object) {
     if (object == null) {
       NettyByteBufUtil.writeInt32(buf, Integer.MIN_VALUE);
       return;

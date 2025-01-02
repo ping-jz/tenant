@@ -32,12 +32,14 @@ public class SetSerializerTest {
     serializer = new CommonSerializer();
     buf = Unpooled.buffer();
 
-    CollectionSerializer collectSer = new CollectionSerializer(serializer, HashSet::new);
-
+    new DefaultSerializersRegister().register(serializer);
+    CollectionSerializer collectSer = new CollectionSerializer(HashSet::new);
     serializer.registerSerializer(Set.class, collectSer);
     serializer.registerSerializer(HashSet.class, collectSer);
-    serializer.registerSerializer(LinkedHashSet.class, new CollectionSerializer(serializer, LinkedHashSet::new));
-    serializer.registerSerializer(TreeSet.class, new CollectionSerializer(serializer, ignore -> new TreeSet<>()));
+    serializer.registerSerializer(LinkedHashSet.class,
+        new CollectionSerializer(LinkedHashSet::new));
+    serializer.registerSerializer(TreeSet.class,
+        new CollectionSerializer(ignore -> new TreeSet<>()));
   }
 
   @Test
@@ -50,7 +52,7 @@ public class SetSerializerTest {
     }
 
     serializer.writeObject(buf, col);
-    Set<Integer> res = serializer.read(buf);
+    Set<Integer> res = serializer.readObject(buf);
     assertEquals(col, res);
   }
 
@@ -64,7 +66,7 @@ public class SetSerializerTest {
     }
 
     serializer.writeObject(buf, col);
-    Set<Double> res = serializer.read(buf);
+    Set<Double> res = serializer.readObject(buf);
     assertEquals(col, res);
   }
 
@@ -78,7 +80,7 @@ public class SetSerializerTest {
     }
 
     serializer.writeObject(buf, col);
-    Set<String> res = serializer.read(buf);
+    Set<String> res = serializer.readObject(buf);
     assertEquals(col, res);
   }
 
@@ -97,7 +99,7 @@ public class SetSerializerTest {
     }
 
     serializer.writeObject(buf, col);
-    Set<Set<String>> res = serializer.read(buf);
+    Set<Set<String>> res = serializer.readObject(buf);
     assertEquals(col, res);
   }
 

@@ -14,9 +14,8 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import javax.lang.model.element.Modifier;
 import org.example.serde.CommonSerializer;
+import org.example.serde.DefaultSerializersRegister;
 import org.example.serde.Serde;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -27,8 +26,6 @@ import org.springframework.context.annotation.Configuration;
  * @since 2024/8/8 20:39
  */
 public final class SerdeConfigGenerator {
-
-  private Logger logger = LoggerFactory.getLogger(SerdeConfigGenerator.class);
 
 
   private SerdeConfigGenerator() {
@@ -76,7 +73,9 @@ public final class SerdeConfigGenerator {
         .addModifiers(Modifier.PUBLIC)
         .addAnnotation(Bean.class)
         .returns(CommonSerializer.class);
-    methodBuilder.addStatement("$T serializer = new $T();", CommonSerializer.class, CommonSerializer.class);
+    methodBuilder.addStatement("$T serializer = new $T()", CommonSerializer.class,
+        CommonSerializer.class);
+    methodBuilder.addStatement("new $T().register(serializer)", DefaultSerializersRegister.class);
     for (ClassInfo info : classGraph.getClassesWithAnnotation(Serde.class)) {
       int protoId = Math.abs(info.getName().hashCode());
       ClassInfo serdeInfo = classGraph.getClassInfo(getSerdeName(info.getName()));
@@ -86,7 +85,7 @@ public final class SerdeConfigGenerator {
                 info.getName()));
       }
 
-      methodBuilder.addStatement("serializer.registerSerializer($L, $T.class, new $T(serializer))",
+      methodBuilder.addStatement("serializer.registerSerializer($L, $T.class, new $T())",
           protoId,
           ClassName.get(info.getPackageName(), info.getSimpleName()),
           ClassName.get(serdeInfo.getPackageName(), serdeInfo.getSimpleName()));

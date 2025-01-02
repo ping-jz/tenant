@@ -37,7 +37,7 @@ public class EnumSerializer<E extends Enum<E>> implements Serializer<E> {
   }
 
   @Override
-  public E readObject(ByteBuf buf) {
+  public E readObject(CommonSerializer serializer, ByteBuf buf) {
     int idx = NettyByteBufUtil.readInt32(buf);
     if (idx == NULL_IDX) {
       return null;
@@ -52,7 +52,7 @@ public class EnumSerializer<E extends Enum<E>> implements Serializer<E> {
   }
 
   @Override
-  public void writeObject(ByteBuf buf, E object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, E object) {
     int idx = NULL_IDX;
     if (object != null) {
       idx = object.ordinal();

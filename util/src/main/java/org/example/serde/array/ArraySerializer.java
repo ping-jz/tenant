@@ -36,36 +36,39 @@ import org.example.serde.Serializer;
  **/
 public class ArraySerializer implements Serializer<Object> {
 
-  /**
-   * 序列化集合
-   */
-  private CommonSerializer serializer;
   /** 数据类型 */
-  private final Class componentType;
+  private final Class<?> componentType;
 
-  public ArraySerializer(Class componentType, CommonSerializer serializer) {
+  public ArraySerializer(Class<?> componentType) {
     this.componentType = componentType;
-    this.serializer = serializer;
   }
 
 
   @Override
-  public Object readObject(ByteBuf buf) {
+  @SuppressWarnings("unchecked")
+  public Object readObject(CommonSerializer serializer, ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
-    if (length == -1) {
+    if (length < 0) {
       return null;
     }
 
     Object array = Array.newInstance(componentType, length);
-    Serializer<Object> serializer = this.serializer;
+    Serializer<Object> ser = null;
     if (Modifier.isFinal(componentType.getModifiers())) {
       SerializerPair pair = Objects
-          .requireNonNull(this.serializer.getSerializerPair(componentType), "类型:" + componentType + ",未注册");
-      serializer = (Serializer<Object>) pair.serializer();
+          .requireNonNull(serializer.getSerializerPair(componentType),
+              "类型:" + componentType + ",未注册");
+      ser = (Serializer<Object>) pair.serializer();
     }
 
-    for (int i = 0; i < length; ++i) {
-      Array.set(array, i, serializer.readObject(buf));
+    if (ser != null) {
+      for (int i = 0; i < length; ++i) {
+        Array.set(array, i, ser.readObject(serializer, buf));
+      }
+    } else {
+      for (int i = 0; i < length; ++i) {
+        Array.set(array, i, serializer.readObject(buf));
+      }
     }
 
     return array;
@@ -73,22 +76,30 @@ public class ArraySerializer implements Serializer<Object> {
 
 
   @Override
-  public void writeObject(ByteBuf buf, Object object) {
+  @SuppressWarnings("unchecked")
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, Object object) {
     if (!object.getClass().isArray()) {
       throw new RuntimeException("类型:" + object.getClass() + ",不是数组");
     }
     final int length = Array.getLength(object);
     NettyByteBufUtil.writeInt32(buf, length);
 
-    Serializer<Object> serializer = this.serializer;
+    Serializer<Object> ser = null;
     if (Modifier.isFinal(componentType.getModifiers())) {
-      SerializerPair pair = Objects.requireNonNull(this.serializer.getSerializerPair(componentType),
-          "类型:" + componentType + ",未注册");
-      serializer = (Serializer<Object>) pair.serializer();
+      SerializerPair pair = Objects.requireNonNull(serializer.getSerializerPair(componentType),
+          () -> "类型:" + componentType + ",未注册");
+      ser = (Serializer<Object>) pair.serializer();
     }
 
-    for (int i = 0; i < length; i++) {
-      serializer.writeObject(buf, Array.get(object, i));
+    if (ser != null) {
+      for (int i = 0; i < length; i++) {
+        ser.writeObject(serializer, buf, Array.get(object, i));
+      }
+    } else {
+      for (int i = 0; i < length; i++) {
+        serializer.writeObject(buf, Array.get(object, i));
+      }
     }
+
   }
 }

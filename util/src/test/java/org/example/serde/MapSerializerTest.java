@@ -25,14 +25,15 @@ public class MapSerializerTest {
     serializer = new CommonSerializer();
     buf = Unpooled.buffer();
 
-    MapSerializer<?, ?> map = new MapSerializer<>(serializer, HashMap::new);
+    new DefaultSerializersRegister().register(serializer);
 
+    MapSerializer<?, ?> map = new MapSerializer<>(HashMap::new);
     serializer.registerSerializer(Map.class, map);
     serializer.registerSerializer(HashMap.class, map);
     serializer.registerSerializer(LinkedHashMap.class,
-        new MapSerializer<>(serializer, LinkedHashMap::new));
+        new MapSerializer<>(LinkedHashMap::new));
     serializer.registerSerializer(TreeMap.class,
-        new MapSerializer<>(serializer, ignore -> new TreeMap<>()));
+        new MapSerializer<>(ignore -> new TreeMap<>()));
   }
 
   @Test
@@ -45,7 +46,7 @@ public class MapSerializerTest {
     }
 
     serializer.writeObject(buf, col);
-    Map<Integer, Double> res = serializer.read(buf);
+    Map<Integer, Double> res = serializer.readObject(buf);
     assertEquals(col, res);
   }
 
@@ -59,7 +60,7 @@ public class MapSerializerTest {
     }
 
     serializer.writeObject(buf, col);
-    Map<String, Double> res = serializer.read(buf);
+    Map<String, Double> res = serializer.readObject(buf);
     assertEquals(col, res);
   }
 
@@ -84,7 +85,7 @@ public class MapSerializerTest {
     col.put(old, null);
 
     serializer.writeObject(buf, col);
-    Map<Integer, Map<String, Double>> res = serializer.read(buf);
+    Map<Integer, Map<String, Double>> res = serializer.readObject(buf);
     assertEquals(col, res);
   }
 }

@@ -12,12 +12,12 @@ import io.netty.buffer.ByteBuf;
 public class BooleanSerializer implements Serializer<Boolean> {
 
   @Override
-  public Boolean readObject(ByteBuf buf) {
+  public Boolean readObject(CommonSerializer serializer, ByteBuf buf) {
     return buf.readBoolean();
   }
 
   @Override
-  public void writeObject(ByteBuf buf, Boolean object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, Boolean object) {
     buf.writeBoolean(object);
   }
 }

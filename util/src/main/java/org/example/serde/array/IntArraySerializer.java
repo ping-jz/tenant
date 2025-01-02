@@ -1,9 +1,7 @@
 package org.example.serde.array;
 
 import io.netty.buffer.ByteBuf;
-import java.lang.reflect.Array;
 import org.example.serde.CommonSerializer;
-import org.example.serde.CommonSerializer.SerializerPair;
 import org.example.serde.NettyByteBufUtil;
 import org.example.serde.Serializer;
 
@@ -34,28 +32,23 @@ import org.example.serde.Serializer;
  **/
 public class IntArraySerializer implements Serializer<int[]> {
 
-
-  public IntArraySerializer() {
-  }
-
-
   @Override
-  public int[] readObject(ByteBuf buf) {
+  public int[] readObject(CommonSerializer serializer, ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
     if (length == -1) {
       return null;
-    } else {
-      int[] array = new int[length];
-      for (int i = 0; i < length; i++) {
-        array[i] = NettyByteBufUtil.readInt32(buf);
-      }
-      return array;
     }
+
+    int[] array = new int[length];
+    for (int i = 0; i < length; i++) {
+      array[i] = NettyByteBufUtil.readInt32(buf);
+    }
+    return array;
   }
 
 
   @Override
-  public void writeObject(ByteBuf buf, int[] object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, int[] object) {
     final int length = object.length;
     NettyByteBufUtil.writeInt32(buf, length);
     for (int o : object) {

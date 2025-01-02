@@ -276,7 +276,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
               methodBuilder.addStatement("$T $L = $L", MESSAGE_CLASS_NAME, pname,
                   MESSAGE_VAR_NAME);
             } else {
-              methodBuilder.addStatement("$T $L = $L.read($L)", TypeName.get(ptype), pname,
+              methodBuilder.addStatement("$T $L = $L.readObject($L)", TypeName.get(ptype), pname,
                   SERIALIZER_VAR_NAME, BUF_VAR_NAME);
             }
           }

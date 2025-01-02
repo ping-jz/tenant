@@ -2,7 +2,6 @@ package org.example.serde.processor;
 
 import com.google.auto.service.AutoService;
 import com.palantir.javapoet.ClassName;
-import com.palantir.javapoet.FieldSpec;
 import com.palantir.javapoet.JavaFile;
 import com.palantir.javapoet.MethodSpec;
 import com.palantir.javapoet.ParameterizedTypeName;
@@ -29,7 +28,6 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 import org.apache.commons.lang3.StringUtils;
@@ -135,16 +133,9 @@ public class SerdeProcessor extends AbstractProcessor {
   public static TypeSpec.Builder consturctorAndFields(TypeSpec.Builder builder) {
     MethodSpec constructor = MethodSpec.constructorBuilder()
         .addModifiers(Modifier.PUBLIC)
-        .addParameter(CommonSerializer.class, SERIALIZER_VAR_NAME)
-        .addStatement("this.$N = $N", SERIALIZER_VAR_NAME, SERIALIZER_VAR_NAME)
         .build();
 
-    FieldSpec fieldSpec = FieldSpec
-        .builder(CommonSerializer.class, SERIALIZER_VAR_NAME)
-        .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
-        .build();
-
-    return builder.addMethod(constructor).addField(fieldSpec);
+    return builder.addMethod(constructor);
   }
 
 
@@ -167,6 +158,7 @@ public class SerdeProcessor extends AbstractProcessor {
           .addAnnotation(Override.class)
           .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
           .returns(typeName)
+          .addParameter(CommonSerializer.class, SERIALIZER_VAR_NAME)
           .addParameter(ByteBuf.class, BUF_VAR_NAME);
 
       builder.addCode("return new $T(\n", typeName);
@@ -186,7 +178,7 @@ public class SerdeProcessor extends AbstractProcessor {
           case LONG -> builder.addCode("$T.readInt64($L)",
               NettyByteBufUtil.class,
               BUF_VAR_NAME);
-          default -> builder.addCode("$L.read($L)",
+          default -> builder.addCode("$L.readObject($L)",
               SERIALIZER_VAR_NAME,
               BUF_VAR_NAME
           );
@@ -205,6 +197,7 @@ public class SerdeProcessor extends AbstractProcessor {
       MethodSpec.Builder builder = MethodSpec.methodBuilder("writeObject")
           .addAnnotation(Override.class)
           .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+          .addParameter(CommonSerializer.class, SERIALIZER_VAR_NAME)
           .addParameter(ByteBuf.class, BUF_VAR_NAME, Modifier.FINAL)
           .addParameter(typeName, OBJECT_VAR_NAME, Modifier.FINAL)
           .returns(TypeName.VOID);
@@ -317,6 +310,7 @@ public class SerdeProcessor extends AbstractProcessor {
       MethodSpec.Builder builder = MethodSpec.methodBuilder("readObject")
           .addAnnotation(Override.class)
           .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+          .addParameter(CommonSerializer.class, SERIALIZER_VAR_NAME)
           .addParameter(ByteBuf.class, BUF_VAR_NAME, Modifier.FINAL)
           .addStatement("$T $L = new $T()", typeName, OBJECT_VAR_NAME, typeName).returns(typeName);
 
@@ -357,7 +351,7 @@ public class SerdeProcessor extends AbstractProcessor {
               fieldName,
               NettyByteBufUtil.class,
               BUF_VAR_NAME);
-          default -> builder.addStatement("$L.set$L($L.read(buf))",
+          default -> builder.addStatement("$L.set$L($L.readObject(buf))",
               OBJECT_VAR_NAME,
               fieldName,
               SERIALIZER_VAR_NAME);
@@ -372,6 +366,7 @@ public class SerdeProcessor extends AbstractProcessor {
       MethodSpec.Builder builder = MethodSpec.methodBuilder("writeObject")
           .addAnnotation(Override.class)
           .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+          .addParameter(CommonSerializer.class, SERIALIZER_VAR_NAME)
           .addParameter(ByteBuf.class, BUF_VAR_NAME, Modifier.FINAL)
           .addParameter(typeName, OBJECT_VAR_NAME, Modifier.FINAL)
           .returns(TypeName.VOID);

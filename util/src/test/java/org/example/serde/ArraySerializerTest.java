@@ -19,6 +19,7 @@ public class ArraySerializerTest {
   @BeforeEach
   public void beforeEach() {
     serializer = new CommonSerializer();
+    new DefaultSerializersRegister().register(serializer);
     serializer.registerObject(ArrayWrapper.class);
     serializer.registerObject(int[][].class);
     serializer.registerObject(double[][].class);
@@ -39,7 +40,7 @@ public class ArraySerializerTest {
     int[] test = {};
     serializer.writeObject(buf, test);
 
-    int[] res = serializer.read(buf);
+    int[] res = serializer.readObject(buf);
     assertArrayEquals(test, res);
   }
 
@@ -51,7 +52,7 @@ public class ArraySerializerTest {
     }
     serializer.writeObject(buf, test);
 
-    int[] res = serializer.read(buf);
+    int[] res = serializer.readObject(buf);
     assertArrayEquals(test, res);
   }
 
@@ -59,7 +60,7 @@ public class ArraySerializerTest {
   public void twoDimensionIntArrayTest() {
     int[][] test = {{1, 10}, {10, 1}};
     serializer.writeObject(buf, test);
-    int[][] res = serializer.read(buf);
+    int[][] res = serializer.readObject(buf);
     assertArrayEquals(test, res);
   }
 
@@ -75,7 +76,7 @@ public class ArraySerializerTest {
       }
     }
     serializer.writeObject(buf, test);
-    double[][][] res = serializer.read(buf);
+    double[][][] res = serializer.readObject(buf);
     assertArrayEquals(test, res);
   }
 
@@ -98,7 +99,7 @@ public class ArraySerializerTest {
     }
 
     serializer.writeObject(buf, test);
-    String[][][][] res = serializer.read(buf);
+    String[][][][] res = serializer.readObject(buf);
     assertArrayEquals(test, res);
   }
 
@@ -129,7 +130,7 @@ public class ArraySerializerTest {
     }
 
     serializer.writeObject(buf, test);
-    ArrayWrapper[][][][] res = serializer.read(buf);
+    ArrayWrapper[][][][] res = serializer.readObject(buf);
     assertArrayEquals(test, res);
   }
 
@@ -138,7 +139,7 @@ public class ArraySerializerTest {
     Object[] objects = {1, 2L, "asdfasdf", new ArrayWrapper(), null, 'a'};
 
     serializer.writeObject(buf, objects);
-    Object[] res = serializer.read(buf);
+    Object[] res = serializer.readObject(buf);
     assertArrayEquals(objects, res);
   }
 

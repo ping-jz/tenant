@@ -32,28 +32,23 @@ import org.example.serde.Serializer;
  **/
 public class BooleanArraySerializer implements Serializer<boolean[]> {
 
-
-  public BooleanArraySerializer() {
-  }
-
-
   @Override
-  public boolean[] readObject(ByteBuf buf) {
+  public boolean[] readObject(CommonSerializer serializer, ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
-    if (length == -1) {
+    if (length < 0) {
       return null;
-    } else {
-      boolean[] array = new boolean[length];
-      for (int i = 0; i < length; i++) {
-        array[i] = buf.readBoolean();
-      }
-      return array;
     }
+
+    boolean[] array = new boolean[length];
+    for (int i = 0; i < length; i++) {
+      array[i] = buf.readBoolean();
+    }
+    return array;
   }
 
 
   @Override
-  public void writeObject(ByteBuf buf, boolean[] object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, boolean[] object) {
     final int length = object.length;
     NettyByteBufUtil.writeInt32(buf, length);
     for (boolean o : object) {

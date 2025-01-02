@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 public class StringSerializer implements Serializer<String> {
 
   @Override
-  public String readObject(ByteBuf buf) {
+  public String readObject(CommonSerializer serializer, ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
     if (length < 0) {
       return null;
@@ -26,7 +26,7 @@ public class StringSerializer implements Serializer<String> {
   }
 
   @Override
-  public void writeObject(ByteBuf buf, String object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, String object) {
     if (object == null) {
       NettyByteBufUtil.writeInt32(buf, -1);
     } else {

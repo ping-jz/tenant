@@ -12,12 +12,12 @@ import io.netty.buffer.ByteBuf;
 public class ByteSerializer implements Serializer<Byte> {
 
   @Override
-  public Byte readObject(ByteBuf buf) {
+  public Byte readObject(CommonSerializer serializer, ByteBuf buf) {
     return buf.readByte();
   }
 
   @Override
-  public void writeObject(ByteBuf buf, Byte object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, Byte object) {
     buf.writeByte(object);
   }
 }

@@ -12,12 +12,12 @@ import io.netty.buffer.ByteBuf;
 public class DoubleSerializer implements Serializer<Double> {
 
   @Override
-  public Double readObject(ByteBuf buf) {
+  public Double readObject(CommonSerializer serializer, ByteBuf buf) {
     return buf.readDouble();
   }
 
   @Override
-  public void writeObject(ByteBuf buf, Double object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, Double object) {
     buf.writeDouble(object);
   }
 }

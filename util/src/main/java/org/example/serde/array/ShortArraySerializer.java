@@ -32,28 +32,23 @@ import org.example.serde.Serializer;
  **/
 public class ShortArraySerializer implements Serializer<short[]> {
 
-
-  public ShortArraySerializer() {
-  }
-
-
   @Override
-  public short[] readObject(ByteBuf buf) {
+  public short[] readObject(CommonSerializer serializer, ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
-    if (length == -1) {
+    if (length < 0) {
       return null;
-    } else {
-      short[] array = new short[length];
-      for (int i = 0; i < length; i++) {
-        array[i] = buf.readShort();
-      }
-      return array;
     }
+
+    short[] array = new short[length];
+    for (int i = 0; i < length; i++) {
+      array[i] = buf.readShort();
+    }
+    return array;
   }
 
 
   @Override
-  public void writeObject(ByteBuf buf, short[] object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, short[] object) {
     final int length = object.length;
     NettyByteBufUtil.writeInt32(buf, length);
     for (short o : object) {

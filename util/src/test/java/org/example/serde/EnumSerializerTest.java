@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import org.example.serde.array.ArraySerializer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -14,35 +13,37 @@ public class EnumSerializerTest {
 
   @Test
   public void simpleTest() {
+    CommonSerializer commonSerializer = new CommonSerializer();
     EnumSerializer<EnumOne> serializer = new EnumSerializer<>(EnumOne.class);
     ByteBuf byteBuf = Unpooled.buffer();
 
     for (EnumOne o : EnumOne.values()) {
-      serializer.writeObject(byteBuf, o);
+      serializer.writeObject(commonSerializer, byteBuf, o);
     }
 
     for (EnumOne o : EnumOne.values()) {
-      Assertions.assertEquals(o, serializer.readObject(byteBuf));
+      Assertions.assertEquals(o, serializer.readObject(commonSerializer, byteBuf));
     }
 
-    serializer.writeObject(byteBuf, null);
-    Assertions.assertNull(serializer.readObject(byteBuf));
+    serializer.writeObject(commonSerializer, byteBuf, null);
+    Assertions.assertNull(serializer.readObject(commonSerializer, byteBuf));
   }
 
   @Test
   public void intergateTest() {
     CommonSerializer serializer = new CommonSerializer();
+    new DefaultSerializersRegister().register(serializer);
     serializer.registerObject(EnumOne.class);
     serializer.registerObject(EnumTwo.class);
-    serializer.registerSerializer(List.class, new CollectionSerializer(serializer));
-    serializer.registerSerializer(ArrayList.class, new CollectionSerializer(serializer));
+    serializer.registerSerializer(List.class, new CollectionSerializer());
+    serializer.registerSerializer(ArrayList.class, new CollectionSerializer());
     serializer.registerObject(EnumOne[].class);
     serializer.registerObject(TestCaseOne.class);
 
     ByteBuf buf = Unpooled.buffer();
 
     serializer.writeObject(buf, EnumOne.values());
-    Assertions.assertArrayEquals(EnumOne.values(), serializer.read(buf));
+    Assertions.assertArrayEquals(EnumOne.values(), serializer.readObject(buf));
     Assertions.assertFalse(buf.isReadable());
 
     {
@@ -52,7 +53,7 @@ public class EnumSerializerTest {
       caseOne.values = EnumOne.values();
 
       serializer.writeObject(buf, caseOne);
-      Assertions.assertEquals(caseOne, serializer.read(buf));
+      Assertions.assertEquals(caseOne, serializer.readObject(buf));
       Assertions.assertFalse(buf.isReadable());
     }
 
@@ -63,7 +64,7 @@ public class EnumSerializerTest {
       caseOne.list = new ArrayList<>(Arrays.asList(EnumOne.values()));
 
       serializer.writeObject(buf, caseOne);
-      Assertions.assertEquals(caseOne, serializer.read(buf));
+      Assertions.assertEquals(caseOne, serializer.readObject(buf));
       Assertions.assertFalse(buf.isReadable());
     }
   }

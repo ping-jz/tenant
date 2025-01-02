@@ -19,13 +19,14 @@ public class RecordSerializerTest {
     ByteBuf buf = Unpooled.buffer();
     commonSerializer.writeObject(buf, empty);
 
-    Empty res = commonSerializer.read(buf);
+    Empty res = commonSerializer.readObject(buf);
     assertEquals(empty, res);
   }
 
   @Test
   public void primityTest() {
     CommonSerializer commonSerializer = new CommonSerializer();
+    new DefaultSerializersRegister().register(commonSerializer);
     commonSerializer.registerObject(Empty.class);
     commonSerializer.registerObject(Compose.class);
 
@@ -33,21 +34,22 @@ public class RecordSerializerTest {
     ByteBuf buf = Unpooled.buffer();
     commonSerializer.writeObject(buf, abc);
 
-    Compose<Double> res = commonSerializer.read(buf);
+    Compose<Double> res = commonSerializer.readObject(buf);
     assertEquals(abc, res);
   }
 
   @Test
   public void composeTest() {
     CommonSerializer commonSerializer = new CommonSerializer();
-    commonSerializer.registerSerializer(Empty.class, new EmptySerde(commonSerializer));
-    commonSerializer.registerSerializer(Compose.class, new ComposeSerde(commonSerializer));
+    new DefaultSerializersRegister().register(commonSerializer);
+    commonSerializer.registerSerializer(Empty.class, new EmptySerde());
+    commonSerializer.registerSerializer(Compose.class, new ComposeSerde());
 
     {
       ByteBuf buf = Unpooled.buffer();
       Empty empty = new Empty();
       commonSerializer.writeObject(buf, empty);
-      Empty res = commonSerializer.read(buf);
+      Empty res = commonSerializer.readObject(buf);
       assertEquals(empty, res);
       assertFalse(buf.isReadable());
     }
@@ -56,7 +58,7 @@ public class RecordSerializerTest {
       ByteBuf buf = Unpooled.buffer();
       Compose<Double> abc = new Compose<Double>((byte) 0, 'c', (short) 1, 1, 2L, 3F, 3.0,false, "EEEEEE", new Empty());
       commonSerializer.writeObject(buf, abc);
-      Compose<Double> res = commonSerializer.read(buf);
+      Compose<Double> res = commonSerializer.readObject(buf);
       assertEquals(abc, res);
       assertFalse(buf.isReadable());
     }

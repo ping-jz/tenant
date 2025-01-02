@@ -18,13 +18,14 @@ public class SerializerTest {
 
   @BeforeEach
   public void before() {
+    new DefaultSerializersRegister().register(serializer);
     buf.clear();
   }
 
   @Test
   public void serdeNullTest() {
     serializer.writeObject(buf, null);
-    assertNull(serializer.read(buf));
+    assertNull(serializer.readObject(buf));
   }
 
   @Test
@@ -33,7 +34,7 @@ public class SerializerTest {
       buf.clear();
       Byte v = (byte) i;
       serializer.writeObject(buf, v);
-      assertEquals(v, serializer.read(buf));
+      assertEquals(v, serializer.readObject(buf));
     }
   }
 
@@ -43,7 +44,7 @@ public class SerializerTest {
       buf.clear();
       Short v = (short) i;
       serializer.writeObject(buf, v);
-      assertEquals(v, serializer.read(buf));
+      assertEquals(v, serializer.readObject(buf));
     }
   }
 
@@ -53,16 +54,16 @@ public class SerializerTest {
       buf.clear();
       Integer v = i;
       serializer.writeObject(buf, v);
-      assertEquals(v, serializer.read(buf));
+      assertEquals(v, serializer.readObject(buf));
     }
 
     buf.clear();
     serializer.writeObject(buf, Integer.MIN_VALUE);
-    assertEquals(Integer.MIN_VALUE, (int) serializer.read(buf));
+    assertEquals(Integer.MIN_VALUE, (int) serializer.readObject(buf));
 
     buf.clear();
     serializer.writeObject(buf, Integer.MAX_VALUE);
-    assertEquals(Integer.MAX_VALUE, (int) serializer.read(buf));
+    assertEquals(Integer.MAX_VALUE, (int) serializer.readObject(buf));
   }
 
   @Test
@@ -71,7 +72,7 @@ public class SerializerTest {
       buf.clear();
       Long v = i;
       serializer.writeObject(buf, v);
-      assertEquals(v, serializer.read(buf));
+      assertEquals(v, serializer.readObject(buf));
     }
   }
 
@@ -81,7 +82,7 @@ public class SerializerTest {
       buf.clear();
       Float v = i;
       serializer.writeObject(buf, v);
-      assertEquals(v, serializer.read(buf));
+      assertEquals(v, serializer.readObject(buf));
     }
   }
 
@@ -91,7 +92,7 @@ public class SerializerTest {
       buf.clear();
       Double v = i;
       serializer.writeObject(buf, v);
-      assertEquals(v, serializer.read(buf));
+      assertEquals(v, serializer.readObject(buf));
     }
   }
 
@@ -99,13 +100,13 @@ public class SerializerTest {
   public void charSerdeTest() {
     Character str = '中';
     serializer.writeObject(buf, str);
-    assertEquals(str, serializer.read(buf));
+    assertEquals(str, serializer.readObject(buf));
   }
 
   @Test
   public void strSerdeTest() throws NoSuchFieldException {
     String str = "Hello World!";
     serializer.writeObject(buf, str);
-    assertEquals(str, serializer.read(buf));
+    assertEquals(str, serializer.readObject(buf));
   }
 }

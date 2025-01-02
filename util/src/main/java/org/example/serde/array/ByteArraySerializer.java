@@ -33,13 +33,12 @@ import org.example.serde.Serializer;
 public class ByteArraySerializer implements Serializer<byte[]> {
 
 
-
   public ByteArraySerializer() {
   }
 
 
   @Override
-  public byte[] readObject(ByteBuf buf) {
+  public byte[] readObject(CommonSerializer serializer, ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
     byte[] array = new byte[length];
     buf.readBytes(array);
@@ -48,7 +47,7 @@ public class ByteArraySerializer implements Serializer<byte[]> {
 
 
   @Override
-  public void writeObject(ByteBuf buf, byte[] object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, byte[] object) {
     final int length = object.length;
     NettyByteBufUtil.writeInt32(buf, length);
     buf.writeBytes(object);

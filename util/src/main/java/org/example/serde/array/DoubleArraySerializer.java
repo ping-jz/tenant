@@ -32,28 +32,22 @@ import org.example.serde.Serializer;
  **/
 public class DoubleArraySerializer implements Serializer<double[]> {
 
-  public DoubleArraySerializer() {
-
-  }
-
-
   @Override
-  public double[] readObject(ByteBuf buf) {
+  public double[] readObject(CommonSerializer serializer, ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
-    if (length == -1) {
+    if (length < 0) {
       return null;
-    } else {
-      double[] array = new double[length];
-      for (int i = 0; i < length; i++) {
-        array[i] = buf.readDouble();
-      }
-      return array;
     }
+    double[] array = new double[length];
+    for (int i = 0; i < length; i++) {
+      array[i] = buf.readDouble();
+    }
+    return array;
   }
 
 
   @Override
-  public void writeObject(ByteBuf buf, double[] object) {
+  public void writeObject(CommonSerializer serializer, ByteBuf buf, double[] object) {
     final int length = object.length;
     NettyByteBufUtil.writeInt32(buf, length);
     for (double o : object) {
