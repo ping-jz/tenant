@@ -1,8 +1,7 @@
 package org.example.net;
 
 import io.netty.channel.Channel;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.example.net.handler.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,10 +22,23 @@ public class DefaultDispatcher implements Dispatcher {
   /**
    * 协议编号 -> 请求处理者
    */
-  private final Map<Integer, Handler> handles;
+  private Int2ObjectOpenHashMap<Handler> handles;
 
-  public Handler registeHandler(int id, Handler handler) {
-    return handles.put(id, handler);
+  public synchronized Handler registeHandler(int id, Handler handler) {
+    Int2ObjectOpenHashMap<Handler> handles = new Int2ObjectOpenHashMap<>(this.handles);
+    handles.put(id, handler);
+    this.handles = handles;
+    return handler;
+  }
+
+  public synchronized Handler registeHandlers(int[] ids, Handler handler) {
+    Int2ObjectOpenHashMap<Handler> handles = new Int2ObjectOpenHashMap<>(this.handles);
+    for (int id : ids) {
+      handles.put(id, handler);
+    }
+
+    this.handles = handles;
+    return handler;
   }
 
 
@@ -42,7 +54,7 @@ public class DefaultDispatcher implements Dispatcher {
 
 
   public DefaultDispatcher() {
-    handles = new ConcurrentHashMap<>();
+    handles = new Int2ObjectOpenHashMap<>();
   }
 
 

@@ -129,9 +129,8 @@ public class GameRpcConfigGenerator {
               facade)
           .addStatement("$T $L = new $T($L, $L)", handler, handlerVarName, handler, facdeVarName,
               serializerVarName)
-          .beginControlFlow("for (int id : $T.protos)", handler)
-          .addStatement("$L.registeHandler(id, $L)", dispatcherVarName, handlerVarName)
-          .endControlFlow()
+          .addStatement("$L.registeHandlers($T.protos, $L)", dispatcherVarName, handler,
+              handlerVarName)
           .endControlFlow();
     }
 
