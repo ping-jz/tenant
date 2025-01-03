@@ -6,6 +6,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.util.AttributeKey;
+import io.netty.util.ReferenceCountUtil;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
@@ -67,7 +68,7 @@ public class AvatarFacadeTest {
 
   }
 
-  @RepeatedTest(10)
+  @RepeatedTest(1000)
   public void echo() throws Exception {
     String str = String.valueOf(ThreadLocalRandom.current().nextLong());
     invoker.of(embeddedChannel.attr(Connection.CONNECTION).get())
@@ -91,11 +92,13 @@ public class AvatarFacadeTest {
       embeddedChannel.writeInbound(reqBuf);
     }
 
-    TimeUnit.MILLISECONDS.sleep(10);
-
     //验证返回的结果
-    {
+    while (true) {
       ByteBuf resBuf = embeddedChannel.readOutbound();
+      if (resBuf == null) {
+        TimeUnit.NANOSECONDS.sleep(1);
+        continue;
+      }
       Assertions.assertNotNull(resBuf);
       resBuf.skipBytes(Integer.BYTES);
       int protoId = NettyByteBufUtil.readInt32(resBuf);
@@ -104,6 +107,8 @@ public class AvatarFacadeTest {
 
       Assertions.assertFalse(resBuf.isReadable());
       Assertions.assertNull(embeddedChannel.readOutbound());
+      ReferenceCountUtil.release(resBuf);
+      break;
     }
   }
 
@@ -171,11 +176,16 @@ public class AvatarFacadeTest {
       ByteBuf reqBuf1 = embeddedChannel.readOutbound();
       embeddedChannel.writeInbound(reqBuf1);
 
-      TimeUnit.MILLISECONDS.sleep(10);
-
       //然后在将结果发送一次
-      ByteBuf resBuf2 = embeddedChannel.readOutbound();
-      embeddedChannel.writeInbound(resBuf2);
+      while (true) {
+        ByteBuf resBuf2 = embeddedChannel.readOutbound();
+        if (resBuf2 == null) {
+          TimeUnit.NANOSECONDS.sleep(1);
+          continue;
+        }
+        embeddedChannel.writeInbound(resBuf2);
+        break;
+      }
     }
 
     Assertions.assertEquals(hashcode, callback.get(100, TimeUnit.MILLISECONDS));

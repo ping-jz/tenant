@@ -5,6 +5,7 @@ import static org.example.common.model.GameId.gameId;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.util.ReferenceCountUtil;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
@@ -68,7 +69,7 @@ public class AvatarIdFacadeTest {
 
   }
 
-  @RepeatedTest(10)
+  @RepeatedTest(1000)
   public void echo() throws Exception {
     String str = String.valueOf(ThreadLocalRandom.current().nextLong());
     AvatarId avatarId = new AvatarId(ThreadLocalRandom.current().nextLong());
@@ -97,11 +98,13 @@ public class AvatarIdFacadeTest {
       embeddedChannel.writeInbound(reqBuf);
     }
 
-    TimeUnit.MILLISECONDS.sleep(10);
-
     //验证返回的结果
-    {
+    while (true) {
       ByteBuf resBuf = embeddedChannel.readOutbound();
+      if (resBuf == null) {
+        TimeUnit.NANOSECONDS.sleep(1);
+        continue;
+      }
       Assertions.assertNotNull(resBuf);
       resBuf.skipBytes(Integer.BYTES);
       int protoId = NettyByteBufUtil.readInt32(resBuf);
@@ -111,6 +114,8 @@ public class AvatarIdFacadeTest {
 
       Assertions.assertFalse(resBuf.isReadable());
       Assertions.assertNull(embeddedChannel.readOutbound());
+      ReferenceCountUtil.release(resBuf);
+      break;
     }
   }
 

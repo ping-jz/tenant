@@ -25,10 +25,4 @@ public class DispatcherHandler extends SimpleChannelInboundHandler<Message> {
   protected void channelRead0(ChannelHandlerContext ctx, Message msg) {
     dispatcher.dispatcher(ctx.channel(), msg);
   }
-
-  @Override
-  public void channelReadComplete(ChannelHandlerContext ctx) {
-    ctx.flush();
-    ctx.fireChannelReadComplete();
-  }
 }
