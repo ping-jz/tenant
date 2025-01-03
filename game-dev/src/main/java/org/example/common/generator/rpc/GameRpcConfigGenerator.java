@@ -24,8 +24,6 @@ import org.springframework.context.annotation.Configuration;
 public class GameRpcConfigGenerator {
 
   private static final String HANDLER_SIMPLE_NAME = "Handler";
-  private static final ClassName CALL_BACK_CONFIG = ClassName.get(
-      "org.example.common.config.generated", "CallBackRpcConfig");
   private static String contextVarName = "c";
 
 
@@ -113,9 +111,6 @@ public class GameRpcConfigGenerator {
     }
 
     for (ClassInfo info : classGraph.getClassesImplementing(Handler.class)) {
-      if (!info.getName().endsWith(HANDLER_SIMPLE_NAME)) {
-        continue;
-      }
       String facdeVarName = "f";
       String handlerVarName = "h";
       int handlerSubFix = info.getSimpleName().lastIndexOf(HANDLER_SIMPLE_NAME);
