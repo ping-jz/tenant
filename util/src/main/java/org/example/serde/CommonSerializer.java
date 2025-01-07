@@ -42,7 +42,7 @@ public final class CommonSerializer {
    * @param serializer 序列化实现
    * @since 2021年07月18日 11:37:14
    */
-  public synchronized void registerSerializer(int id, Class<?> clazz, Serializer<?> serializer) {
+  public void registerSerializer(int id, Class<?> clazz, Serializer<?> serializer) {
     Objects.requireNonNull(clazz);
     Objects.requireNonNull(serializer);
 
@@ -50,13 +50,8 @@ public final class CommonSerializer {
       throw new RuntimeException(String.format("%s,%s 类型ID发生冲突", id2Clazz.get(id), clazz));
     }
 
-    HashMap<Class<?>, SerializerPair> serializers = new HashMap<>(this.serializers);
-    Int2ObjectOpenHashMap<Class<?>> id2Clazz = new Int2ObjectOpenHashMap<>(this.id2Clazz);
     id2Clazz.put(id, clazz);
     serializers.put(clazz, new SerializerPair(id, serializer));
-
-    this.serializers = serializers;
-    this.id2Clazz = id2Clazz;
   }
 
   /**
