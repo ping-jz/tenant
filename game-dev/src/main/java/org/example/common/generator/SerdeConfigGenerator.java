@@ -13,9 +13,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import javax.lang.model.element.Modifier;
-import org.example.serde.CommonSerializer;
 import org.example.serde.DefaultSerializersRegister;
 import org.example.serde.Serde;
+import org.example.serde.Serdes;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -72,9 +72,9 @@ public final class SerdeConfigGenerator {
         .methodBuilder("commonSerializer")
         .addModifiers(Modifier.PUBLIC)
         .addAnnotation(Bean.class)
-        .returns(CommonSerializer.class);
-    methodBuilder.addStatement("$T serializer = new $T()", CommonSerializer.class,
-        CommonSerializer.class);
+        .returns(Serdes.class);
+    methodBuilder.addStatement("$T serializer = new $T()", Serdes.class,
+        Serdes.class);
     methodBuilder.addStatement("new $T().register(serializer)", DefaultSerializersRegister.class);
     for (ClassInfo info : classGraph.getClassesWithAnnotation(Serde.class)) {
       int protoId = Math.abs(info.getName().hashCode());

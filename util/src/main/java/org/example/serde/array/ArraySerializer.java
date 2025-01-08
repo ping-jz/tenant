@@ -4,9 +4,9 @@ import io.netty.buffer.ByteBuf;
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
-import org.example.serde.CommonSerializer;
-import org.example.serde.CommonSerializer.SerializerPair;
 import org.example.serde.NettyByteBufUtil;
+import org.example.serde.Serdes;
+import org.example.serde.Serdes.SerializerPair;
 import org.example.serde.Serializer;
 
 /**
@@ -30,7 +30,7 @@ import org.example.serde.Serializer;
  * <p>1.数组长宽必须一致</p>
  * <p>2.暂时不支持PrimitiveWrapper数组，序列化时会全部转化为对应的基础类型</p>
  * <p>
- * 与{@link CommonSerializer} 组合使用
+ * 与{@link Serdes} 组合使用
  *
  * @since 2021年07月18日 14:17:04
  **/
@@ -46,7 +46,7 @@ public class ArraySerializer implements Serializer<Object> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public Object readObject(CommonSerializer serializer, ByteBuf buf) {
+  public Object readObject(Serdes serializer, ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
     if (length < 0) {
       return null;
@@ -77,7 +77,7 @@ public class ArraySerializer implements Serializer<Object> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public void writeObject(CommonSerializer serializer, ByteBuf buf, Object object) {
+  public void writeObject(Serdes serializer, ByteBuf buf, Object object) {
     if (!object.getClass().isArray()) {
       throw new RuntimeException("类型:" + object.getClass() + ",不是数组");
     }

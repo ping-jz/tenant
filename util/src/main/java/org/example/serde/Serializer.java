@@ -32,7 +32,7 @@ public interface Serializer<T> {
    * @param buf        目标buff
    * @since 2021年07月17日 16:02:03
    */
-  T readObject(CommonSerializer serializer, ByteBuf buf);
+  T readObject(Serdes serializer, ByteBuf buf);
 
   /**
    * 把{@param object}序列化至{@param buff}
@@ -42,5 +42,5 @@ public interface Serializer<T> {
    * @param object     对象
    * @since 2021年07月17日 16:02:03
    */
-  void writeObject(CommonSerializer serializer, ByteBuf buf, T object);
+  void writeObject(Serdes serializer, ByteBuf buf, T object);
 }

@@ -16,7 +16,7 @@ import org.example.net.ConnectionManager;
 import org.example.net.DefaultDispatcher;
 import org.example.net.handler.CallBackFacade;
 import org.example.net.handler.Handler;
-import org.example.serde.CommonSerializer;
+import org.example.serde.Serdes;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -89,8 +89,8 @@ public class GameRpcConfigGenerator {
         .addParameter(ParameterSpec.builder(DefaultDispatcher.class, dispatcherVarName).build())
         .addParameter(
             ParameterSpec.builder(AnnotationConfigApplicationContext.class, contextVarName).build())
-        .addStatement("$T $L = $L.getBean($T.class)", CommonSerializer.class, serializerVarName,
-            contextVarName, CommonSerializer.class)
+        .addStatement("$T $L = $L.getBean($T.class)", Serdes.class, serializerVarName,
+            contextVarName, Serdes.class)
         .addStatement("$T $L = $L.getBean($T.class)", ConnectionManager.class, managerVar,
             contextVarName, ConnectionManager.class);
 

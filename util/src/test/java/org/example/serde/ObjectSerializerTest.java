@@ -16,12 +16,12 @@ import org.junit.jupiter.api.Test;
 
 public class ObjectSerializerTest {
 
-  private CommonSerializer serializer;
+  private Serdes serializer;
   private ByteBuf buf;
 
   @BeforeEach
   public void before() {
-    serializer = new CommonSerializer();
+    serializer = new Serdes();
     new DefaultSerializersRegister().register(serializer);
     buf = Unpooled.buffer();
   }

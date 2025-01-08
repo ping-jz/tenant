@@ -10,14 +10,14 @@ import java.nio.charset.StandardCharsets;
  * <p>
  * 长度:varint和ZigZag编码 内容:bytes
  * <p>
- * 与{@link CommonSerializer} 组合使用
+ * 与{@link Serdes} 组合使用
  *
  * @since 2021年07月17日 16:16:14
  **/
 public class StringSerializer implements Serializer<String> {
 
   @Override
-  public String readObject(CommonSerializer serializer, ByteBuf buf) {
+  public String readObject(Serdes serializer, ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
     if (length < 0) {
       return null;
@@ -26,7 +26,7 @@ public class StringSerializer implements Serializer<String> {
   }
 
   @Override
-  public void writeObject(CommonSerializer serializer, ByteBuf buf, String object) {
+  public void writeObject(Serdes serializer, ByteBuf buf, String object) {
     if (object == null) {
       NettyByteBufUtil.writeInt32(buf, -1);
     } else {

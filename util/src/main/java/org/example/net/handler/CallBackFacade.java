@@ -7,8 +7,8 @@ import org.example.net.Connection;
 import org.example.net.ConnectionManager;
 import org.example.net.Message;
 import org.example.net.Util;
-import org.example.serde.CommonSerializer;
 import org.example.serde.NettyByteBufUtil;
+import org.example.serde.Serdes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,10 +16,10 @@ public class CallBackFacade implements Handler {
 
   static final Logger logger = LoggerFactory.getLogger(CallBackFacade.class);
 
-  private final CommonSerializer serializer;
+  private final Serdes serializer;
   private final ConnectionManager manager;
 
-  public CallBackFacade(ConnectionManager manager, CommonSerializer serializer) {
+  public CallBackFacade(ConnectionManager manager, Serdes serializer) {
     this.serializer = serializer;
     this.manager = manager;
   }

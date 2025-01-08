@@ -13,12 +13,12 @@ import org.junit.jupiter.api.Test;
 
 public class ArraySerializerTest {
 
-  private CommonSerializer serializer;
+  private Serdes serializer;
   private ByteBuf buf;
 
   @BeforeEach
   public void beforeEach() {
-    serializer = new CommonSerializer();
+    serializer = new Serdes();
     new DefaultSerializersRegister().register(serializer);
     serializer.registerObject(ArrayWrapper.class);
     serializer.registerObject(int[][].class);

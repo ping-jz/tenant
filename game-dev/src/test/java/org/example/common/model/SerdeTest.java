@@ -6,7 +6,7 @@ import io.netty.buffer.Unpooled;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import org.example.serde.CollectionSerializer;
-import org.example.serde.CommonSerializer;
+import org.example.serde.Serdes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,12 +16,12 @@ import org.junit.jupiter.api.Test;
 public class SerdeTest {
 
 
-  private static CommonSerializer codeSerde;
+  private static Serdes codeSerde;
 
 
   @BeforeAll
   public static void prepare() {
-    codeSerde = new CommonSerializer();
+    codeSerde = new Serdes();
     codeSerde.registerSerializer(ReqMove.class, new ReqMoveSerde());
     codeSerde.registerSerializer(ResMove.class, new ResMoveSerde());
     codeSerde.registerSerializer(List.class, new CollectionSerializer());

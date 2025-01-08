@@ -13,7 +13,7 @@ import org.example.serde.array.ArraySerializer;
  *
  * @since 2021年07月17日 16:30:05
  **/
-public final class CommonSerializer {
+public final class Serdes {
 
   /**
    * [类型ID, 具体类型]
@@ -28,7 +28,7 @@ public final class CommonSerializer {
 
   }
 
-  public CommonSerializer() {
+  public Serdes() {
     serializers = new HashMap<>();
     id2Clazz = new Int2ObjectOpenHashMap<>();
   }

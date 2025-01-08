@@ -18,26 +18,26 @@ public class DefaultSerializersRegister {
    *
    * @since 2021年07月19日 23:00:35
    */
-  public void register(CommonSerializer commonSerializer) {
-    commonSerializer.registerSerializer(0, NullSerializer.class, new NullSerializer());
-    commonSerializer.registerSerializer(1, Byte.class, new ByteSerializer());
-    commonSerializer.registerSerializer(2, Boolean.class, new BooleanSerializer());
-    commonSerializer.registerSerializer(3, Short.class, new ShortSerializer());
-    commonSerializer.registerSerializer(4, Integer.class, new IntegerSerializer());
-    commonSerializer.registerSerializer(5, Long.class, new LongSerializer());
-    commonSerializer.registerSerializer(6, Float.class, new FloatSerializer());
-    commonSerializer.registerSerializer(7, Double.class, new DoubleSerializer());
-    commonSerializer.registerSerializer(9, Character.class, new CharacterSerializer());
-    commonSerializer.registerSerializer(10, String.class, new StringSerializer());
-    commonSerializer.registerSerializer(12, byte[].class, new ByteArraySerializer());
-    commonSerializer.registerSerializer(13, boolean[].class, new BooleanArraySerializer());
-    commonSerializer.registerSerializer(14, short[].class, new ShortArraySerializer());
-    commonSerializer.registerSerializer(15, char[].class, new CharArraySerializer());
-    commonSerializer.registerSerializer(16, float[].class, new FloatArraySerializer());
-    commonSerializer.registerSerializer(17, double[].class, new DoubleArraySerializer());
-    commonSerializer.registerSerializer(18, int[].class, new IntArraySerializer());
-    commonSerializer.registerSerializer(19, long[].class, new LongArraySerializer());
-    commonSerializer.registerSerializer(20, String[].class, new StringArraySerializer());
+  public void register(Serdes serdes) {
+    serdes.registerSerializer(0, NullSerializer.class, new NullSerializer());
+    serdes.registerSerializer(1, Byte.class, new ByteSerializer());
+    serdes.registerSerializer(2, Boolean.class, new BooleanSerializer());
+    serdes.registerSerializer(3, Short.class, new ShortSerializer());
+    serdes.registerSerializer(4, Integer.class, new IntegerSerializer());
+    serdes.registerSerializer(5, Long.class, new LongSerializer());
+    serdes.registerSerializer(6, Float.class, new FloatSerializer());
+    serdes.registerSerializer(7, Double.class, new DoubleSerializer());
+    serdes.registerSerializer(9, Character.class, new CharacterSerializer());
+    serdes.registerSerializer(10, String.class, new StringSerializer());
+    serdes.registerSerializer(12, byte[].class, new ByteArraySerializer());
+    serdes.registerSerializer(13, boolean[].class, new BooleanArraySerializer());
+    serdes.registerSerializer(14, short[].class, new ShortArraySerializer());
+    serdes.registerSerializer(15, char[].class, new CharArraySerializer());
+    serdes.registerSerializer(16, float[].class, new FloatArraySerializer());
+    serdes.registerSerializer(17, double[].class, new DoubleArraySerializer());
+    serdes.registerSerializer(18, int[].class, new IntArraySerializer());
+    serdes.registerSerializer(19, long[].class, new LongArraySerializer());
+    serdes.registerSerializer(20, String[].class, new StringArraySerializer());
   }
 
 }

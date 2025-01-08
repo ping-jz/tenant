@@ -13,7 +13,7 @@ public class SerializerTest {
   /** 写入buf */
   private final ByteBuf buf = Unpooled.buffer();
   /** 测试对象 */
-  private final CommonSerializer serializer = new CommonSerializer();
+  private final Serdes serializer = new Serdes();
 
 
   @BeforeEach

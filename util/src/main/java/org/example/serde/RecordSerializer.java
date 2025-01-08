@@ -28,7 +28,7 @@ public class RecordSerializer implements Serializer<Object> {
   }
 
   @Override
-  public Object readObject(CommonSerializer serializer, ByteBuf buf) {
+  public Object readObject(Serdes serializer, ByteBuf buf) {
     Object[] args = null;
     if (0 < fields.length) {
       args = new Object[fields.length];
@@ -56,7 +56,7 @@ public class RecordSerializer implements Serializer<Object> {
   }
 
   @Override
-  public void writeObject(CommonSerializer serializer, ByteBuf buf, Object object) {
+  public void writeObject(Serdes serializer, ByteBuf buf, Object object) {
     for (FieldInfo field : fields) {
       try {
         Object value = field.getter().invoke(object);

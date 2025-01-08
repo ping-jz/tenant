@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.example.serde.CollectionSerializer;
-import org.example.serde.CommonSerializer;
+import org.example.serde.Serdes;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Level;
@@ -30,19 +30,19 @@ public class SerdeTest {
 
   CodecObject object;
 
-  CommonSerializer codeSerde;
-  CommonSerializer refSerde;
+  Serdes codeSerde;
+  Serdes refSerde;
 
   @Setup
   public void prepare() {
     object = new CodecObject();
 
-    codeSerde = new CommonSerializer();
+    codeSerde = new Serdes();
     codeSerde.registerSerializer(CodecObject.class, new CodecObjectSerde());
     codeSerde.registerSerializer(List.class, new CollectionSerializer());
     codeSerde.registerSerializer(ArrayList.class, new CollectionSerializer());
 
-    refSerde = new CommonSerializer();
+    refSerde = new Serdes();
     refSerde.registerObject(CodecObject.class);
     refSerde.registerSerializer(List.class, new CollectionSerializer());
     refSerde.registerSerializer(ArrayList.class, new CollectionSerializer());

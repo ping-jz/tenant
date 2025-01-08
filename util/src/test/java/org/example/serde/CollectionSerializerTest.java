@@ -24,13 +24,13 @@ import org.junit.jupiter.api.Test;
 public class CollectionSerializerTest {
 
   /** 业务入口 */
-  private CommonSerializer serializer;
+  private Serdes serializer;
   /** 临时buff */
   private ByteBuf buf;
 
   @BeforeEach
   public void beforeEach() {
-    serializer = new CommonSerializer();
+    serializer = new Serdes();
     buf = Unpooled.buffer();
 
     new DefaultSerializersRegister().register(serializer);

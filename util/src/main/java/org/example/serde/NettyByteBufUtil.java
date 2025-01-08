@@ -284,13 +284,13 @@ public class NettyByteBufUtil {
    * @param buffer the {@link ByteBuf} to add. {@link ByteBuf#release()} ownership is not transferred
    * {@link CompositeByteBuf}.
    */
-  public static ByteBuf encode(CommonSerializer commonSerializer, Message message, ByteBuf buffer) {
+  public static ByteBuf encode(Serdes serdes, Message message, ByteBuf buffer) {
     CompositeByteBuf composite = ByteBufAllocator.DEFAULT.compositeBuffer();
     try {
       int writerIndex = composite.writerIndex();
       composite.writeInt(0);
 
-      commonSerializer.writeObject(composite, message);
+      serdes.writeObject(composite, message);
       composite.addComponent(true, buffer.retain());
       composite.setInt(writerIndex, composite.writerIndex() - writerIndex);
       return composite;

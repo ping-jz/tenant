@@ -17,6 +17,7 @@ import org.example.net.anno.Req;
 import org.example.net.handler.ArgExecSupplier;
 import org.example.net.handler.ExecSupplier;
 import org.example.net.handler.RawExecSupplier;
+import org.example.serde.Serdes;
 
 public final class Util {
 
@@ -35,8 +36,7 @@ public final class Util {
   public static final ClassName CONNECTION_GETTER =
       ClassName.get("org.example.net", "ConnectionManager");
   public static final ClassName BASE_REMOTING = ClassName.get("org.example.net", "BaseRemoting");
-  public static final ClassName COMMON_SERIALIZER = ClassName.get("org.example.serde",
-      "CommonSerializer");
+  public static final ClassName COMMON_SERIALIZER = ClassName.get(Serdes.class);
 
   public static final String SERIALIZER_VAR_NAME = "serializer";
   public static final FieldSpec COMMON_SERIALIZER_FIELD_SPEC = FieldSpec

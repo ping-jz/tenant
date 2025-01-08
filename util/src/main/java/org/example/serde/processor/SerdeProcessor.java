@@ -31,8 +31,8 @@ import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 import org.apache.commons.lang3.StringUtils;
-import org.example.serde.CommonSerializer;
 import org.example.serde.NettyByteBufUtil;
+import org.example.serde.Serdes;
 import org.example.serde.Serializer;
 
 @SupportedAnnotationTypes("org.example.serde.Serde")
@@ -158,7 +158,7 @@ public class SerdeProcessor extends AbstractProcessor {
           .addAnnotation(Override.class)
           .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
           .returns(typeName)
-          .addParameter(CommonSerializer.class, SERIALIZER_VAR_NAME)
+          .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
           .addParameter(ByteBuf.class, BUF_VAR_NAME);
 
       builder.addCode("return new $T(\n", typeName);
@@ -197,7 +197,7 @@ public class SerdeProcessor extends AbstractProcessor {
       MethodSpec.Builder builder = MethodSpec.methodBuilder("writeObject")
           .addAnnotation(Override.class)
           .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-          .addParameter(CommonSerializer.class, SERIALIZER_VAR_NAME)
+          .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
           .addParameter(ByteBuf.class, BUF_VAR_NAME, Modifier.FINAL)
           .addParameter(typeName, OBJECT_VAR_NAME, Modifier.FINAL)
           .returns(TypeName.VOID);
@@ -310,7 +310,7 @@ public class SerdeProcessor extends AbstractProcessor {
       MethodSpec.Builder builder = MethodSpec.methodBuilder("readObject")
           .addAnnotation(Override.class)
           .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-          .addParameter(CommonSerializer.class, SERIALIZER_VAR_NAME)
+          .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
           .addParameter(ByteBuf.class, BUF_VAR_NAME, Modifier.FINAL)
           .addStatement("$T $L = new $T()", typeName, OBJECT_VAR_NAME, typeName).returns(typeName);
 
@@ -366,7 +366,7 @@ public class SerdeProcessor extends AbstractProcessor {
       MethodSpec.Builder builder = MethodSpec.methodBuilder("writeObject")
           .addAnnotation(Override.class)
           .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-          .addParameter(CommonSerializer.class, SERIALIZER_VAR_NAME)
+          .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
           .addParameter(ByteBuf.class, BUF_VAR_NAME, Modifier.FINAL)
           .addParameter(typeName, OBJECT_VAR_NAME, Modifier.FINAL)
           .returns(TypeName.VOID);

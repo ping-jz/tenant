@@ -12,16 +12,17 @@ import java.util.List;
 /**
  * 通用对象序列化实现
  *
- * <p>2.字段类型也需要注册进{@link CommonSerializer}, 顺序无关</p>
+ * <p>2.字段类型也需要注册进{@link Serdes}, 顺序无关</p>
  * <p>3.因为接口和抽象类的存在，无法确定具体类型，所以不提供自动注册</p>
  * <p>
- * 与{@link CommonSerializer} 组合使用,本体功能并不完整
+ * 与{@link Serdes} 组合使用,本体功能并不完整
  *
  * @since 2021年07月17日 16:16:14
  **/
 public class ObjectSerializer implements Serializer<Object> {
 
-  public static final FieldInfo[] EMPTY_FILE_INFO = new FieldInfo[0];
+  private static final FieldInfo[] EMPTY_FILE_INFO = new FieldInfo[0];
+
   /**
    * 目标类型
    */
@@ -50,7 +51,7 @@ public class ObjectSerializer implements Serializer<Object> {
    */
   public static void checkClass(Class<?> clazz) {
     if (clazz.isInterface() || clazz.isAnnotation() || clazz.isPrimitive() || Modifier.isAbstract(
-        clazz.getModifiers()) || clazz == Object.class) {
+        clazz.getModifiers())) {
       throw new RuntimeException("类型:" + clazz + ",无法序列化");
     }
 
@@ -103,7 +104,7 @@ public class ObjectSerializer implements Serializer<Object> {
   }
 
   @Override
-  public Object readObject(CommonSerializer serializer, ByteBuf buf) {
+  public Object readObject(Serdes serializer, ByteBuf buf) {
     Object o;
     try {
       o = constructor.invoke();
@@ -125,7 +126,7 @@ public class ObjectSerializer implements Serializer<Object> {
   }
 
   @Override
-  public void writeObject(CommonSerializer serializer, ByteBuf buf, Object object) {
+  public void writeObject(Serdes serializer, ByteBuf buf, Object object) {
     for (FieldInfo field : fields) {
       try {
         Object value = field.getter().invoke(object);

@@ -5,7 +5,7 @@ import io.netty.buffer.ByteBuf;
 /**
  * 枚举类序列化
  * <p>
- * 与{@link CommonSerializer} 组合使用
+ * 与{@link Serdes} 组合使用
  *
  * @since 2022年03月13日 16:16:14
  */
@@ -37,7 +37,7 @@ public class EnumSerializer<E extends Enum<E>> implements Serializer<E> {
   }
 
   @Override
-  public E readObject(CommonSerializer serializer, ByteBuf buf) {
+  public E readObject(Serdes serializer, ByteBuf buf) {
     int idx = NettyByteBufUtil.readInt32(buf);
     if (idx == NULL_IDX) {
       return null;
@@ -52,7 +52,7 @@ public class EnumSerializer<E extends Enum<E>> implements Serializer<E> {
   }
 
   @Override
-  public void writeObject(CommonSerializer serializer, ByteBuf buf, E object) {
+  public void writeObject(Serdes serializer, ByteBuf buf, E object) {
     int idx = NULL_IDX;
     if (object != null) {
       idx = object.ordinal();

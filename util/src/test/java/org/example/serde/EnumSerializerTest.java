@@ -13,25 +13,25 @@ public class EnumSerializerTest {
 
   @Test
   public void simpleTest() {
-    CommonSerializer commonSerializer = new CommonSerializer();
+    Serdes serdes = new Serdes();
     EnumSerializer<EnumOne> serializer = new EnumSerializer<>(EnumOne.class);
     ByteBuf byteBuf = Unpooled.buffer();
 
     for (EnumOne o : EnumOne.values()) {
-      serializer.writeObject(commonSerializer, byteBuf, o);
+      serializer.writeObject(serdes, byteBuf, o);
     }
 
     for (EnumOne o : EnumOne.values()) {
-      Assertions.assertEquals(o, serializer.readObject(commonSerializer, byteBuf));
+      Assertions.assertEquals(o, serializer.readObject(serdes, byteBuf));
     }
 
-    serializer.writeObject(commonSerializer, byteBuf, null);
-    Assertions.assertNull(serializer.readObject(commonSerializer, byteBuf));
+    serializer.writeObject(serdes, byteBuf, null);
+    Assertions.assertNull(serializer.readObject(serdes, byteBuf));
   }
 
   @Test
   public void intergateTest() {
-    CommonSerializer serializer = new CommonSerializer();
+    Serdes serializer = new Serdes();
     new DefaultSerializersRegister().register(serializer);
     serializer.registerObject(EnumOne.class);
     serializer.registerObject(EnumTwo.class);

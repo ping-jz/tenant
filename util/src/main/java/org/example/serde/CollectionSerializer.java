@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.function.IntFunction;
-import org.example.serde.CommonSerializer.SerializerPair;
+import org.example.serde.Serdes.SerializerPair;
 
 
 /**
@@ -21,7 +21,7 @@ import org.example.serde.CommonSerializer.SerializerPair;
  *    元素:实现决定
  * </pre>
  * <p>
- * 与{@link CommonSerializer} 组合使用
+ * 与{@link Serdes} 组合使用
  *
  * @since 2021年07月18日 14:17:04
  **/
@@ -45,7 +45,7 @@ public class CollectionSerializer implements Serializer<Object> {
   }
 
   @Override
-  public Object readObject(CommonSerializer serializer, ByteBuf buf) {
+  public Object readObject(Serdes serializer, ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
     if (length < 0) {
       return null;
@@ -76,7 +76,7 @@ public class CollectionSerializer implements Serializer<Object> {
   }
 
   @Override
-  public void writeObject(CommonSerializer serializer, ByteBuf buf, Object object) {
+  public void writeObject(Serdes serializer, ByteBuf buf, Object object) {
     if (object == null) {
       NettyByteBufUtil.writeInt32(buf, -1);
     } else {

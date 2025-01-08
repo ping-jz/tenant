@@ -25,9 +25,9 @@ import org.example.net.DefaultDispatcher;
 import org.example.net.codec.MessageCodec;
 import org.example.net.handler.CallBackFacade;
 import org.example.net.handler.DispatcherHandler;
-import org.example.serde.CommonSerializer;
 import org.example.serde.DefaultSerializersRegister;
 import org.example.serde.NettyByteBufUtil;
+import org.example.serde.Serdes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
@@ -36,27 +36,27 @@ public class AvatarFacadeTest {
 
   private static EmbeddedChannel embeddedChannel;
   private static ConnectionManager connectionManager;
-  private static CommonSerializer commonSerializer;
+  private static Serdes serdes;
   private static AvatarFacadeInvoker invoker;
 
   @BeforeAll
   public static void beforeAll() {
     connectionManager = new ConnectionManager();
-    commonSerializer = new CommonSerializer();
-    new DefaultSerializersRegister().register(commonSerializer);
-    commonSerializer.registerSerializer(ReqMove.class, new ReqMoveSerde());
-    commonSerializer.registerSerializer(ResMove.class, new ResMoveSerde());
+    serdes = new Serdes();
+    new DefaultSerializersRegister().register(serdes);
+    serdes.registerSerializer(ReqMove.class, new ReqMoveSerde());
+    serdes.registerSerializer(ResMove.class, new ResMoveSerde());
 
-    invoker = new AvatarFacadeInvoker(connectionManager, commonSerializer);
+    invoker = new AvatarFacadeInvoker(connectionManager, serdes);
 
     DefaultDispatcher handlerRegistry = new DefaultDispatcher();
     AvatarFacade facade = new AvatarFacade(invoker);
-    AvatarFacadeHandler handler = new AvatarFacadeHandler(facade, commonSerializer);
+    AvatarFacadeHandler handler = new AvatarFacadeHandler(facade, serdes);
     for (int id : AvatarFacadeHandler.protos) {
       handlerRegistry.registeHandler(id, handler);
     }
 
-    CallBackFacade gameFacadeCallBack = new CallBackFacade(connectionManager, commonSerializer);
+    CallBackFacade gameFacadeCallBack = new CallBackFacade(connectionManager, serdes);
     handlerRegistry.registeHandler(gameFacadeCallBack.id(), gameFacadeCallBack);
 
     embeddedChannel = new EmbeddedChannel();
@@ -82,7 +82,7 @@ public class AvatarFacadeTest {
       reqBuf.skipBytes(Integer.BYTES);
       NettyByteBufUtil.readInt32(reqBuf);
       ByteBuf buf = Unpooled.buffer();
-      commonSerializer.writeObject(buf, str);
+      serdes.writeObject(buf, str);
       Assertions.assertArrayEquals(NettyByteBufUtil.readBytes(buf),
           NettyByteBufUtil.readBytes(reqBuf));
       Assertions.assertFalse(reqBuf.isReadable());
@@ -103,7 +103,7 @@ public class AvatarFacadeTest {
       resBuf.skipBytes(Integer.BYTES);
       int protoId = NettyByteBufUtil.readInt32(resBuf);
       Assertions.assertNotEquals(0, protoId);
-      Assertions.assertEquals(str, commonSerializer.readObject(resBuf));
+      Assertions.assertEquals(str, serdes.readObject(resBuf));
 
       Assertions.assertFalse(resBuf.isReadable());
       Assertions.assertNull(embeddedChannel.readOutbound());
