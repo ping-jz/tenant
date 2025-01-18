@@ -18,19 +18,19 @@ public final class Serdes {
   /**
    * [类型ID, 具体类型]
    */
-  private Int2ObjectOpenHashMap<Class<?>> id2Clazz;
+  private Int2ObjectOpenHashMap<SerializerPair> id2Serders;
   /**
    * 序列化注册 [目标类型 -> 序列化实现]
    */
-  private Map<Class<?>, SerializerPair> serializers;
+  private Map<Class<?>, SerializerPair> type2Serders;
 
-  public record SerializerPair(int typeId, Serializer<?> serializer) {
+  public record SerializerPair(Serializer<?> serializer, Class<?> clz, int typeId) {
 
   }
 
   public Serdes() {
-    serializers = new HashMap<>();
-    id2Clazz = new Int2ObjectOpenHashMap<>();
+    type2Serders = new HashMap<>();
+    id2Serders = new Int2ObjectOpenHashMap<>();
   }
 
 
@@ -46,12 +46,22 @@ public final class Serdes {
     Objects.requireNonNull(clazz);
     Objects.requireNonNull(serializer);
 
-    if (id2Clazz.containsKey(id)) {
-      throw new RuntimeException(String.format("%s,%s 类型ID发生冲突", id2Clazz.get(id), clazz));
+    if (id2Serders.containsKey(id)) {
+      throw new RuntimeException(
+          String.format("%s,%s 类型ID:%s。发生冲突", id2Serders.get(id).clz(), clazz, id));
     }
 
-    id2Clazz.put(id, clazz);
-    serializers.put(clazz, new SerializerPair(id, serializer));
+    if (type2Serders.containsKey(clazz)) {
+      SerializerPair pair = type2Serders.get(clazz);
+      throw new RuntimeException(
+          String.format(
+              "clz:%s, id:%s, cls:%s,id:%s 类型ID不一致", pair.clz(), pair.typeId(), clazz, id));
+    }
+
+    SerializerPair pair = new SerializerPair(serializer, clazz, id);
+
+    id2Serders.put(id, pair);
+    type2Serders.put(clazz, pair);
   }
 
   /**
@@ -61,7 +71,7 @@ public final class Serdes {
    * @since 2021年07月18日 16:18:08
    */
   public SerializerPair getSerializerPair(Class<?> cls) {
-    return serializers.get(cls);
+    return type2Serders.get(cls);
   }
 
   /**
@@ -70,8 +80,9 @@ public final class Serdes {
    * @param typeId 类型ID
    * @since 2021年07月18日 16:18:08
    */
-  public Class<?> getClazz(int typeId) {
-    return id2Clazz.get(typeId);
+  public Serializer<?> getSeriailizer(int typeId) {
+    SerializerPair typePair = id2Serders.get(typeId);
+    return typePair != null ? typePair.serializer : null;
   }
 
   /**
@@ -131,15 +142,12 @@ public final class Serdes {
     int readerIndex = buf.readerIndex();
     try {
       int typeId = NettyByteBufUtil.readInt32(buf);
-      Class<?> clazz = getClazz(typeId);
+      Serializer<?> clazz = getSeriailizer(typeId);
       if (clazz == null) {
         throw new NullPointerException("类型ID:" + typeId + "，未注册");
       }
-      SerializerPair pair = getSerializerPair(clazz);
-      if (pair == null) {
-        throw new NullPointerException("类型ID:" + typeId + "，未注册");
-      }
-      return pair.serializer.readObject(this, buf);
+
+      return clazz.readObject(this, buf);
     } catch (Exception e) {
       buf.readerIndex(readerIndex);
       throw new RuntimeException(e);

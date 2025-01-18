@@ -12,9 +12,8 @@ import org.springframework.stereotype.Component;
  * @author ZJP
  * @since 2021年07月25日 14:27:59
  **/
-@Target(ElementType.TYPE)
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Component
-public @interface LocalRpc {
-
+public @interface LocalReq {
 }

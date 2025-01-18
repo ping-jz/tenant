@@ -3,6 +3,7 @@ package org.example.net;
 import com.palantir.javapoet.ClassName;
 import com.palantir.javapoet.FieldSpec;
 import com.palantir.javapoet.TypeName;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -78,7 +79,7 @@ public final class Util {
   public static final String FACADE_VAR_NAME = "f";
 
   public static List<ExecutableElement> getReqMethod(ProcessingEnvironment processingEnv,
-      TypeElement typeElement) {
+      TypeElement typeElement, Class<? extends Annotation> anno) {
     List<ExecutableElement> res = new ArrayList<>();
 
     for (Element element : typeElement.getEnclosedElements()) {
@@ -86,7 +87,7 @@ public final class Util {
         continue;
       }
 
-      if (element.getAnnotation(Req.class) == null) {
+      if (element.getAnnotation(anno) == null) {
         continue;
       }
 

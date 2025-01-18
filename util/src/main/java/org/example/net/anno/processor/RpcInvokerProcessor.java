@@ -44,6 +44,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 import org.example.net.Util;
+import org.example.net.anno.Req;
 
 /**
  * 负责RPC方法的调用类和代理类
@@ -77,7 +78,8 @@ public class RpcInvokerProcessor extends AbstractProcessor {
       for (Element clazz : annotationElements) {
         TypeElement typeElement = (TypeElement) clazz;
         try {
-          List<ExecutableElement> elements = Util.getReqMethod(processingEnv, typeElement);
+          List<ExecutableElement> elements = Util.getReqMethod(processingEnv, typeElement,
+              Req.class);
           generateOuter(typeElement, elements);
         } catch (Exception e) {
           processingEnv.getMessager()

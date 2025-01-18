@@ -34,6 +34,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 import org.example.net.Util;
+import org.example.net.anno.LocalReq;
 
 /**
  * 负责RPC方法的调用类和代理类
@@ -42,13 +43,11 @@ import org.example.net.Util;
  * @author zhongjianping
  * @since 2024/8/9 11:19
  */
-@SupportedAnnotationTypes("org.example.net.anno.LocalRpc")
+@SupportedAnnotationTypes("org.example.net.anno.Rpc")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @AutoService(Processor.class)
 public class LocalRpcProcessor extends AbstractProcessor {
 
-
-  private static final String INVOKER_SUBFIX = "Invoker";
   private static final String LOCAL_SUBFIX = "Local";
   private static final String RUNNABLE_VAR_NAME = "r";
 
@@ -63,7 +62,8 @@ public class LocalRpcProcessor extends AbstractProcessor {
       for (Element clazz : annotationElements) {
         TypeElement typeElement = (TypeElement) clazz;
         try {
-          List<ExecutableElement> elements = Util.getReqMethod(processingEnv, typeElement);
+          List<ExecutableElement> elements = Util.getReqMethod(processingEnv, typeElement,
+              LocalReq.class);
 
           buildInvoker(typeElement, elements);
         } catch (Exception e) {
@@ -83,6 +83,10 @@ public class LocalRpcProcessor extends AbstractProcessor {
 
   public void buildInvoker(TypeElement typeElement, List<ExecutableElement> elements)
       throws Exception {
+    if (elements.isEmpty()) {
+      return;
+    }
+
     ClassName typeName = ClassName.get(typeElement);
     TypeSpec invoker = buildInvoker0(typeElement, elements).build();
     ClassName invokerClassName = ClassName.get(typeName.packageName(), invoker.name());
@@ -96,12 +100,8 @@ public class LocalRpcProcessor extends AbstractProcessor {
   }
 
   TypeSpec.Builder buildInvoker0(TypeElement typeElement, List<ExecutableElement> methods) {
-    final String simpleName;
-    if (typeElement.getSimpleName().toString().endsWith(LOCAL_SUBFIX)) {
-      simpleName = typeElement.getSimpleName().toString() + INVOKER_SUBFIX;
-    } else {
-      simpleName = typeElement.getSimpleName().toString() + LOCAL_SUBFIX + INVOKER_SUBFIX;
-    }
+    final String simpleName = typeElement.getSimpleName().toString() + LOCAL_SUBFIX;
+
     TypeSpec.Builder typeBuilder = TypeSpec
         .classBuilder(simpleName)
         .addAnnotation(Util.COMPONENT_ANNOTATION)

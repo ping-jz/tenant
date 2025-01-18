@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.IntFunction;
-import org.example.serde.Serdes.SerializerPair;
 
 /**
  * Map集合序列化，默认实现为{@link HashMap},反序列化不保持顺序
@@ -53,17 +52,11 @@ public class MapSerializer<K, V> implements Serializer<Map<K, V>> {
       Serializer<Object> keySer = null;
       Serializer<Object> valSer = null;
 
-      Class<?> kClz = Objects.requireNonNull(serializer.getClazz(keyTypeId),
-          () -> "Map解析，未注册的Key类型ID:%s".formatted(keyTypeId));
-      SerializerPair kPair = Objects.requireNonNull(serializer.getSerializerPair(kClz),
-          () -> "Map解析，未注册的Key类型:%s".formatted(kClz));
-      keySer = (Serializer<Object>) kPair.serializer();
+      keySer = (Serializer<Object>) Objects.requireNonNull(serializer.getSeriailizer(keyTypeId),
+          () -> "未注册的类型ID:%s".formatted(keyTypeId));
 
-      Class<?> vClz = Objects.requireNonNull(serializer.getClazz(valueTypeId),
-          () -> "Map解析，未注册的Value类型ID:%s".formatted(valueTypeId));
-      SerializerPair vPair = Objects.requireNonNull(serializer.getSerializerPair(vClz),
-          () -> "Map解析，未注册的Value类型:%s".formatted(vClz));
-      valSer = (Serializer<Object>) vPair.serializer();
+      valSer = (Serializer<Object>) Objects.requireNonNull(serializer.getSeriailizer(valueTypeId),
+          () -> "未注册的类型ID:%s".formatted(valueTypeId));
 
       Map<K, V> map = supplier.apply(length);
       for (int i = 0; i < length; i++) {

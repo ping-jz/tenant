@@ -21,13 +21,10 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -46,10 +43,9 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
-import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
-import javax.tools.StandardLocation;
 import org.example.net.Util;
+import org.example.net.anno.Req;
 
 /**
  * 负责RPC方法的调用类和代理类
@@ -76,12 +72,9 @@ public class RpcHandlerProcessor extends AbstractProcessor {
       MESSAGE_CLASS_NAME,
       MESSAGE_VAR_NAME).build();
 
-  private Set<String> set = Collections.emptySet();
-
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
-    set = new ConcurrentSkipListSet<>();
   }
 
 
@@ -106,12 +99,11 @@ public class RpcHandlerProcessor extends AbstractProcessor {
         }
         TypeElement facade = (TypeElement) clazz;
 
-        List<ExecutableElement> methodElements = Util.getReqMethod(processingEnv, facade);
+        List<ExecutableElement> methodElements = Util.getReqMethod(processingEnv, facade,
+            Req.class);
         if (methodElements.isEmpty()) {
           continue;
         }
-
-        set.add(facade.toString());
 
         try {
           buildHandler(facade, methodElements);
@@ -130,24 +122,6 @@ public class RpcHandlerProcessor extends AbstractProcessor {
         }
       }
     }
-
-    if (roundEnv.processingOver()) {
-      try {
-        FileObject fileObject = processingEnv.getFiler()
-            .createResource(StandardLocation.CLASS_OUTPUT, "",
-                "META-INF/services/testssss");
-
-        try (PrintWriter writer = new PrintWriter(fileObject.openWriter())) {
-          for (String s : set) {
-            writer.println(s);
-          }
-          writer.println(Instant.now().toString());
-        }
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
     return false;
   }
 

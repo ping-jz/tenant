@@ -14,13 +14,13 @@ import org.junit.jupiter.api.RepeatedTest;
 
 public class AvatarIdFacadeLocalTest {
 
-  private static AvatarIdFacadeLocal facade;
-  private static AvatarIdFacadeLocalInvoker invoker;
+  private static AvatarIdService facade;
+  private static AvatarIdServiceLocal invoker;
 
   @BeforeAll
   public static void beforeAll() {
-    facade = new AvatarIdFacadeLocal();
-    invoker = new AvatarIdFacadeLocalInvoker(facade);
+    facade = new AvatarIdService();
+    invoker = new AvatarIdServiceLocal(facade);
   }
 
   @RepeatedTest(10)

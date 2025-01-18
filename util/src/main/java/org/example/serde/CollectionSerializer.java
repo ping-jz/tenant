@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.function.IntFunction;
-import org.example.serde.Serdes.SerializerPair;
 
 
 /**
@@ -45,6 +44,7 @@ public class CollectionSerializer implements Serializer<Object> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public Object readObject(Serdes serializer, ByteBuf buf) {
     int length = NettyByteBufUtil.readInt32(buf);
     if (length < 0) {
@@ -57,11 +57,8 @@ public class CollectionSerializer implements Serializer<Object> {
 
     if (typeId != 0) {
       Serializer<Object> ser = null;
-      Class<?> clz = Objects.requireNonNull(serializer.getClazz(typeId),
+      ser = (Serializer<Object>) Objects.requireNonNull(serializer.getSeriailizer(typeId),
           () -> "未注册的类型ID:%s".formatted(typeId));
-      SerializerPair pair = Objects.requireNonNull(serializer.getSerializerPair(clz),
-          () -> "未注册的类型:%s".formatted(clz));
-      ser = (Serializer<Object>) pair.serializer();
 
       for (int i = 0; i < length; i++) {
         collection.add(ser.readObject(serializer, buf));
