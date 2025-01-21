@@ -1,10 +1,11 @@
 package org.example.serde;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.example.util.NettyByteBufUtil;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * 编码，反编码工具类测试
@@ -47,22 +48,22 @@ public class NettyByteBufUtilTest {
     ByteBuf buf = Unpooled.buffer();
     for (long i = -10000000L; i <= 10000000L; i++) {
       buf.clear();
-      NettyByteBufUtil.writeInt64(buf, i);
-      assertEquals(i, NettyByteBufUtil.readInt64(buf));
+      NettyByteBufUtil.writeVarInt64(buf, i);
+      assertEquals(i, NettyByteBufUtil.readVarInt64(buf));
     }
 
     buf.clear();
-    NettyByteBufUtil.writeInt64(buf, Long.MIN_VALUE);
-    NettyByteBufUtil.writeInt64(buf, -123123123);
-    assertEquals(Long.MIN_VALUE, NettyByteBufUtil.readInt64(buf));
-    assertEquals(-123123123, NettyByteBufUtil.readInt64(buf));
+    NettyByteBufUtil.writeVarInt64(buf, Long.MIN_VALUE);
+    NettyByteBufUtil.writeVarInt64(buf, -123123123);
+    assertEquals(Long.MIN_VALUE, NettyByteBufUtil.readVarInt64(buf));
+    assertEquals(-123123123, NettyByteBufUtil.readVarInt64(buf));
     assertEquals(0, buf.readableBytes());
 
     buf.clear();
-    NettyByteBufUtil.writeInt64(buf, Long.MAX_VALUE);
-    NettyByteBufUtil.writeInt64(buf, 5555555);
-    assertEquals(Long.MAX_VALUE, NettyByteBufUtil.readInt64(buf));
-    assertEquals(5555555, NettyByteBufUtil.readInt64(buf));
+    NettyByteBufUtil.writeVarInt64(buf, Long.MAX_VALUE);
+    NettyByteBufUtil.writeVarInt64(buf, 5555555);
+    assertEquals(Long.MAX_VALUE, NettyByteBufUtil.readVarInt64(buf));
+    assertEquals(5555555, NettyByteBufUtil.readVarInt64(buf));
     assertEquals(0, buf.readableBytes());
   }
 
@@ -89,22 +90,22 @@ public class NettyByteBufUtilTest {
     ByteBuf buf = Unpooled.buffer();
     for (int i = -10000000; i <= 10000000; i++) {
       buf.clear();
-      NettyByteBufUtil.writeInt32(buf, i);
-      assertEquals(i, NettyByteBufUtil.readInt32(buf));
+      NettyByteBufUtil.writeVarInt32(buf, i);
+      assertEquals(i, NettyByteBufUtil.readVarInt32(buf));
     }
 
     buf.clear();
-    NettyByteBufUtil.writeInt32(buf, Integer.MIN_VALUE);
-    NettyByteBufUtil.writeInt32(buf, -123123123);
-    assertEquals(Integer.MIN_VALUE, NettyByteBufUtil.readInt32(buf));
-    assertEquals(-123123123, NettyByteBufUtil.readInt32(buf));
+    NettyByteBufUtil.writeVarInt32(buf, Integer.MIN_VALUE);
+    NettyByteBufUtil.writeVarInt32(buf, -123123123);
+    assertEquals(Integer.MIN_VALUE, NettyByteBufUtil.readVarInt32(buf));
+    assertEquals(-123123123, NettyByteBufUtil.readVarInt32(buf));
     assertEquals(0, buf.readableBytes());
 
     buf.clear();
-    NettyByteBufUtil.writeInt32(buf, Integer.MAX_VALUE);
-    NettyByteBufUtil.writeInt32(buf, 123123123);
-    assertEquals(Integer.MAX_VALUE, NettyByteBufUtil.readInt32(buf));
-    assertEquals(123123123, NettyByteBufUtil.readInt32(buf));
+    NettyByteBufUtil.writeVarInt32(buf, Integer.MAX_VALUE);
+    NettyByteBufUtil.writeVarInt32(buf, 123123123);
+    assertEquals(Integer.MAX_VALUE, NettyByteBufUtil.readVarInt32(buf));
+    assertEquals(123123123, NettyByteBufUtil.readVarInt32(buf));
     assertEquals(0, buf.readableBytes());
   }
 

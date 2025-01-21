@@ -18,7 +18,7 @@ public class StringSerializer implements Serializer<String> {
 
   @Override
   public String readObject(Serdes serializer, ByteBuf buf) {
-    int length = NettyByteBufUtil.readInt32(buf);
+    int length = serializer.readVarInt32(buf);
     if (length < 0) {
       return null;
     }
@@ -28,10 +28,10 @@ public class StringSerializer implements Serializer<String> {
   @Override
   public void writeObject(Serdes serializer, ByteBuf buf, String object) {
     if (object == null) {
-      NettyByteBufUtil.writeInt32(buf, -1);
+      serializer.writeVarInt32(buf, -1);
     } else {
       byte[] bytes = object.getBytes(StandardCharsets.UTF_8);
-      NettyByteBufUtil.writeInt32(buf, bytes.length);
+      serializer.writeVarInt32(buf, bytes.length);
       buf.writeBytes(bytes);
     }
   }

@@ -3,7 +3,6 @@ package org.example.serde.array;
 import io.netty.buffer.ByteBuf;
 import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
-import org.example.serde.NettyByteBufUtil;
 import org.example.serde.Serdes;
 import org.example.serde.Serializer;
 
@@ -16,14 +15,14 @@ public class StringArraySerializer implements Serializer<String[]> {
 
   @Override
   public String[] readObject(Serdes serializer, ByteBuf buf) {
-    int length = NettyByteBufUtil.readInt32(buf);
+    int length = serializer.readVarInt32(buf);
     if (length < 0) {
       return null;
     }
 
     String[] array = new String[length];
     for (int i = 0; i < length; ++i) {
-      int strLength = NettyByteBufUtil.readInt32(buf);
+      int strLength = serializer.readVarInt32(buf);
       if (0 <= strLength) {
         array[i] = buf.readCharSequence(strLength, StandardCharsets.UTF_8).toString();
       }
@@ -36,19 +35,19 @@ public class StringArraySerializer implements Serializer<String[]> {
   @Override
   public void writeObject(Serdes serializer, ByteBuf buf, String[] object) {
     if (object == null) {
-      NettyByteBufUtil.writeInt32(buf, Integer.MIN_VALUE);
+      serializer.writeVarInt32(buf, Integer.MIN_VALUE);
       return;
     }
 
     final int length = Array.getLength(object);
-    NettyByteBufUtil.writeInt32(buf, length);
+    serializer.writeVarInt32(buf, length);
 
     for (String s : object) {
       if (s == null) {
-        NettyByteBufUtil.writeInt32(buf, Integer.MIN_VALUE);
+        serializer.writeVarInt32(buf, Integer.MIN_VALUE);
       } else {
         byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
-        NettyByteBufUtil.writeInt32(buf, bytes.length);
+        serializer.writeVarInt32(buf, bytes.length);
         buf.writeBytes(bytes);
       }
     }

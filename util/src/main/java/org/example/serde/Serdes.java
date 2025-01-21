@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.example.serde.array.ArraySerializer;
+import org.example.util.NettyByteBufUtil;
 
 /**
  * 序列化组合实现,业务主要入口
@@ -133,6 +134,42 @@ public final class Serdes {
     registerSerializer(clazz.getName().hashCode(), clazz, serializer);
   }
 
+  /**
+   * {@link NettyByteBufUtil#writeVarInt32(ByteBuf, int)}
+   *
+   * @since 2025/1/21 18:46
+   */
+  public void writeVarInt32(ByteBuf buf, int value) {
+    NettyByteBufUtil.writeVarInt32(buf, value);
+  }
+
+  /**
+   * {@link NettyByteBufUtil#readVarInt32(ByteBuf)} (ByteBuf, int)}
+   *
+   * @since 2025/1/21 18:46
+   */
+  public int readVarInt32(ByteBuf buf) {
+    return NettyByteBufUtil.readVarInt32(buf);
+  }
+
+  /**
+   * {@link NettyByteBufUtil#writeVarInt64(ByteBuf, long)} (ByteBuf, int)}
+   *
+   * @since 2025/1/21 18:46
+   */
+  public void writeVarInt64(ByteBuf buf, long value) {
+    NettyByteBufUtil.writeVarInt64(buf, value);
+  }
+
+  /**
+   * {@link NettyByteBufUtil#readVarInt64(ByteBuf)} (ByteBuf)}
+   *
+   * @since 2025/1/21 18:46
+   */
+  public long readVarInt64(ByteBuf buf) {
+    return NettyByteBufUtil.readVarInt64(buf);
+  }
+
   @SuppressWarnings("unchecked")
   public <V> V readObject(ByteBuf buf) {
     return (V) read(buf);
@@ -141,7 +178,7 @@ public final class Serdes {
   private Object read(ByteBuf buf) {
     int readerIndex = buf.readerIndex();
     try {
-      int typeId = NettyByteBufUtil.readInt32(buf);
+      int typeId = readVarInt32(buf);
       Serializer<?> clazz = getSeriailizer(typeId);
       if (clazz == null) {
         throw new NullPointerException("类型ID:" + typeId + "，未注册");
@@ -166,7 +203,7 @@ public final class Serdes {
       }
 
       Serializer<Object> serializer = (Serializer<Object>) pair.serializer;
-      NettyByteBufUtil.writeInt32(buf, pair.typeId);
+      writeVarInt32(buf, pair.typeId);
       serializer.writeObject(this, buf, object);
     } catch (Exception e) {
       buf.writerIndex(writeIdx);

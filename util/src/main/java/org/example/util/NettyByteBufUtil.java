@@ -1,10 +1,12 @@
-package org.example.serde;
+package org.example.util;
 
+import io.netty.buffer.AdaptiveByteBufAllocator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 import org.apache.commons.lang3.ArrayUtils;
 import org.example.net.Message;
+import org.example.serde.Serdes;
 
 /**
  * 编码，反编码工具类。代码部分从ProtoBuf那里复制过来。方便实现自己的需求
@@ -12,19 +14,25 @@ import org.example.net.Message;
  * @author ZJP
  * @since 2021年07月17日 09:26:40
  **/
-public class NettyByteBufUtil {
+public final class NettyByteBufUtil {
+
+  /** 测试使用中 */
+  public static final ByteBufAllocator DEFAULT = new AdaptiveByteBufAllocator();
+
+  private NettyByteBufUtil() {
+  }
 
   /**
    * Write a int32 field to the {@param buf}.
    */
-  public static void writeInt32(ByteBuf buf, int value) {
+  public static void writeVarInt32(ByteBuf buf, int value) {
     writeRawVarint32(buf, encodeZigZag32(value));
   }
 
   /**
    * read a int32 field from the {@param buf}.
    */
-  public static int readInt32(ByteBuf buf) {
+  public static int readVarInt32(ByteBuf buf) {
     return decodeZigZag32(readRawVarint32(buf));
   }
 
@@ -115,7 +123,7 @@ public class NettyByteBufUtil {
    * @param value 写入的内容
    * @since 2021年07月17日 09:40:01
    */
-  public static void writeInt64(ByteBuf buf, long value) {
+  public static void writeVarInt64(ByteBuf buf, long value) {
     writeRawVarint64(buf, encodeZigZag64(value));
   }
 
@@ -125,7 +133,7 @@ public class NettyByteBufUtil {
    * @param buf 目前buff
    * @since 2021年07月17日 09:40:01
    */
-  public static long readInt64(ByteBuf buf) {
+  public static long readVarInt64(ByteBuf buf) {
     return decodeZigZag64(readRawVarint64(buf));
   }
 
@@ -277,12 +285,13 @@ public class NettyByteBufUtil {
   }
 
   /**
-   * Add the given {@link ByteBuf} and increase the {@code writerIndex} if {@code increaseWriterIndex} is
-   * {@code true}.
-   *
+   * Add the given {@link ByteBuf} and increase the {@code writerIndex} if
+   * {@code increaseWriterIndex} is {@code true}.
+   * <p>
    * {@link ByteBuf#release()} ownership of {@code buffer} is not transferred.
-   * @param buffer the {@link ByteBuf} to add. {@link ByteBuf#release()} ownership is not transferred
-   * {@link CompositeByteBuf}.
+   *
+   * @param buffer the {@link ByteBuf} to add. {@link ByteBuf#release()} ownership is not
+   *               transferred {@link CompositeByteBuf}.
    */
   public static ByteBuf encode(Serdes serdes, Message message, ByteBuf buffer) {
     CompositeByteBuf composite = ByteBufAllocator.DEFAULT.compositeBuffer();

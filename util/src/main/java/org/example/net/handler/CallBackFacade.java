@@ -7,7 +7,6 @@ import org.example.net.Connection;
 import org.example.net.ConnectionManager;
 import org.example.net.Message;
 import org.example.net.Util;
-import org.example.serde.NettyByteBufUtil;
 import org.example.serde.Serdes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +24,7 @@ public class CallBackFacade implements Handler {
   }
 
   void callback(Connection c, Message m) throws Exception {
-    final int msgId = NettyByteBufUtil.readInt32(m.packet());
+    final int msgId = serializer.readVarInt32(m.packet());
     final CompletableFuture<?> futureVar = manager.removeInvokeFuture(msgId);
     if (futureVar == null) {
       logger.error(

@@ -31,7 +31,6 @@ import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 import org.apache.commons.lang3.StringUtils;
-import org.example.serde.NettyByteBufUtil;
 import org.example.serde.Serdes;
 import org.example.serde.Serializer;
 
@@ -172,11 +171,11 @@ public class SerdeProcessor extends AbstractProcessor {
           case CHAR -> builder.addCode("$L.readChar()", BUF_VAR_NAME);
           case FLOAT -> builder.addCode("$L.readFloat()", BUF_VAR_NAME);
           case DOUBLE -> builder.addCode("$T $L = $L.readDouble()", BUF_VAR_NAME);
-          case INT -> builder.addCode("$T.readInt32($L)",
-              NettyByteBufUtil.class,
+          case INT -> builder.addCode("$L.readVarInt32($L)",
+              SERIALIZER_VAR_NAME,
               BUF_VAR_NAME);
-          case LONG -> builder.addCode("$T.readInt64($L)",
-              NettyByteBufUtil.class,
+          case LONG -> builder.addCode("$L.readVarInt64($L)",
+              SERIALIZER_VAR_NAME,
               BUF_VAR_NAME);
           default -> builder.addCode("$L.readObject($L)",
               SERIALIZER_VAR_NAME,
@@ -229,13 +228,13 @@ public class SerdeProcessor extends AbstractProcessor {
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case INT -> builder.addStatement("$T.writeInt32($L, $L.$L())",
-              NettyByteBufUtil.class,
+          case INT -> builder.addStatement("$L.writeVarInt32($L, $L.$L())",
+              SERIALIZER_VAR_NAME,
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case LONG -> builder.addStatement("$T.writeInt64($L, $L.$L())",
-              NettyByteBufUtil.class,
+          case LONG -> builder.addStatement("$L.writeVarInt64($L, $L.$L())",
+              SERIALIZER_VAR_NAME,
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
@@ -341,15 +340,15 @@ public class SerdeProcessor extends AbstractProcessor {
               OBJECT_VAR_NAME,
               fieldName,
               BUF_VAR_NAME);
-          case INT -> builder.addStatement("$L.set$L($T.readInt32($L))",
+          case INT -> builder.addStatement("$L.set$L($L.readVarInt32($L))",
               OBJECT_VAR_NAME,
               fieldName,
-              NettyByteBufUtil.class,
+              SERIALIZER_VAR_NAME,
               BUF_VAR_NAME);
-          case LONG -> builder.addStatement("$L.set$L($T.readInt64($L))",
+          case LONG -> builder.addStatement("$L.set$L($L.readVarInt64($L))",
               OBJECT_VAR_NAME,
               fieldName,
-              NettyByteBufUtil.class,
+              SERIALIZER_VAR_NAME,
               BUF_VAR_NAME);
           default -> builder.addStatement("$L.set$L($L.readObject(buf))",
               OBJECT_VAR_NAME,
@@ -398,13 +397,13 @@ public class SerdeProcessor extends AbstractProcessor {
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case INT -> builder.addStatement("$T.writeInt32($L, $L.get$L())",
-              NettyByteBufUtil.class,
+          case INT -> builder.addStatement("$L.writeVarInt32($L, $L.get$L())",
+              SERIALIZER_VAR_NAME,
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case LONG -> builder.addStatement("$T.writeInt64($L, $L.get$L())",
-              NettyByteBufUtil.class,
+          case LONG -> builder.addStatement("$L.writeVarInt64($L, $L.get$L())",
+              SERIALIZER_VAR_NAME,
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);

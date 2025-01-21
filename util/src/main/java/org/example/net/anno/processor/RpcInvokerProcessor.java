@@ -1,7 +1,6 @@
 package org.example.net.anno.processor;
 
 import static org.example.net.Util.BASE_REMOTING;
-import static org.example.net.Util.BYTEBUF_UTIL;
 import static org.example.net.Util.BYTE_BUF;
 import static org.example.net.Util.COMMON_SERIALIZER;
 import static org.example.net.Util.CONNECTION_CLASS_NAME;
@@ -11,6 +10,7 @@ import static org.example.net.Util.LOGGER_FACTOR;
 import static org.example.net.Util.MESSAGE_CLASS_NAME;
 import static org.example.net.Util.MSG_ID_VAR_NAME;
 import static org.example.net.Util.POOLED_UTIL;
+import static org.example.net.Util.SERIALIZER_VAR_NAME;
 
 import com.google.auto.service.AutoService;
 import com.palantir.javapoet.ClassName;
@@ -126,9 +126,9 @@ public class RpcInvokerProcessor extends AbstractProcessor {
         .constructorBuilder()
         .addModifiers(Modifier.PUBLIC)
         .addParameter(CONNECTION_GETTER, "manager")
-        .addParameter(COMMON_SERIALIZER, "serializer")
+        .addParameter(COMMON_SERIALIZER, SERIALIZER_VAR_NAME)
         .addStatement("this.manager = manager")
-        .addStatement("this.serializer = serializer")
+        .addStatement("this.$L = $L", SERIALIZER_VAR_NAME, SERIALIZER_VAR_NAME)
         .addStatement("remoting = new $T()", BASE_REMOTING)
         .build();
 
@@ -216,7 +216,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
 
         //Handle param
         if (callback) {
-          methodBuilder.addStatement("$T.writeInt32($L, $L)", BYTEBUF_UTIL, BUF_VAR_NAME,
+          methodBuilder.addStatement("$L.writeVarInt32($L, $L)", SERIALIZER_VAR_NAME, BUF_VAR_NAME,
               MSG_ID_VAR_NAME);
         }
         for (VariableElement variableElement : method.getParameters()) {
@@ -238,13 +238,14 @@ public class RpcInvokerProcessor extends AbstractProcessor {
             case CHAR -> methodBuilder.addStatement("$L.writeChar($L)", BUF_VAR_NAME, name);
             case FLOAT -> methodBuilder.addStatement("$L.writeFloat($L)", BUF_VAR_NAME, name);
             case DOUBLE -> methodBuilder.addStatement("$L.writeDouble($L)", BUF_VAR_NAME, name);
-            case INT ->
-                methodBuilder.addStatement("$T.writeInt32($L, $L)", BYTEBUF_UTIL, BUF_VAR_NAME,
-                    name);
-            case LONG ->
-                methodBuilder.addStatement("$T.writeInt64($L, $L)", BYTEBUF_UTIL, BUF_VAR_NAME,
-                    name);
-            default -> methodBuilder.addStatement("serializer.writeObject(buf, $L)", name);
+            case INT -> methodBuilder.addStatement("$L.writeVarInt32($L, $L)", SERIALIZER_VAR_NAME,
+                BUF_VAR_NAME,
+                name);
+            case LONG -> methodBuilder.addStatement("$L.writeVarInt64($L, $L)", SERIALIZER_VAR_NAME,
+                BUF_VAR_NAME,
+                name);
+            default ->
+                methodBuilder.addStatement("$L.writeObject(buf, $L)", SERIALIZER_VAR_NAME, name);
           }
         }
 

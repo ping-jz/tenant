@@ -4,7 +4,6 @@ import io.netty.buffer.ByteBuf;
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
-import org.example.serde.NettyByteBufUtil;
 import org.example.serde.Serdes;
 import org.example.serde.Serdes.SerializerPair;
 import org.example.serde.Serializer;
@@ -47,7 +46,7 @@ public class ArraySerializer implements Serializer<Object> {
   @Override
   @SuppressWarnings("unchecked")
   public Object readObject(Serdes serializer, ByteBuf buf) {
-    int length = NettyByteBufUtil.readInt32(buf);
+    int length = serializer.readVarInt32(buf);
     if (length < 0) {
       return null;
     }
@@ -82,7 +81,7 @@ public class ArraySerializer implements Serializer<Object> {
       throw new RuntimeException("类型:" + object.getClass() + ",不是数组");
     }
     final int length = Array.getLength(object);
-    NettyByteBufUtil.writeInt32(buf, length);
+    serializer.writeVarInt32(buf, length);
 
     Serializer<Object> ser = null;
     if (Modifier.isFinal(componentType.getModifiers())) {

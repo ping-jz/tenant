@@ -1,7 +1,6 @@
 package org.example.serde.array;
 
 import io.netty.buffer.ByteBuf;
-import org.example.serde.NettyByteBufUtil;
 import org.example.serde.Serdes;
 import org.example.serde.Serializer;
 
@@ -35,7 +34,7 @@ public class FloatArraySerializer implements Serializer<float[]> {
 
   @Override
   public float[] readObject(Serdes serializer, ByteBuf buf) {
-    int length = NettyByteBufUtil.readInt32(buf);
+    int length = serializer.readVarInt32(buf);
     if (length < 0) {
       return null;
     }
@@ -51,7 +50,7 @@ public class FloatArraySerializer implements Serializer<float[]> {
   @Override
   public void writeObject(Serdes serializer, ByteBuf buf, float[] object) {
     final int length = object.length;
-    NettyByteBufUtil.writeInt32(buf, length);
+    serializer.writeVarInt32(buf, length);
     for (float o : object) {
       buf.writeFloat(o);
     }

@@ -5,7 +5,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import java.util.List;
 import org.example.net.Message;
-import org.example.serde.NettyByteBufUtil;
+import org.example.util.NettyByteBufUtil;
 
 /**
  * {@link Message} 序列化和反序列
@@ -24,7 +24,7 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
     int start = out.writerIndex();
     //serializing
     out.writerIndex(start + lengthFieldLength);
-    NettyByteBufUtil.writeInt32(out, msg.proto());
+    NettyByteBufUtil.writeVarInt32(out, msg.proto());
     out.writeBytes(msg.packet());
 
     //set the length
@@ -55,7 +55,7 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
     ByteBuf buf = in.retainedSlice(readIdx, length).skipBytes(lengthFieldLength);
 
     out.add(Message.of(
-        NettyByteBufUtil.readInt32(buf),
+        NettyByteBufUtil.readVarInt32(buf),
         buf));
   }
 }

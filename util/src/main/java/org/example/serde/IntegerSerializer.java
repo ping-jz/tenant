@@ -13,11 +13,11 @@ public class IntegerSerializer implements Serializer<Integer> {
 
   @Override
   public Integer readObject(Serdes serializer, ByteBuf buf) {
-    return NettyByteBufUtil.readInt32(buf);
+    return serializer.readVarInt32(buf);
   }
 
   @Override
   public void writeObject(Serdes serializer, ByteBuf buf, Integer object) {
-    NettyByteBufUtil.writeInt32(buf, object);
+    serializer.writeVarInt32(buf, object);
   }
 }

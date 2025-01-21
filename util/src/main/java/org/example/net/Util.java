@@ -19,6 +19,7 @@ import org.example.net.handler.ArgExecSupplier;
 import org.example.net.handler.ExecSupplier;
 import org.example.net.handler.RawExecSupplier;
 import org.example.serde.Serdes;
+import org.example.util.NettyByteBufUtil;
 
 public final class Util {
 
@@ -45,10 +46,7 @@ public final class Util {
       .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
       .build();
   public static final ClassName BYTE_BUF = ClassName.get("io.netty.buffer", "ByteBuf");
-  public static final ClassName BYTEBUF_UTIL = ClassName.get("org.example.serde",
-      "NettyByteBufUtil");
-  public static final ClassName POOLED_UTIL = ClassName.get("io.netty.buffer",
-      "PooledByteBufAllocator");
+  public static final ClassName POOLED_UTIL = ClassName.get(NettyByteBufUtil.class);
 
   public static final ClassName UNNPOOLED_UTIL = ClassName.get("io.netty.buffer",
       "Unpooled");

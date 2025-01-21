@@ -1,7 +1,6 @@
 package org.example.serde.array;
 
 import io.netty.buffer.ByteBuf;
-import org.example.serde.NettyByteBufUtil;
 import org.example.serde.Serdes;
 import org.example.serde.Serializer;
 
@@ -34,15 +33,15 @@ public class CharArraySerializer implements Serializer<char[]> {
 
   @Override
   public char[] readObject(Serdes serializer, ByteBuf buf) {
-    int length = NettyByteBufUtil.readInt32(buf);
+    int length = serializer.readVarInt32(buf);
     if (length < 0) {
       return null;
     }
-      char[] array = new char[length];
-      for (int i = 0; i < length; i++) {
-        array[i] = buf.readChar();
-      }
-      return array;
+    char[] array = new char[length];
+    for (int i = 0; i < length; i++) {
+      array[i] = buf.readChar();
+    }
+    return array;
 
   }
 
@@ -50,7 +49,7 @@ public class CharArraySerializer implements Serializer<char[]> {
   @Override
   public void writeObject(Serdes serializer, ByteBuf buf, char[] object) {
     final int length = object.length;
-    NettyByteBufUtil.writeInt32(buf, length);
+    serializer.writeVarInt32(buf, length);
     for (char o : object) {
       buf.writeShort(o);
     }

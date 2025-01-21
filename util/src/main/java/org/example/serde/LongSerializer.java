@@ -13,11 +13,11 @@ public class LongSerializer implements Serializer<Long> {
 
   @Override
   public Long readObject(Serdes serializer, ByteBuf buf) {
-    return NettyByteBufUtil.readInt64(buf);
+    return serializer.readVarInt64(buf);
   }
 
   @Override
   public void writeObject(Serdes serializer, ByteBuf buf, Long object) {
-    NettyByteBufUtil.writeInt64(buf, object);
+    serializer.writeVarInt64(buf, object);
   }
 }

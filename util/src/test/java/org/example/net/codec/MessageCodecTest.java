@@ -1,6 +1,7 @@
 package org.example.net.codec;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.netty.buffer.ByteBuf;
@@ -9,7 +10,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
 import org.example.net.Message;
-import org.example.serde.NettyByteBufUtil;
+import org.example.util.NettyByteBufUtil;
 import org.junit.jupiter.api.Test;
 
 public class MessageCodecTest {
@@ -24,14 +25,14 @@ public class MessageCodecTest {
         "Hello World".getBytes(StandardCharsets.UTF_8)
     );
     channel.writeOutbound(message);
-    assertEquals(message.refCnt(), 0);
+    assertFalse(message.packet().isReadable());
 
     ByteBuf out = channel.readOutbound();
 
     int length = out.readInt();
     assertTrue(0 < length);
 
-    assertEquals(protoId, NettyByteBufUtil.readInt32(out));
+    assertEquals(protoId, NettyByteBufUtil.readVarInt32(out));
     byte[] bytes = new byte[out.readableBytes()];
     out.readBytes(bytes);
     assertEquals(Unpooled.wrappedBuffer("Hello World".getBytes(StandardCharsets.UTF_8)),
@@ -52,8 +53,8 @@ public class MessageCodecTest {
     ByteBuf inBuf = Unpooled.buffer();
     int start = inBuf.writerIndex();
     inBuf.writerIndex(Integer.BYTES);
-    NettyByteBufUtil.writeInt32(inBuf, proto);
-    NettyByteBufUtil.writeInt32(inBuf, optIdx);
+    NettyByteBufUtil.writeVarInt32(inBuf, proto);
+    NettyByteBufUtil.writeVarInt32(inBuf, optIdx);
     inBuf.writeBytes(helloWorld);
 
     inBuf.setInt(start, inBuf.readableBytes());
@@ -61,7 +62,7 @@ public class MessageCodecTest {
 
     Message out = channel.readInbound();
     assertEquals(proto, out.proto());
-    assertEquals(optIdx, NettyByteBufUtil.readInt32(out.packet()));
+    assertEquals(optIdx, NettyByteBufUtil.readVarInt32(out.packet()));
     assertEquals(Unpooled.wrappedBuffer(helloWorld), out.packet());
     assertEquals(0, inBuf.readableBytes());
 

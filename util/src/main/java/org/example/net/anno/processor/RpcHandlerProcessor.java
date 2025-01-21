@@ -1,6 +1,5 @@
 package org.example.net.anno.processor;
 
-import static org.example.net.Util.BYTEBUF_UTIL;
 import static org.example.net.Util.BYTE_BUF;
 import static org.example.net.Util.CONNECTION_CLASS_NAME;
 import static org.example.net.Util.FACADE_VAR_NAME;
@@ -216,7 +215,8 @@ public class RpcHandlerProcessor extends AbstractProcessor {
       methodBuilder.addStatement("$T $L = $L.packet()", BYTE_BUF, BUF_VAR_NAME, MESSAGE_VAR_NAME);
 
       if (hasReturnValue(element)) {
-        methodBuilder.addStatement("int $L = $T.readInt32($L)", MSG_ID_VAR_NAME, BYTEBUF_UTIL,
+        methodBuilder.addStatement("int $L = $L.readVarInt32($L)", MSG_ID_VAR_NAME,
+            SERIALIZER_VAR_NAME,
             BUF_VAR_NAME);
       }
 
@@ -235,9 +235,11 @@ public class RpcHandlerProcessor extends AbstractProcessor {
               methodBuilder.addStatement("float $L = $L.readFloat()", pname, BUF_VAR_NAME);
           case DOUBLE ->
               methodBuilder.addStatement("double $L = $L.readDouble()", pname, BUF_VAR_NAME);
-          case INT -> methodBuilder.addStatement("int $L = $T.readInt32($L)", pname, BYTEBUF_UTIL,
+          case INT ->
+              methodBuilder.addStatement("int $L = $L.readVarInt32($L)", pname, SERIALIZER_VAR_NAME,
               BUF_VAR_NAME);
-          case LONG -> methodBuilder.addStatement("long $L = $T.readInt64($L)", pname, BYTEBUF_UTIL,
+          case LONG -> methodBuilder.addStatement("long $L = $L.readVarInt64($L)", pname,
+              SERIALIZER_VAR_NAME,
               BUF_VAR_NAME);
           default -> {
             TypeMirror paramType = p.asType();
@@ -323,7 +325,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
           .add("\n")
           .addStatement("$T $L = $T.DEFAULT.buffer()", BYTE_BUF, resBuf, Util.POOLED_UTIL)
           .beginControlFlow("try")
-          .addStatement("$T.writeInt32($L, $L)", BYTEBUF_UTIL, resBuf, MSG_ID_VAR_NAME)
+          .addStatement("$L.writeVarInt32($L, $L)", SERIALIZER_VAR_NAME, resBuf, MSG_ID_VAR_NAME)
           .addStatement("$L.writeObject($L, $L)", SERIALIZER_VAR_NAME, resBuf, resVarName)
           .addStatement("$L.channel().writeAndFlush($T.of($L, $L))", CONNECTION_VAR_NAME,
               MESSAGE_CLASS_NAME, Util.CALL_BACK_ID, resBuf)

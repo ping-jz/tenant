@@ -103,7 +103,9 @@ public class Message implements ReferenceCounted {
 
   @Override
   public boolean release() {
-    return packet.release();
+    boolean suc = packet.release();
+    packet = Unpooled.EMPTY_BUFFER;
+    return suc;
   }
 
   @Override

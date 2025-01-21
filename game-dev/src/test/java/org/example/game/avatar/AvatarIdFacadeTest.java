@@ -26,8 +26,8 @@ import org.example.net.codec.MessageCodec;
 import org.example.net.handler.CallBackFacade;
 import org.example.net.handler.DispatcherHandler;
 import org.example.serde.DefaultSerializersRegister;
-import org.example.serde.NettyByteBufUtil;
 import org.example.serde.Serdes;
+import org.example.util.NettyByteBufUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
@@ -83,7 +83,7 @@ public class AvatarIdFacadeTest {
 
       reqBuf.skipBytes(Integer.BYTES);
       //协议ID
-      Assertions.assertNotEquals(0, NettyByteBufUtil.readInt32(reqBuf));
+      Assertions.assertNotEquals(0, NettyByteBufUtil.readVarInt32(reqBuf));
 
       ByteBuf buf = Unpooled.buffer();
       serdes.writeObject(buf, avatarId);
@@ -107,7 +107,7 @@ public class AvatarIdFacadeTest {
       }
       Assertions.assertNotNull(resBuf);
       resBuf.skipBytes(Integer.BYTES);
-      int protoId = NettyByteBufUtil.readInt32(resBuf);
+      int protoId = NettyByteBufUtil.readVarInt32(resBuf);
       Assertions.assertNotEquals(0, protoId);
       Assertions.assertEquals(avatarId, serdes.readObject(resBuf));
       Assertions.assertEquals(str, serdes.readObject(resBuf));
@@ -130,7 +130,7 @@ public class AvatarIdFacadeTest {
       reqBuf.markReaderIndex();
       reqBuf.skipBytes(Integer.BYTES);
       //协议ID
-      Assertions.assertNotEquals(0, NettyByteBufUtil.readInt32(reqBuf));
+      Assertions.assertNotEquals(0, NettyByteBufUtil.readVarInt32(reqBuf));
       Assertions.assertFalse(
           Arrays.equals(ArrayUtils.EMPTY_BYTE_ARRAY, NettyByteBufUtil.readBytes(reqBuf)));
       Assertions.assertFalse(reqBuf.isReadable());

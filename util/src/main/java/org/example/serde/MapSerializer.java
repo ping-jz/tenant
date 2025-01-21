@@ -41,13 +41,13 @@ public class MapSerializer<K, V> implements Serializer<Map<K, V>> {
   @Override
   @SuppressWarnings("unchecked")
   public Map<K, V> readObject(Serdes serializer, ByteBuf buf) {
-    int length = NettyByteBufUtil.readInt32(buf);
+    int length = serializer.readVarInt32(buf);
     if (length < 0) {
       return null;
     }
 
-    int keyTypeId = NettyByteBufUtil.readInt32(buf);
-    int valueTypeId = NettyByteBufUtil.readInt32(buf);
+    int keyTypeId = serializer.readVarInt32(buf);
+    int valueTypeId = serializer.readVarInt32(buf);
     if (keyTypeId != 0 && valueTypeId != 0) {
       Serializer<Object> keySer = null;
       Serializer<Object> valSer = null;
@@ -79,14 +79,14 @@ public class MapSerializer<K, V> implements Serializer<Map<K, V>> {
   @Override
   public void writeObject(Serdes serializer, ByteBuf buf, Map<K, V> object) {
     if (object == null) {
-      NettyByteBufUtil.writeInt32(buf, -1);
+      serializer.writeVarInt32(buf, -1);
       return;
     }
 
     int length = object.size();
-    NettyByteBufUtil.writeInt32(buf, length);
-    NettyByteBufUtil.writeInt32(buf, 0);
-    NettyByteBufUtil.writeInt32(buf, 0);
+    serializer.writeVarInt32(buf, length);
+    serializer.writeVarInt32(buf, 0);
+    serializer.writeVarInt32(buf, 0);
 
     for (Entry<K, V> e : object.entrySet()) {
       Object key = e.getKey();

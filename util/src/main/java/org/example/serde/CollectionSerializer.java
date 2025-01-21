@@ -46,12 +46,12 @@ public class CollectionSerializer implements Serializer<Object> {
   @Override
   @SuppressWarnings("unchecked")
   public Object readObject(Serdes serializer, ByteBuf buf) {
-    int length = NettyByteBufUtil.readInt32(buf);
+    int length = serializer.readVarInt32(buf);
     if (length < 0) {
       return null;
     }
 
-    int typeId = NettyByteBufUtil.readInt32(buf);
+    int typeId = serializer.readVarInt32(buf);
 
     Collection<Object> collection = factory.apply(length);
 
@@ -75,15 +75,15 @@ public class CollectionSerializer implements Serializer<Object> {
   @Override
   public void writeObject(Serdes serializer, ByteBuf buf, Object object) {
     if (object == null) {
-      NettyByteBufUtil.writeInt32(buf, -1);
+      serializer.writeVarInt32(buf, -1);
     } else {
       if (!(object instanceof Collection)) {
         throw new RuntimeException("类型:" + object.getClass() + ",不是集合");
       }
       @SuppressWarnings("unchecked") Collection<Object> collection = (Collection<Object>) object;
 
-      NettyByteBufUtil.writeInt32(buf, collection.size());
-      NettyByteBufUtil.writeInt32(buf, 0);
+      serializer.writeVarInt32(buf, collection.size());
+      serializer.writeVarInt32(buf, 0);
 
       for (Object o : collection) {
         serializer.writeObject(buf, o);
