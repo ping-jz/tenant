@@ -52,8 +52,8 @@ public class VirutalExecutors {
    * @param id 指定执行器所属ID
    * @since 2024/12/8 18:31
    */
-  public Thread executeWith(Identity id, Runnable command) {
-    return temporalExecutor.get(id).exec(command);
+  public void executeWith(Identity id, Runnable command) {
+    temporalExecutor.get(id).exec(command);
   }
 
   /**

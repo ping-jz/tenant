@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.example.common.model.AvatarId;
 import org.example.common.model.ReqMove;
@@ -110,6 +111,48 @@ public class AvatarFacadeTest {
       ReferenceCountUtil.release(resBuf);
       break;
     }
+  }
+
+  @RepeatedTest(100)
+  public void echoLoop() throws Exception {
+    int loops = 1000;
+    String[] strs = IntStream.range(0, loops)
+        .mapToObj(ignore -> String.valueOf(ThreadLocalRandom.current().nextLong()))
+        .toArray(String[]::new);
+    for (String str : strs) {
+      invoker.of(embeddedChannel.attr(Connection.CONNECTION).get())
+          .echo(str);
+    }
+
+    //模拟网络消息
+    TimeUnit.NANOSECONDS.sleep(1);
+    for (int i = 0; i < strs.length; i++) {
+      {
+        ByteBuf reqBuf = embeddedChannel.readOutbound();
+        embeddedChannel.writeInbound(reqBuf);
+      }
+    }
+
+    for (String str : strs) {
+      //验证返回的结果
+      while (true) {
+        ByteBuf resBuf = embeddedChannel.readOutbound();
+        if (resBuf == null) {
+          TimeUnit.NANOSECONDS.sleep(1);
+          continue;
+        }
+        Assertions.assertNotEquals(0, resBuf.readInt());
+        int protoId = NettyByteBufUtil.readVarInt32(resBuf);
+        Assertions.assertNotEquals(0, protoId);
+        Assertions.assertEquals(str, serdes.readObject(resBuf));
+
+        Assertions.assertFalse(resBuf.isReadable());
+        ReferenceCountUtil.release(resBuf);
+        break;
+      }
+    }
+
+    Assertions.assertNull(embeddedChannel.readOutbound());
   }
 
   @RepeatedTest(10)

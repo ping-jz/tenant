@@ -4,7 +4,7 @@ package org.example.exec;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.example.util.Identity;
 import org.jctools.queues.MpscUnboundedArrayQueue;
 import org.slf4j.Logger;
@@ -20,14 +20,14 @@ public class VirtualExecutor implements Executor {
   private static final ThreadLocal<Identity> CURRENT = new ThreadLocal<>();
 
   private final Queue<Runnable> queue;
-  private final ReentrantLock lock;
+  private final AtomicBoolean running;
   private final ThreadFactory factory;
   private final Identity identity;
 
   public VirtualExecutor(Identity identity) {
     this.identity = identity;
     queue = new MpscUnboundedArrayQueue<>(128);
-    lock = new ReentrantLock();
+    running = new AtomicBoolean();
     factory = Thread.ofVirtual().name(identity.toString())
         .uncaughtExceptionHandler((t, e) -> {
           logger.error("VirtualExecutor uncaughtException", e);
@@ -40,13 +40,20 @@ public class VirtualExecutor implements Executor {
   }
 
   private void run() {
-    lock.lock();
+    boolean failed = !running.compareAndSet(false, true);
+    if (failed) {
+      return;
+    }
+
     try {
       CURRENT.set(identity);
       doRun();
     } finally {
       CURRENT.remove();
-      lock.unlock();
+      running.set(false);
+      if (!queue.isEmpty()) {
+        trySchedule();
+      }
     }
   }
 
@@ -62,11 +69,18 @@ public class VirtualExecutor implements Executor {
     exec(command);
   }
 
-  public Thread exec(Runnable command) {
+  public void exec(Runnable command) {
     queue.add(command);
+    trySchedule();
+  }
+
+  private void trySchedule() {
+    if (running.get()) {
+      return;
+    }
+
     Thread thread = factory.newThread(this::run);
     thread.start();
-    return thread;
   }
 
   public boolean isEmpty() {
