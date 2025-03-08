@@ -1,7 +1,7 @@
 package org.example.exec;
 
-
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -17,7 +17,7 @@ public class VirtualExecutor implements Executor {
   /**
    * 当前Executor的ID
    */
-  private static final ThreadLocal<Identity> CURRENT = new ThreadLocal<>();
+  private static final ConcurrentHashMap<Thread, Identity> CURRENT = new ConcurrentHashMap<>();
 
   private final Queue<Runnable> queue;
   private final AtomicBoolean running;
@@ -45,13 +45,15 @@ public class VirtualExecutor implements Executor {
       return;
     }
 
+    Thread thread = Thread.currentThread();
     try {
-      CURRENT.set(identity);
+      CURRENT.put(thread, identity);
       doRun();
     } finally {
-      CURRENT.remove();
+      CURRENT.remove(thread);
       running.set(false);
-      if (!queue.isEmpty()) {
+
+      if (!isEmpty()) {
         trySchedule();
       }
     }
@@ -88,7 +90,7 @@ public class VirtualExecutor implements Executor {
   }
 
   public static VirtualExecutor current() {
-    Identity identity = CURRENT.get();
+    Identity identity = CURRENT.get(Thread.currentThread());
     if (identity == null) {
       return null;
     }
