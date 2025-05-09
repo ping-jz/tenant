@@ -1,6 +1,5 @@
 package org.example.util;
 
-import io.netty.buffer.AdaptiveByteBufAllocator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
@@ -17,7 +16,7 @@ import org.example.serde.Serdes;
 public final class NettyByteBufUtil {
 
   /** 测试使用中 */
-  public static final ByteBufAllocator DEFAULT = new AdaptiveByteBufAllocator();
+  public static final ByteBufAllocator DEFAULT = ByteBufAllocator.DEFAULT;
 
   private NettyByteBufUtil() {
   }
