@@ -3,7 +3,6 @@ package org.example.common;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
-import org.example.common.generator.SerdeConfigGenerator;
 import org.example.common.generator.rpc.GameRpcConfigGenerator;
 
 public final class SourceCodeGenerator {
@@ -13,7 +12,7 @@ public final class SourceCodeGenerator {
    * @since 2024/8/8 20:42
    */
   private static List<Consumer<Path>> codeGenerators() {
-    return List.of(SerdeConfigGenerator::serdeConfig, GameRpcConfigGenerator::rpcConfig);
+    return List.of(GameRpcConfigGenerator::rpcConfig);
   }
 
   public static void main(String[] args) {

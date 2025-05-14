@@ -9,15 +9,22 @@ import com.palantir.javapoet.TypeName;
 import com.palantir.javapoet.TypeSpec;
 import com.palantir.javapoet.TypeSpec.Builder;
 import io.netty.buffer.ByteBuf;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Filer;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -29,26 +36,40 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic.Kind;
+import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
 import org.apache.commons.lang3.StringUtils;
+import org.example.serde.SerdeRegister;
 import org.example.serde.Serdes;
 import org.example.serde.Serializer;
+import org.example.util.ServicesFiles;
 
 @SupportedAnnotationTypes("org.example.serde.Serde")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @AutoService(Processor.class)
 public class SerdeProcessor extends AbstractProcessor {
 
+  private static final String SERDE_SUB_FIX = "Serde";
   private static final String BUF_VAR_NAME = "buf";
   private static final String SERIALIZER_VAR_NAME = "serializer";
   private static final String OBJECT_VAR_NAME = "object";
 
+  private final Map<Integer, String> serdeObjects = new HashMap<>();
+
   public SerdeProcessor() {
   }
 
-
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    processElements(annotations, roundEnv);
+    if (roundEnv.processingOver()) {
+      generateConfigFiles();
+    }
+    return false;
+  }
+
+  private void processElements(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
     for (TypeElement annotation : annotations) {
       Set<? extends Element> annotationElements = roundEnv.getElementsAnnotatedWith(annotation);
       if (annotationElements.isEmpty()) {
@@ -59,15 +80,15 @@ public class SerdeProcessor extends AbstractProcessor {
         if (clz.getKind() != ElementKind.CLASS && clz.getKind() != ElementKind.RECORD) {
           processingEnv.getMessager()
               .printMessage(Kind.ERROR, "@Serde must be applied to a Class", clz);
-          return false;
+          return;
         }
 
         TypeElement clazz = (TypeElement) clz;
+        ClassName typename = ClassName.get(clazz);
+        ClassName serderTypeName = ClassName.get(typename.packageName(),
+            typename.simpleName() + SERDE_SUB_FIX);
 
         try {
-          ClassName typename = ClassName.get(clazz);
-          ClassName serderTypeName = ClassName.get(typename.packageName(),
-              typename.simpleName() + "Serde");
 
           TypeName genericInterface = ParameterizedTypeName.get(ClassName.get(Serializer.class),
               typename);
@@ -81,39 +102,42 @@ public class SerdeProcessor extends AbstractProcessor {
                   clazz);
               MethodSpec deSer = BeanSerde.deSerializerCode(typename, fieldElements);
               MethodSpec serde = BeanSerde.serializerCode(typename, fieldElements);
-              TypeSpec typeSpec = consturctorAndFields(builder)
+              constructor(builder)
                   .addMethod(deSer)
                   .addMethod(serde)
-                  .build();
+              ;
+
+              reigsterMethod(clz, typename, builder);
 
               JavaFileObject builderFile = processingEnv.getFiler()
                   .createSourceFile(serderTypeName.canonicalName());
               try (PrintWriter writer = new PrintWriter(builderFile.openWriter())) {
-                JavaFile.builder(typename.packageName(), typeSpec).build().writeTo(writer);
+                JavaFile.builder(typename.packageName(), builder.build()).build().writeTo(writer);
               }
             }
             case RECORD -> {
-              List<Element> fieldElements = RecordSerde.getAllFieldElements((TypeElement) clazz);
+              List<Element> fieldElements = RecordSerde.getAllFieldElements(clazz);
               MethodSpec deSer = RecordSerde.deSerializerCode(typename, fieldElements);
               MethodSpec serde = RecordSerde.serializerCode(typename, fieldElements);
-              TypeSpec typeSpec = consturctorAndFields(builder)
+              constructor(builder)
                   .addMethod(deSer)
                   .addMethod(serde)
-                  .build();
+              ;
+
+              reigsterMethod(clz, typename, builder);
 
               JavaFileObject builderFile = processingEnv.getFiler()
                   .createSourceFile(serderTypeName.canonicalName());
               try (PrintWriter writer = new PrintWriter(builderFile.openWriter())) {
-                JavaFile.builder(typename.packageName(), typeSpec).build().writeTo(writer);
+                JavaFile.builder(typename.packageName(), builder.build()).build().writeTo(writer);
               }
             }
             default -> {
               processingEnv.getMessager()
                   .printMessage(Kind.ERROR, "@Serde must be applied to a Class", clazz);
-              return false;
+              return;
             }
           }
-
 
         } catch (Throwable e) {
           processingEnv.getMessager()
@@ -126,15 +150,93 @@ public class SerdeProcessor extends AbstractProcessor {
         }
       }
     }
-    return false;
   }
 
-  public static TypeSpec.Builder consturctorAndFields(TypeSpec.Builder builder) {
+  /**
+   * constructor and SerdeRegister
+   *
+   * @since 2025/5/14 13:04
+   */
+  private static TypeSpec.Builder constructor(TypeSpec.Builder builder) {
     MethodSpec constructor = MethodSpec.constructorBuilder()
         .addModifiers(Modifier.PUBLIC)
         .build();
 
     return builder.addMethod(constructor);
+  }
+
+  private Builder reigsterMethod(Element clazz, ClassName type, Builder builder) {
+    int protoId = type.toString().hashCode();
+    String prev = serdeObjects.get(protoId);
+    if (prev != null) {
+      processingEnv.getMessager()
+          .printError(
+              "[%s]\n[%s]\nid:%s, hashID发生碰撞，请修改名字以避免".formatted(type, prev, protoId),
+              clazz);
+      return builder;
+    }
+
+    serdeObjects.put(protoId, type.toString());
+    builder.addSuperinterface(SerdeRegister.class);
+    MethodSpec register = MethodSpec
+        .methodBuilder("register")
+        .addModifiers(Modifier.PUBLIC)
+        .addAnnotation(Override.class)
+        .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
+        .addStatement("$L.registerSerializer($L, $T.class, this)", SERIALIZER_VAR_NAME, protoId,
+            type)
+        .build();
+    return builder.addMethod(register);
+  }
+
+  /**
+   * {@link com.google.auto.service.processor.AutoServiceProcessor;}
+   *
+   * @since 2025/5/14 11:40
+   */
+  private void generateConfigFiles() {
+    Filer filer = processingEnv.getFiler();
+
+    String resourceFile = "META-INF/services/" + SerdeRegister.class.getName();
+    processingEnv.getMessager().printNote("Working on resource file: " + resourceFile);
+    try {
+      SortedSet<String> allServices = new TreeSet<>();
+      try {
+        // would like to be able to print the full path
+        // before we attempt to get the resource in case the behavior
+        // of filer.getResource does change to match the spec, but there's
+        // no good way to resolve CLASS_OUTPUT without first getting a resource.
+        FileObject existingFile =
+            filer.getResource(StandardLocation.CLASS_OUTPUT, "", resourceFile);
+        Set<String> oldServices = ServicesFiles.readServiceFile(existingFile.openInputStream());
+        allServices.addAll(oldServices);
+      } catch (IOException e) {
+        // According to the javadoc, Filer.getResource throws an exception
+        // if the file doesn't already exist.  In practice this doesn't
+        // appear to be the case.  Filer.getResource will happily return a
+        // FileObject that refers to a non-existent file but will throw
+        // IOException if you try to open an input stream for it.
+        processingEnv.getMessager().printNote("Resource file did not already exist.");
+      }
+      Set<String> serdeImpl = serdeObjects.values()
+          .stream()
+          .map(s -> s + SERDE_SUB_FIX)
+          .collect(Collectors.toSet());
+      if (!allServices.addAll(serdeImpl)) {
+        processingEnv.getMessager().printNote("No new service entries being added.");
+        return;
+      }
+
+      processingEnv.getMessager().printNote("New service file contents: " + allServices);
+      FileObject fileObject =
+          filer.createResource(StandardLocation.CLASS_OUTPUT, "", resourceFile);
+      try (OutputStream out = fileObject.openOutputStream()) {
+        ServicesFiles.writeServiceFile(allServices, out);
+      }
+      processingEnv.getMessager().printNote("Wrote to: " + fileObject.toUri());
+    } catch (IOException e) {
+      processingEnv.getMessager().printError("Unable to create " + resourceFile + ", " + e);
+    }
   }
 
 

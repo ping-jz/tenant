@@ -36,6 +36,54 @@ public final class Serdes {
 
 
   /**
+   * 注册普通序列化
+   *
+   * @param clazz 类型
+   * @since 2021年07月18日 11:37:14
+   */
+  public void registerObject(Class<?> clazz) {
+    registerObject(clazz.getName().hashCode(), clazz);
+  }
+
+  /**
+   * 注册对象序列化
+   *
+   * @param id    类型ID
+   * @param clazz 类型
+   * @since 2021年07月18日 11:37:14
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public void registerObject(Integer id, Class clazz) {
+    Objects.requireNonNull(id);
+    Objects.requireNonNull(clazz);
+
+    if (clazz.isArray()) {
+      registerSerializer(id, clazz, new ArraySerializer(clazz.getComponentType()));
+    } else if (clazz.isRecord()) {
+      Serializer<?> serializer = new RecordSerializer(clazz);
+      registerSerializer(id, clazz, serializer);
+    } else if (clazz.isEnum()) {
+      registerSerializer(id, clazz, new EnumSerializer<>(clazz));
+    } else {
+      ObjectSerializer.checkClass(clazz);
+      Serializer<?> serializer = new ObjectSerializer(clazz);
+      registerSerializer(id, clazz, serializer);
+    }
+  }
+
+  /**
+   * 注册序列化
+   *
+   * @param clazz      类型
+   * @param serializer 序列化实现
+   * @since 2021年07月18日 11:37:14
+   */
+  public void registerSerializer(Class<?> clazz, Serializer<?> serializer) {
+    registerSerializer(clazz.getName().hashCode(), clazz, serializer);
+  }
+
+
+  /**
    * 注册序列化
    *
    * @param id         类型ID
@@ -84,54 +132,6 @@ public final class Serdes {
   public Serializer<?> getSeriailizer(int typeId) {
     SerializerPair typePair = id2Serders.get(typeId);
     return typePair != null ? typePair.serializer : null;
-  }
-
-  /**
-   * 注册普通序列化
-   *
-   * @param clazz 类型
-   * @since 2021年07月18日 11:37:14
-   */
-  public void registerObject(Class<?> clazz) {
-    registerObject(clazz.getName().hashCode(), clazz);
-  }
-
-  /**
-   * 注册对象序列化
-   *
-   * @param id    类型ID
-   * @param clazz 类型
-   * @since 2021年07月18日 11:37:14
-   */
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public void registerObject(Integer id, Class clazz) {
-    Objects.requireNonNull(id);
-    Objects.requireNonNull(clazz);
-
-    if (clazz.isArray()) {
-      registerSerializer(id, clazz, new ArraySerializer(clazz.getComponentType()));
-    } else if (clazz.isRecord()) {
-      Serializer<?> serializer = new RecordSerializer(clazz);
-      registerSerializer(id, clazz, serializer);
-    } else if (clazz.isEnum()) {
-      registerSerializer(id, clazz, new EnumSerializer<>(clazz));
-    } else {
-      ObjectSerializer.checkClass(clazz);
-      Serializer<?> serializer = new ObjectSerializer(clazz);
-      registerSerializer(id, clazz, serializer);
-    }
-  }
-
-
-  /**
-   * 注册序列化
-   *
-   * @param clazz      类型
-   * @param serializer 序列化实现
-   * @since 2021年07月18日 11:37:14
-   */
-  public void registerSerializer(Class<?> clazz, Serializer<?> serializer) {
-    registerSerializer(clazz.getName().hashCode(), clazz, serializer);
   }
 
   /**
